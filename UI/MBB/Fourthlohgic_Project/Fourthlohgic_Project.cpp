@@ -134,12 +134,25 @@ int CFourthlohgicProjectApp::ExitInstance()
 
 void CFourthlohgicProjectApp::OnFileNew()
 {
-
+	
+	
 	static TCHAR BASED_CODE szFilter[] = _T("이미지 파일(*.BMP, *.GIF, *.JPG, *PNG) | *.BMP;*.GIF;*.JPG;*.bmp;*.jpg;*.png;*.gif; |모든파일(*.*)|*.*||");
 
+	//CFileDialog dlg(TRUE, _T("*.jpg"), _T("image"), OFN_HIDEREADONLY, szFilter);
 	CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY, szFilter);
+	/*if (IDOK == dlg.DoModal())
+	{
+
+		sFilename = dlg.GetPathName();
+		CWnd* pWnd = AfxGetMainWnd();
+		HWND hWnd = pWnd->m_hWnd;
+
+		MessageBox(hWnd, sFilename, _T("hello"),MB_OK);
+	}*/
+
 	if (IDOK != dlg.DoModal()) return;
 	sFilename = dlg.GetPathName();
+
 	CMainFrame* pFrame = STATIC_DOWNCAST(CMainFrame, m_pMainWnd);
 	// 새 MDI 자식 창을 만듭니다.
 	pFrame->CreateNewChild(
