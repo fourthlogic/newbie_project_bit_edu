@@ -34,6 +34,26 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	CImage image;
-	BOOL MakeCellFrameImage(LPCTSTR InSourceImageFileName);
+
+	CBitmap m_bmBack;
+	CDC m_memDC;
+	CRect  tmpRect;
+
+	float fOffsetX = 0.0f;
+	float fOffsetY = 0.0f;
+
+	double mox, moy;
+	double mxMax, mxMin, myMax, myMin;
+
+	CPoint m_sPt, m_ePt;
+
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+
+	void CChildView::DeviceToWorld(long m_sPtx, long m_sPty, double& mx, double& my);
+	void CChildView::DrawImage(CDC* pDC);
 };
 
