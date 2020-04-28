@@ -6,7 +6,7 @@ using namespace cv;
 using namespace std;
 
 void binaryThreshold(Mat& src, Mat& dst, int MinValue, int MaxValue);
-void outerLine(Mat& src, Mat& dst, vector<Point>& cp, int sx, int sy );
+void outerLine(Mat& src, Mat& dst, vector<Point>& cp, int sx, int sy);
 void onEdgetrackBar(int value, void* userData);
 bool imageDataStart(uchar*& pSrc, int& height, int& width, Point& startPt, Point& firstPt, int value);
 
@@ -23,7 +23,7 @@ void rangeThreshold(Mat& src, Mat& dst, int MinValue = 0, int MaxValue = 255)
 {
 	if (!dst.data)
 		dst = Mat(src.size(), CV_8UC1, Scalar(0));
-	
+
 	for (int i = 0; i < src.rows; i++)
 	{
 		uchar* srcPtr = src.ptr<uchar>(i);
@@ -59,7 +59,7 @@ void binaryThreshold(Mat& src, Mat& dst, int MinValue = 0, int MaxValue = 255)
 }
 
 // 해당 value값을 찾는 함수 
-bool imageDataStart(uchar* &pSrc, int& height, int& width, Point & startPt, Point & firstPt, int value)
+bool imageDataStart(uchar*& pSrc, int& height, int& width, Point& startPt, Point& firstPt, int value)
 {
 
 	for (int y = 0; y < height; y++)
@@ -107,7 +107,7 @@ void outerLine(Mat& src, Mat& dst, vector<Point>& cp, int sx = 0, int sy = 0)
 	};
 
 
-	if (pSrc[w*sy + sx]!=255)
+	if (pSrc[w * sy + sx] != 255)
 	{
 		Point strPt(0, 0);
 		Point firstPt;
@@ -133,7 +133,7 @@ void outerLine(Mat& src, Mat& dst, vector<Point>& cp, int sx = 0, int sy = 0)
 				d = 0;
 			cnt++;
 
-			if (cnt >= 4) 
+			if (cnt >= 4)
 			{
 				cp.push_back(Point(x, y));
 				break;
@@ -187,7 +187,7 @@ void onEdgetrackBar(int value, void* userData)
 	//binaryThreshold(img, dst, minValue, maxValue);
 	//imshow("binaryThreshold", dst);
 	//end = clock();
-	
+
 	// 4. range Threshold  - 범위 제외
 	//start = clock();
 	//rangeThreshold(img, dst, minValue, maxValue);
@@ -225,6 +225,33 @@ void MedianFilter(Mat img, Mat& dst, int size)
 
 }
 
+
+void myROI(Mat& src, Mat& dst, Size& size, Point sPt, Point ePt)
+{
+	int h = size.height;
+	int w = size.width;
+	dst = Mat(h, w, CV_8UC1, Scalar(0)); // 사이즈 만큼 생성
+	double Alpha = ((double)ePt.y - sPt.y) / ((double)ePt.x - sPt.x);
+	double Beta = sPt.y - Alpha * sPt.x;
+
+	cout << "기울기 좌표 수식 : y =" << Alpha << "x + " << Beta << endl;
+
+	Point target;
+	uchar* srcPtr;
+	uchar* dstPtr;
+	double rotateX;
+	for (int y = sPt.y; y < h; y++)
+	{
+		srcPtr = src.ptr<uchar>(y);
+		dstPtr = dst.ptr<uchar>(y);
+		rotateX = (y - Beta) / Alpha;
+		for (int x = 0; x < w; x++)
+		{
+			dstPtr[x] = srcPtr[(int)rotateX + x];
+		}
+	}
+}
+
 void main()
 {
 	img = imread("images/20200115220714674 CAM_3 ULC.png", IMREAD_GRAYSCALE);
@@ -232,7 +259,7 @@ void main()
 	Mat outerImage;
 	Mat binaryImage;
 	vector<Point> edgePoints;
-	
+
 	// 범위 지정
 	//binaryThreshold(img, binaryImage,34,255);
 	//imshow("binary", binaryImage);
@@ -246,13 +273,38 @@ void main()
 	//outerLine(binaryImage, outerImage, edgePoints, 643 , 1);
 	//imshow("outer", outerImage);
 	//waitKey();
-	
+
 	// thrsold 트랙바
 	//createTrackbar("MaxValue", "srcImage", &maxValue, 255, onEdgetrackBar);
 	//createTrackbar("MinValue", "srcImage", &minValue, 255, onEdgetrackBar);
 
 
 	// 원본소스 출력
+
+	//myROI 함수 test
+	uchar data[] = {
+	0, 0, 0, 0, 1, 0, 0, 0,
+	0, 0, 0, 1, 0, 0, 0, 0,
+	0, 0, 1, 0, 0, 0, 0, 0,
+	0, 1, 0, 0, 0, 0, 0, 0,
+	1, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0
+	};
+	Mat SrcData(8, 8, CV_8UC1, data);
+	Mat rotateDst;
+	Size size(2, 5);
+	Point startPoint(0, 4);
+	Point endPoint(4, 0);
+	cout << "SrcData" << endl;
+	cout << SrcData << endl;
+	
+	myROI(SrcData, rotateDst, size, startPoint, endPoint);
+	cout << "rotateDst" << endl;
+	cout << rotateDst << endl;
+
+
 	imshow("srcImage", img);
 	waitKey();
 
