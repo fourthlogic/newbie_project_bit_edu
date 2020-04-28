@@ -20,9 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{6D650FED-4BDB-4CCD-8B73-15C05F956EFF}</ProjectGuid>
+    <ProjectGuid>{88EA3191-24A3-437B-A4F6-13BE55340E2F}</ProjectGuid>
     <Keyword>MFCProj</Keyword>
-    <RootNamespace>FourthlohgicProject</RootNamespace>
+    <RootNamespace>Test1</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -187,17 +187,16 @@
   <ItemGroup>
     <ClInclude Include="ChildFrm.h" />
     <ClInclude Include="ChildView.h" />
-    <ClInclude Include="Fourthlohgic_Project.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="Test1.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChildFrm.cpp" />
     <ClCompile Include="ChildView.cpp" />
-    <ClCompile Include="Fourthlohgic_Project.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -205,15 +204,16 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Test1.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="FourthlohgicProject.rc" />
+    <ResourceCompile Include="Test1.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\FourthlohgicProject.rc2" />
+    <None Include="res\Test1.rc2" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\Fourthlohgic_Project.ico" />
+    <Image Include="res\Test1.ico" />
     <Image Include="res\Toolbar.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

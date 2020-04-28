@@ -38,6 +38,7 @@ public:
 	CBitmap m_bmBack;
 	CDC m_memDC;
 	CRect  tmpRect;
+	CBitmap m_layerCollection;
 
 	float fOffsetX = 0.0f;
 	float fOffsetY = 0.0f;
@@ -54,6 +55,15 @@ public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 
 	void CChildView::DeviceToWorld(long m_sPtx, long m_sPty, double& mx, double& my);
-	void CChildView::DrawImage(CDC* pDC);
+	CBitmap CChildView::DrawLayers(CDC* pDC, CBitmap m_scaler);
+
+	CDC memDC;  // 처리 CDC을 지정 한다.
+	// 빈공간을 새롭게 만든다.
+	CDC mdcOffScreen;      // 더블버퍼링을 위한 메모리 그림버퍼
+	CBitmap bmpOffScreen; // 더블버퍼링을 위한 비트맵 객체를 만든다.
+	CBitmap* oldbitmap;
+
+	CBitmap m_background;
+	BITMAP m_Bitmap;
 };
 

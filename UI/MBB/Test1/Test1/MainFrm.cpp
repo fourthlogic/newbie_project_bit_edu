@@ -4,7 +4,7 @@
 
 #include "pch.h"
 #include "framework.h"
-#include "Fourthlohgic_Project.h"
+#include "Test1.h"
 
 #include "MainFrm.h"
 

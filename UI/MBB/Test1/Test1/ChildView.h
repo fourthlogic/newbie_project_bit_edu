@@ -1,10 +1,7 @@
 ﻿
 // ChildView.h: CChildView 클래스의 인터페이스
 //
-#include <opencv2/opencv.hpp>
-//#include <iostream>
-using namespace cv;
-//using namespace std;
+
 
 #pragma once
 
@@ -35,22 +32,23 @@ public:
 protected:
 	afx_msg void OnPaint();
 	DECLARE_MESSAGE_MAP()
+
 public:
-	CImage SrcImage;
-	CImage DstImage;
-	int a;
-	BOOL MakeCellFrameImage(LPCTSTR InSourceImageFileName);
-	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
-public:
-	CString pathname;
-	String sFilename;
-	CImage image;
-	//Mat srcImage, dstImage;
+	String filePathName;
+	CBitmap* cbm;
+	HBITMAP hbm;
+	BITMAP bmInfo;
+	Mat image;
 	int height, width;
-	//zoom
-	int m_nZoomRate;
-	int m_ImageWidth;
-	int m_ImageHeight;
-	void Paint(HDC dc);
+	int _iViewportWidth, _iViewportHeight;
+	CPoint _viewportPoint, _mouseLClickPoint, _clientMousePoint;
+	BOOL _bMouseLClick;
+	float _fViewportScale;
+	int m_nZoom;
+public:
+	void PrintImg(HDC dc);
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 };
 

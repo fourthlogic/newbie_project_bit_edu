@@ -1,12 +1,12 @@
 ﻿
-// Fourthlohgic_Project.cpp: 애플리케이션에 대한 클래스 동작을 정의합니다.
+// Test1.cpp: 애플리케이션에 대한 클래스 동작을 정의합니다.
 //
 
 #include "pch.h"
 #include "framework.h"
 #include "afxwinappex.h"
 #include "afxdialogex.h"
-#include "Fourthlohgic_Project.h"
+#include "Test1.h"
 #include "MainFrm.h"
 
 #include "ChildFrm.h"
@@ -16,17 +16,17 @@
 #endif
 
 
-// CFourthlohgicProjectApp
+// CTest1App
 
-BEGIN_MESSAGE_MAP(CFourthlohgicProjectApp, CWinApp)
-	ON_COMMAND(ID_APP_ABOUT, &CFourthlohgicProjectApp::OnAppAbout)
-	ON_COMMAND(ID_FILE_NEW, &CFourthlohgicProjectApp::OnFileNew)
+BEGIN_MESSAGE_MAP(CTest1App, CWinApp)
+	ON_COMMAND(ID_APP_ABOUT, &CTest1App::OnAppAbout)
+	ON_COMMAND(ID_FILE_NEW, &CTest1App::OnFileNew)
 END_MESSAGE_MAP()
 
 
-// CFourthlohgicProjectApp 생성
+// CTest1App 생성
 
-CFourthlohgicProjectApp::CFourthlohgicProjectApp() noexcept
+CTest1App::CTest1App() noexcept
 {
 	// 다시 시작 관리자 지원
 	m_dwRestartManagerSupportFlags = AFX_RESTART_MANAGER_SUPPORT_ALL_ASPECTS;
@@ -39,20 +39,20 @@ CFourthlohgicProjectApp::CFourthlohgicProjectApp() noexcept
 
 	// TODO: 아래 애플리케이션 ID 문자열을 고유 ID 문자열로 바꾸십시오(권장).
 	// 문자열에 대한 서식: CompanyName.ProductName.SubProduct.VersionInformation
-	SetAppID(_T("FourthlohgicProject.AppID.NoVersion"));
+	SetAppID(_T("Test1.AppID.NoVersion"));
 
 	// TODO: 여기에 생성 코드를 추가합니다.
 	// InitInstance에 모든 중요한 초기화 작업을 배치합니다.
 }
 
-// 유일한 CFourthlohgicProjectApp 개체입니다.
+// 유일한 CTest1App 개체입니다.
 
-CFourthlohgicProjectApp theApp;
+CTest1App theApp;
 
 
-// CFourthlohgicProjectApp 초기화
+// CTest1App 초기화
 
-BOOL CFourthlohgicProjectApp::InitInstance()
+BOOL CTest1App::InitInstance()
 {
 	// 애플리케이션 매니페스트가 ComCtl32.dll 버전 6 이상을 사용하여 비주얼 스타일을
 	// 사용하도록 지정하는 경우, Windows XP 상에서 반드시 InitCommonControlsEx()가 필요합니다. 
@@ -104,10 +104,10 @@ BOOL CFourthlohgicProjectApp::InitInstance()
 	//TODO: 추가 멤버 변수를 추가하고 응용 프로그램에 필요한 추가 메뉴 형식에 대한
 	//	호출을 로드합니다.
 	HINSTANCE hInst = AfxGetResourceHandle();
-	m_hMDIMenu  = ::LoadMenu(hInst, MAKEINTRESOURCE(IDR_FourthlohgicProjectTYPE));
-	m_hMDIAccel = ::LoadAccelerators(hInst, MAKEINTRESOURCE(IDR_FourthlohgicProjectTYPE));
+	m_hMDIMenu  = ::LoadMenu(hInst, MAKEINTRESOURCE(IDR_Test1TYPE));
+	m_hMDIAccel = ::LoadAccelerators(hInst, MAKEINTRESOURCE(IDR_Test1TYPE));
 
-	sFilename = L"";
+
 
 
 	// 주 창이 초기화되었으므로 이를 표시하고 업데이트합니다.
@@ -117,7 +117,7 @@ BOOL CFourthlohgicProjectApp::InitInstance()
 	return TRUE;
 }
 
-int CFourthlohgicProjectApp::ExitInstance()
+int CTest1App::ExitInstance()
 {
 	//TODO: 추가한 추가 리소스를 처리합니다.
 	if (m_hMDIMenu != nullptr)
@@ -130,22 +130,14 @@ int CFourthlohgicProjectApp::ExitInstance()
 	return CWinApp::ExitInstance();
 }
 
-// CFourthlohgicProjectApp 메시지 처리기
+// CTest1App 메시지 처리기
 
-void CFourthlohgicProjectApp::OnFileNew()
+void CTest1App::OnFileNew()
 {
-
-	static TCHAR BASED_CODE szFilter[] = _T("이미지 파일(*.BMP, *.GIF, *.JPG, *PNG) | *.BMP;*.GIF;*.JPG;*.bmp;*.jpg;*.png;*.gif; |모든파일(*.*)|*.*||");
-
-	CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY, szFilter);
-	if (IDOK != dlg.DoModal()) return;
-	sFilename = dlg.GetPathName();
 	CMainFrame* pFrame = STATIC_DOWNCAST(CMainFrame, m_pMainWnd);
 	// 새 MDI 자식 창을 만듭니다.
 	pFrame->CreateNewChild(
-		RUNTIME_CLASS(CChildFrame), IDR_FourthlohgicProjectTYPE, m_hMDIMenu, m_hMDIAccel);
-
-
+		RUNTIME_CLASS(CChildFrame), IDR_Test1TYPE, m_hMDIMenu, m_hMDIAccel);
 }
 
 // 응용 프로그램 정보에 사용되는 CAboutDlg 대화 상자입니다.
@@ -181,13 +173,13 @@ BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
 END_MESSAGE_MAP()
 
 // 대화 상자를 실행하기 위한 응용 프로그램 명령입니다.
-void CFourthlohgicProjectApp::OnAppAbout()
+void CTest1App::OnAppAbout()
 {
 	CAboutDlg aboutDlg;
 	aboutDlg.DoModal();
 }
 
-// CFourthlohgicProjectApp 메시지 처리기
+// CTest1App 메시지 처리기
 
 
 
