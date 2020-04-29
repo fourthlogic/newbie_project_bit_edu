@@ -47,8 +47,6 @@ public:
 	int m_nZoom;
 public:
 	void PrintImg(HDC dc);
-	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
-	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 };
 
