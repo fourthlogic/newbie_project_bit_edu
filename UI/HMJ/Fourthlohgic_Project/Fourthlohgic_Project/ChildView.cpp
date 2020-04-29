@@ -61,7 +61,7 @@ void CChildView::OnPaint()
 
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	//---------------------------------------------------
-	
+	GetClientRect(&tmpRect);
 	CDC* pDC = GetDC();
 
    // 이미 배경은 OnInitDialog() 혹은 OnInitialUpdate()에서 로드되어 있으므로 다시 할 필요는 없다.
@@ -79,20 +79,24 @@ void CChildView::OnPaint()
 	//우선 배경 그림이 맨 밑이므로 배경을 메모리에 복사 한다.
 
 	memDC.SelectObject(&m_background);   // 배경 그림을 선택하고
-	mdcOffScreen.BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, 0, 0, SRCCOPY);
+	mdcOffScreen.BitBlt(tmpRect.left, tmpRect.top, tmpRect.right, tmpRect.bottom, &memDC, 0, 0, SRCCOPY);
 	// ==> 배경을 메모리버퍼에 복사 한다. 아직 화면에는 나타나지 않는다.
 	//따라서 그림은 화면에 나타나지 않고, 디버깅이 힘들다.
 	//디버깅을 싶게 한다면
 	//pDC->BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, 0, 0, SRCCOPY); 
 	//    한줄 더 넣어 화면을 확인하고 디버깅이 끝나면 삭제 한다.
    // 이번에는 BitBlt 말고 다른 윈도우 함수를 역시 메모리에 복사 한다.
-	mdcOffScreen.SetTextColor((COLORREF)0x00FFFFFF);
+	//----------
+	//mdcOffScreen.SetTextColor((COLORREF)0x00FFFFFF);
 	//==> 이것은 pDC->SetTextColor( (COLORREF) 0x00FFFFFF );와는 별개로 상관없음
-	mdcOffScreen.SetBkMode(TRANSPARENT);   // 글자의 배경색을 없앤다.
+	//mdcOffScreen.SetBkMode(TRANSPARENT);   // 글자의 배경색을 없앤다.
+	//-----------
 	// 여기까지 모든 그림이 완성되어 지만, 아직 표시 버퍼에 출력된 상태가 아니다. 디버깅을 해보면 아직 그림이 표시되지 않는다.
 	// 최종적으로 표시 화면 메모리에 복사 한다.
 	//pDC->StretchBlt(0, 0, tmpRect.right, tmpRect.bottom, &mdcOffScreen, tmpRect.left, tmpRect.top, tmpRect.right, tmpRect.bottom, SRCCOPY);
-	pDC->BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, 0, 0, SRCCOPY);
+	
+	pDC->BitBlt(tmpRect.left, tmpRect.top, tmpRect.right, tmpRect.bottom, &mdcOffScreen, 0, 0, SRCCOPY);
+	//pDC->BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &mdcOffScreen, 0, 0, SRCCOPY);
 
 	// 이때서야 화면에 그림이 나타난다.
 	memDC.DeleteDC();
@@ -121,40 +125,40 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 	{
 		// 이동 크기 구하기
 		CSize offset = point - m_sPt;
-
-		// 화면의 크기를 구하기
-		GetClientRect(&tmpRect);
+		CDC* pDC = GetDC();
+		
 
 		// 메모리 DC 준비
 		CClientDC DC(this);
 		CDC memDC;
-		memDC.CreateCompatibleDC(&DC);
-		CBitmap* pOldBM = (CBitmap*)memDC.SelectObject(&m_bmBack); //pOldBM에 m_bmBack 넣기
+		memDC.CreateCompatibleDC(pDC);
+		CBitmap* pOldBM = (CBitmap*)memDC.SelectObject(&m_background); //pOldBM에 m_bmBack 넣기
 
 		CPen pen;
 		pen.CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
-		CPen* p = (CPen*)DC.SelectObject(&pen);
+		CPen* p = (CPen*)pDC->SelectObject(&pen);
 
 		// A영역의 사각형 그리기 //m_sPt는 기존 포인트, point는 이동
 		if (m_sPt.x < point.x) // 오른쪽으로 끌었을때
-			DC.Rectangle((point.x + m_sPt.x), 0, (point.x - m_sPt.x), tmpRect.bottom);
+		{
+			//pDC->Rectangle(0, 0, (point.x - m_sPt.x), tmpRect.bottom);
+			pDC->Rectangle(tmpRect.left + (point.x - m_sPt.x), tmpRect.top, tmpRect.right + (point.x - m_sPt.x), tmpRect.bottom);
+		}
 			//tmpRect = CRect((point.x + m_sPt.x), 0, (point.x - m_sPt.x), tmpRect.bottom);
 		else // 왼쪽으로 끌었을때
-			DC.Rectangle(tmpRect.right - (m_sPt.x - point.x),
-				0, tmpRect.right, tmpRect.bottom);
+			pDC->Rectangle(tmpRect.left - (m_sPt.x - point.x), tmpRect.top, tmpRect.right - (m_sPt.x - point.x), tmpRect.bottom);
 
 		// B영역의 사각형 그리기
 		if (m_sPt.y < point.y) // 위로 올렸을때
-			DC.Rectangle(0, 0, tmpRect.right, (point.y - m_sPt.y));
+			pDC->Rectangle(tmpRect.left, tmpRect.top - (m_sPt.y - point.y), tmpRect.right, tmpRect.bottom - (m_sPt.x - point.x));
 		else // 아래로 내렸을때
-			DC.Rectangle(0, tmpRect.bottom - (m_sPt.y - point.y),
-				tmpRect.right, tmpRect.bottom);
+			pDC->Rectangle(tmpRect.left, tmpRect.top + (point.y - m_sPt.y), tmpRect.right, tmpRect.bottom + (point.x - m_sPt.x));
 
 		// 이미지 붙이기
-		DC.BitBlt(offset.cx, offset.cy, tmpRect.right,
+		/*pDC->BitBlt(offset.cx, offset.cy, tmpRect.right,
 			tmpRect.bottom, &mdcOffScreen, 0, 0, SRCCOPY);
-		DC.SelectObject(p);
-		memDC.SelectObject(pOldBM);
+		pDC->SelectObject(p);
+		memDC.SelectObject(pOldBM);*/
 
 		Invalidate();
 	}
@@ -191,11 +195,6 @@ void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
 
 	Invalidate(0);
 	CWnd::OnLButtonUp(nFlags, point);
-}
-
-CBitmap CChildView::DrawLayers(CDC* pDC, CBitmap m_scaler)
-{
-
 }
 
 void CChildView::DeviceToWorld(long m_sPtx, long m_sPty, double &mx, double &my)

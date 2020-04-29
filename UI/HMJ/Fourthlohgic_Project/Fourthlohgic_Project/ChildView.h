@@ -55,7 +55,6 @@ public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 
 	void CChildView::DeviceToWorld(long m_sPtx, long m_sPty, double& mx, double& my);
-	CBitmap CChildView::DrawLayers(CDC* pDC, CBitmap m_scaler);
 
 	CDC memDC;  // 처리 CDC을 지정 한다.
 	// 빈공간을 새롭게 만든다.
