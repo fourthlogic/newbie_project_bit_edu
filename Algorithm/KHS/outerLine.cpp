@@ -5,19 +5,104 @@
 using namespace cv;
 using namespace std;
 
-void binaryThreshold(Mat& src, Mat& dst, int MinValue , int MaxValue);
-void outerLine(Mat& src, Mat& dst);
-void onEdgetrackBar(int value, void* userData);
 
-Mat img;
-int maxValue = 150;
-int minValue = 255;
+//=========================================================================
+// 외곽 함수 라인 test code 
+//=========================================================================
 
 
-// 바이너리 전용 threshold 함수 
-void binaryThreshold(Mat& src, Mat& dst, int MinValue =0 , int MaxValue=255 )
+// 지정된 좌표에서 부터 outerLine 추출 및 드로잉
+void outerLine(Mat& src, Mat& dst, vector<Point>& cp, int sx, int sy);
+
+// 데이터 시작 좌표를 찾기 위한 함수
+bool imageDataStart(uchar*& pSrc, int& height, int& width, Point& startPt, Point& firstPt, int value);
+
+// 바이너리 전용  threshold 함수 사이값 범위 max ~ min 
+void binaryThreshold(Mat& src, Mat& dst, int MinValue, int MaxValue);
+
+// 메디안 필터
+void MedianFilter(Mat img, Mat& dst, int size);
+
+// mask 적용 필터
+void filter(Mat img, Mat& dst, Mat mask);
+
+Mat img; // 원본소스
+
+// 시간 측정용
+clock_t start;
+clock_t end;
+
+void main()
 {
-	dst = Mat(src.rows, src.cols, CV_8UC1);
+	img = imread("image/a1.png", IMREAD_GRAYSCALE);
+	if (!img.data)
+		return;
+	namedWindow("srcImage", WINDOW_AUTOSIZE);
+	imshow("srcImage", img);
+	Mat outerImage;
+	Mat binaryImage;
+	vector<Point> edgePoints;
+
+	//범위 지정
+	binaryThreshold(img, binaryImage,34,255);
+	imshow("binary", binaryImage);
+
+	// 1.메디안 - 연산속도 너무 느림 - 정확성 up
+	//MedianFilter(binaryImage, binaryImage, 5);
+	
+	// 2.침식작용 - 연산속도 상대적으로 빠름
+	//Matx <uchar, 3, 3> mask(0, 1, 0, 1, 1, 1, 0, 1, 0);
+	//morphologyEx(binaryImage, binaryImage, MORPH_OPEN, mask);
+
+	// 3.블러처리 - 
+	//float data[] = {
+	//1 / 9.f, 1 / 9.f, 1 / 9.f,
+	//1 / 9.f, 1 / 9.f, 1 / 9.f,
+	//1 / 9.f, 1 / 9.f, 1 / 9.f};
+	//
+	//Mat mask(3, 3, CV_32F, data);
+	//filter(binaryImage, binaryImage, mask);
+	//binaryImage.convertTo(binaryImage, CV_8U);
+
+	// 외곽선
+	outerLine(binaryImage, outerImage, edgePoints, 0 , 0);
+	imshow("outer", outerImage);
+	waitKey();
+}
+
+
+// 필터 적용함수
+void filter(Mat img, Mat& dst, Mat mask)
+{
+	dst = Mat(img.size(), CV_32F, Scalar(0));
+	Point h_m = mask.size() / 2;
+	for (int i = h_m.y; i < img.rows - h_m.y; i++)
+	{
+		for (int j = h_m.x; j < img.cols - h_m.x; j++)
+		{
+			float sum = 0;
+			for (int k = 0; k < mask.rows; k++)
+			{
+				for (int t = 0; t < mask.cols; t++)
+				{
+					int y = i + k - h_m.y;
+					int x = j + t - h_m.x;
+					sum += mask.at<float>(k, t) * img.at<uchar>(y, x);
+				}
+			}
+			dst.ptr<float>(i)[j] = sum;
+		}
+
+	}
+}
+
+
+// 바이너리 전용  threshold 함수 사이값 범위 max ~ min 
+void binaryThreshold(Mat& src, Mat& dst, int MinValue = 0, int MaxValue = 255)
+{
+	if (!dst.data)
+		dst = Mat(src.size(), CV_8UC1, Scalar(0));
+
 	for (int i = 0; i < src.rows; i++)
 	{
 		uchar* srcPtr = src.ptr<uchar>(i);
@@ -32,80 +117,131 @@ void binaryThreshold(Mat& src, Mat& dst, int MinValue =0 , int MaxValue=255 )
 	}
 }
 
-// 필터 이용 외곽선 검출 함수 제작중
-void outerLine(Mat& src, Mat& dst)
+// 해당 value값을 찾는 함수 
+bool imageDataStart(uchar*& pSrc, int& height, int& width, Point& startPt, Point& firstPt, int value)
 {
-	float data[] = {
-		 0, 0,
-		-1, 0,
-		-1, 1,
-		 0, 1
-	};
-	Mat mask(2, 2, CV_32F, data);
 
-	Point A, B;
-	uchar a, b;
-	for (int i = 1; i < src.rows - 1; i++)
+	for (int y = 0; y < height; y++)
 	{
-		uchar* ptr = src.ptr<uchar>(i);
-		A.y = i - 1;
-		B.y = i - 1;
-		for (int j = 1; j < src.cols - 1; j++)
+		for (int x = 0; x < width; x++)
 		{
-			if (*src.ptr<uchar>(i, j) == 0)
+			if (pSrc[y * width + x] == value)
 			{
-				A.x = j;
-				B.x = j + 1;
-				a = *src.ptr<uchar>(A.y, A.x);
-				b = *src.ptr<uchar>(B.y, B.x);
-				if (a == 0 && b == 0);
-				//x;
-				else if (a == 0 && b == 1);
-				//x;
-				else if (a == 1 && b == 0);
-				//x;
-				else;
-					//x;
-
+				firstPt.y = y;
+				firstPt.x = x;
+				return true;
 			}
+		}
+	}
+	return false;
+}
+
+// 필터 이용 외곽선 검출 함수 4방향 검출
+void outerLine(Mat& src, Mat& dst, vector<Point>& cp, int sx = 0, int sy = 0)
+{
+	if (!dst.data)
+		dst = Mat(src.size(), CV_8UC1, Scalar(0));
+
+	int w = src.cols;
+	int h = src.rows;
+
+	uchar* pSrc = new uchar[w * h];
+
+	for (int i = 0; i < h; i++)
+	{
+		for (int j = 0; j < w; j++)
+		{
+			pSrc[w * i + j] = src.ptr(i)[j];
+		}
+	}
+
+	int x, y, nx, ny;
+	int d, cnt;
+
+	int dir[4][2] = {
+		{  1,  0 },
+		{  0,  1 },
+		{ -1,  0 },
+		{  0, -1 },
+	};
+
+
+	if (pSrc[w * sy + sx] != 255)
+	{
+		Point strPt(0, 0);
+		Point firstPt;
+		if (!imageDataStart(pSrc, h, w, strPt, firstPt, 255))
+			return;
+		sx = firstPt.x;
+		sy = firstPt.y;
+	}
+
+	x = sx;
+	y = sy;
+
+	d = cnt = 0;
+
+	while (1)
+	{
+		nx = x + dir[d][0];
+		ny = y + dir[d][1];
+
+		if (nx < 0 || nx >= w || ny < 0 || ny >= h || pSrc[ny * w + nx] == 0)
+		{
+			if (++d > 3)
+				d = 0;
+			cnt++;
+
+			if (cnt >= 4)
+			{
+				cp.push_back(Point(x, y));
+				break;
+			}
+		}
+		else
+		{
+			cp.push_back(Point(x, y));
+
+			x = nx;
+			y = ny;
+			cnt = 0;
+
+			d = (d + 3) % 4;
+		}
+
+		if (x == sx && y == sy && d == 0)
+			break;
+	}
+
+	for (int i = 0; i < cp.size(); i++)
+		dst.ptr<uchar>(cp[i].y)[cp[i].x] = 255;
+}
+
+void MedianFilter(Mat img, Mat& dst, int size)
+{
+	dst = Mat(img.size(), CV_8U, Scalar(0));
+
+	Size mSize(size, size);
+	Point h_m = mSize / 2;
+
+	for (int i = h_m.y; i < img.rows - h_m.y; i++)
+	{
+
+		for (int j = h_m.x; j < img.cols - h_m.x; j++)
+		{
+			Point start = Point(j, i) - h_m;
+			Rect roi(start, mSize);
+			Mat mask, sort_m;
+			img(roi).copyTo(mask);
+
+			Mat one_row = mask.reshape(1, 1);
+			cv::sort(one_row, sort_m, SORT_EVERY_ROW); // 행 단위 정렬
+
+			int medi_idx = (int)(one_row.total() / 2); // 중간위치
+			dst.at<uchar>(i, j) = sort_m.at<uchar>(medi_idx);
+
 		}
 
 	}
-}
-
-// 트랙바 콜백함수
-void onEdgetrackBar(int value, void* userData)
-{
-	clock_t start;
-	clock_t end;
-	Mat dst = img.clone();
-	// 1. OpenCV제공 Canny 검출 속도측정
-	//start = clock();
-	//Canny(dst, dst, th1, th2);
-	//end = clock();
-	//cout << "Canny = " << (double)(end - start) << endl;
-	//imshow("Canny", dst);
-
-	// 2. OpenCV제공 Laplacian 검출 속도측정
-	start = clock();
-	//binaryThreshold(dst, dst, maxValue, minValue);
-	Laplacian(img, dst, CV_8U, 3);// == mask8
-	convertScaleAbs(dst, dst);
-	end = clock();
-	cout << "Laplacian = " << (double)(end - start) << endl;
-	imshow("Laplacian ", dst);
-
-	//cout << "Canny = " << (double)(end - start) / CLOCKS_PER_SEC << endl;
-}
-
-
-void main()
-{
-	img = imread("images/20200115220714674 CAM_3 ULC.png", IMREAD_GRAYSCALE);
-	namedWindow("threshold", WINDOW_AUTOSIZE);
-	createTrackbar("threshold1", "threshold", &maxValue, 255, onEdgetrackBar);
-	createTrackbar("threshold2", "threshold", &minValue, 255, onEdgetrackBar);
-	imshow("threshold", img);
-	waitKey();
 
 }
