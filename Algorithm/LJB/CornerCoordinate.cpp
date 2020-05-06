@@ -9,6 +9,7 @@ int max_grayscale = 160;
 int min_grayscale = 110;
 double epsilon_control = 0.07;
 
+// 최외각 라인 추출, 3점 이용 ROI영역 추출 ,Threshold 테스트
 // 최소제곱법. 1차방정식 도출 및 x값 받으면 y값 출력하는 함수
 int LeastSquaredMethod(vector<Point>, int);
 // src 이미지의 외곽 좌표 tl, bl, br를 구하는 함수 (dst에 순서대로 저장)
