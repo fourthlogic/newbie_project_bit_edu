@@ -4,7 +4,7 @@
 
 #include "pch.h"
 #include "framework.h"
-#include "Test1.h"
+#include "Fourthlohgic_Project.h"
 
 #include "ChildFrm.h"
 
@@ -20,6 +20,7 @@ BEGIN_MESSAGE_MAP(CChildFrame, CMDIChildWnd)
 	ON_COMMAND(ID_FILE_CLOSE, &CChildFrame::OnFileClose)
 	ON_WM_SETFOCUS()
 	ON_WM_CREATE()
+	ON_WM_ERASEBKGND()
 END_MESSAGE_MAP()
 
 // CChildFrame 생성/소멸

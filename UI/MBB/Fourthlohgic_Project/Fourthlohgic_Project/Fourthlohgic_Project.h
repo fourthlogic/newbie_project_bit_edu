@@ -1,5 +1,5 @@
 ﻿
-// Test1.h: Test1 애플리케이션의 기본 헤더 파일
+// Fourthlohgic_Project.h: Fourthlohgic_Project 애플리케이션의 기본 헤더 파일
 //
 #pragma once
 
@@ -10,14 +10,14 @@
 #include "resource.h"       // 주 기호입니다.
 
 
-// CTest1App:
-// 이 클래스의 구현에 대해서는 Test1.cpp을(를) 참조하세요.
+// CFourthlohgicProjectApp:
+// 이 클래스의 구현에 대해서는 Fourthlohgic_Project.cpp을(를) 참조하세요.
 //
 
-class CTest1App : public CWinApp
+class CFourthlohgicProjectApp : public CWinApp
 {
 public:
-	CTest1App() noexcept;
+	CFourthlohgicProjectApp() noexcept;
 
 
 // 재정의입니다.
@@ -34,6 +34,8 @@ public:
 	afx_msg void OnAppAbout();
 	afx_msg void OnFileNew();
 	DECLARE_MESSAGE_MAP()
+public:
+	CString sFilename;
 };
 
-extern CTest1App theApp;
+extern CFourthlohgicProjectApp theApp;
