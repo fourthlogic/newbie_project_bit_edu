@@ -22,6 +22,11 @@ CChildView::CChildView()
 
 	m_background.Attach(image.Detach());
 	m_background.GetObject(sizeof(BITMAP), (LPVOID)&m_Bitmap);
+
+	//m_ePt.x = 0;
+	//m_ePt.y = 0;
+
+	m_bkgBrush.CreateSolidBrush(0x00000000);
 }
 
 CChildView::~CChildView()
@@ -36,6 +41,7 @@ BEGIN_MESSAGE_MAP(CChildView, CWnd)
 	ON_WM_MOUSEMOVE()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
+	ON_WM_MOUSEWHEEL()
 END_MESSAGE_MAP()
 
 
@@ -61,7 +67,6 @@ void CChildView::OnPaint()
 
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	//---------------------------------------------------
-	GetClientRect(&tmpRect);
 	CDC* pDC = GetDC();
 
    // 이미 배경은 OnInitDialog() 혹은 OnInitialUpdate()에서 로드되어 있으므로 다시 할 필요는 없다.
@@ -79,7 +84,8 @@ void CChildView::OnPaint()
 	//우선 배경 그림이 맨 밑이므로 배경을 메모리에 복사 한다.
 
 	memDC.SelectObject(&m_background);   // 배경 그림을 선택하고
-	mdcOffScreen.BitBlt(tmpRect.left, tmpRect.top, tmpRect.right, tmpRect.bottom, &memDC, 0, 0, SRCCOPY);
+	//mdcOffScreen.BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, 0, 0, SRCCOPY);
+	mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, m_ePt.x, m_ePt.y, m_Bitmap.bmWidth, m_Bitmap.bmHeight, SRCCOPY);
 	// ==> 배경을 메모리버퍼에 복사 한다. 아직 화면에는 나타나지 않는다.
 	//따라서 그림은 화면에 나타나지 않고, 디버깅이 힘들다.
 	//디버깅을 싶게 한다면
@@ -95,8 +101,8 @@ void CChildView::OnPaint()
 	// 최종적으로 표시 화면 메모리에 복사 한다.
 	//pDC->StretchBlt(0, 0, tmpRect.right, tmpRect.bottom, &mdcOffScreen, tmpRect.left, tmpRect.top, tmpRect.right, tmpRect.bottom, SRCCOPY);
 	
-	pDC->BitBlt(tmpRect.left, tmpRect.top, tmpRect.right, tmpRect.bottom, &mdcOffScreen, 0, 0, SRCCOPY);
-	//pDC->BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &mdcOffScreen, 0, 0, SRCCOPY);
+	pDC->BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &mdcOffScreen, 0, 0, SRCCOPY);
+	//pDC->StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &mdcOffScreen, m_ePt.x, m_ePt.y, m_Bitmap.bmWidth, m_Bitmap.bmHeight, SRCCOPY);
 
 	// 이때서야 화면에 그림이 나타난다.
 	memDC.DeleteDC();
@@ -105,9 +111,29 @@ void CChildView::OnPaint()
 	bmpOffScreen.DeleteObject();
 }
 
-BOOL CChildView::OnEraseBkgnd(CDC* pDC)
+BOOL CChildView::OnEraseBkgnd(CDC* pDC) 
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	// 클라 크기가 이미지보다 클때 검은화면으로 채워주기
+	if (m_Bitmap.bmWidth < m_bgRect.right) { //오른쪽
+		RECT rect2;
+		rect2.left = m_Bitmap.bmWidth;
+		rect2.right = m_bgRect.right;
+		rect2.top = 0;
+		rect2.bottom = m_Bitmap.bmHeight;
+		m_ePt.x = 0;
+		pDC->FillRect(&rect2, &m_bkgBrush);  // B영역 칠하기
+	}
+	if (m_Bitmap.bmHeight < m_bgRect.bottom) { //아래
+		RECT rect2;
+		rect2.left = 0;
+		rect2.right = m_bgRect.right;
+		rect2.top = m_Bitmap.bmHeight;
+		rect2.bottom = m_bgRect.bottom;
+		m_ePt.y = 0;
+		pDC->FillRect(&rect2, &m_bkgBrush); // C영역 칠하기
+	}
 
 	//return CWnd::OnEraseBkgnd(pDC);
 	return false;
@@ -121,45 +147,46 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 	CWnd::OnMouseMove(nFlags, point);
 
 	if (nFlags & MK_LBUTTON)
-
 	{
-		// 이동 크기 구하기
-		CSize offset = point - m_sPt;
-		CDC* pDC = GetDC();
-		
-
-		// 메모리 DC 준비
-		CClientDC DC(this);
-		CDC memDC;
-		memDC.CreateCompatibleDC(pDC);
-		CBitmap* pOldBM = (CBitmap*)memDC.SelectObject(&m_background); //pOldBM에 m_bmBack 넣기
-
-		CPen pen;
-		pen.CreatePen(PS_SOLID, 1, RGB(255, 255, 255));
-		CPen* p = (CPen*)pDC->SelectObject(&pen);
+		int width = m_bgRect.right - m_bgRect.left;
+		int height = m_bgRect.bottom - m_bgRect.top;
 
 		// A영역의 사각형 그리기 //m_sPt는 기존 포인트, point는 이동
 		if (m_sPt.x < point.x) // 오른쪽으로 끌었을때
 		{
 			//pDC->Rectangle(0, 0, (point.x - m_sPt.x), tmpRect.bottom);
-			pDC->Rectangle(tmpRect.left + (point.x - m_sPt.x), tmpRect.top, tmpRect.right + (point.x - m_sPt.x), tmpRect.bottom);
+			m_ePt.x -= point.x - m_sPt.x;
+			if (m_ePt.x < 0)
+				m_ePt.x = 0;
 		}
-			//tmpRect = CRect((point.x + m_sPt.x), 0, (point.x - m_sPt.x), tmpRect.bottom);
 		else // 왼쪽으로 끌었을때
-			pDC->Rectangle(tmpRect.left - (m_sPt.x - point.x), tmpRect.top, tmpRect.right - (m_sPt.x - point.x), tmpRect.bottom);
-
+		{
+			m_ePt.x += m_sPt.x - point.x;
+			if (m_Bitmap.bmWidth > m_bgRect.right)
+			{
+				if (m_ePt.x > m_Bitmap.bmWidth - width)
+					m_ePt.x = m_Bitmap.bmWidth - width;
+			}
+		}
+			
 		// B영역의 사각형 그리기
 		if (m_sPt.y < point.y) // 위로 올렸을때
-			pDC->Rectangle(tmpRect.left, tmpRect.top - (m_sPt.y - point.y), tmpRect.right, tmpRect.bottom - (m_sPt.x - point.x));
+		{
+			m_ePt.y -= point.y - m_sPt.y;
+			if (m_ePt.y < 0)
+				m_ePt.y = 0;
+		}
 		else // 아래로 내렸을때
-			pDC->Rectangle(tmpRect.left, tmpRect.top + (point.y - m_sPt.y), tmpRect.right, tmpRect.bottom + (point.x - m_sPt.x));
+		{
+			m_ePt.y += m_sPt.y - point.y;
+			if (m_Bitmap.bmHeight > m_bgRect.bottom)
+			{
+				if (m_ePt.y > m_Bitmap.bmHeight - height)
+					m_ePt.y = m_Bitmap.bmHeight - height;
+			}
+		}
 
-		// 이미지 붙이기
-		/*pDC->BitBlt(offset.cx, offset.cy, tmpRect.right,
-			tmpRect.bottom, &mdcOffScreen, 0, 0, SRCCOPY);
-		pDC->SelectObject(p);
-		memDC.SelectObject(pOldBM);*/
-
+		m_sPt = point;
 		Invalidate();
 	}
 }
@@ -170,37 +197,7 @@ void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
 	CWnd::OnLButtonDown(nFlags, point);
-	m_sPt = m_ePt = point;
-}
-
-
-void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
-{
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	m_ePt = point;
-	double mx1, mx2, my1, my2;
-	DeviceToWorld(m_sPt.x, m_sPt.y, mx1, my1);
-	DeviceToWorld(m_ePt.x, m_ePt.y, mx2, my2);
-
-	mox += (mx1 - mx2);
-	moy += (my1 - my2);
-
-	double mWidth = mxMax - mxMin;
-	double mHeight = myMax - myMin;
-
-	mxMin = mox - (mWidth / 2);
-	mxMax = mox + (mWidth / 2);
-	myMin = moy - (mHeight / 2);
-	myMax = moy + (mHeight / 2);
-
-	Invalidate(0);
-	CWnd::OnLButtonUp(nFlags, point);
-}
-
-void CChildView::DeviceToWorld(long m_sPtx, long m_sPty, double &mx, double &my)
-{
-	mx = (long)(m_sPtx) + fOffsetX;
-	my = (long)(m_sPtx) + fOffsetY;
+	m_sPt = point;
 }
 
 
@@ -209,20 +206,29 @@ void CChildView::OnSize(UINT nType, int cx, int cy)
 	CWnd::OnSize(nType, cx, cy);
 
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+	m_bgRect.left = 0;
+	m_bgRect.top = 0;
+	m_bgRect.right = cx;
+	m_bgRect.bottom = cy;
+}
 
-	// 화면 크기 얻기
-	//GetClientRect(tmpRect);
 
-	//CClientDC dc(this);
+BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
-	//// 기존에 생성되어 있던 메모리DC 객체를 떼어낸다.
-	//m_memDC.DeleteDC();
+	int width = m_bgRect.right - m_bgRect.left;
+	int height = m_bgRect.bottom - m_bgRect.top;
 
-	//// 새롭게 다시 화면DC와 호환되는 메모리 DC생성
+	if (zDelta <= 0)// 휠 내릴때
+	{
+		ViewScale += 0.1f;
+	}
+	else// 휠 올릴때
+	{
+		ViewScale -= 0.1f;
+	}
 
-	//m_memDC.CreateCompatibleDC(&dc);
-	//m_bmBack.DeleteObject();
-
-	//// 메모리 DC에 붙일 비트맵 다시 생성
-	//m_bmBack.CreateCompatibleBitmap(&dc, tmpRect.Width(), tmpRect.Height());
+	Invalidate();
+	return CWnd::OnMouseWheel(nFlags, zDelta, pt);
 }

@@ -35,26 +35,7 @@ protected:
 public:
 	CImage image;
 
-	CBitmap m_bmBack;
-	CDC m_memDC;
-	CRect  tmpRect;
-	CBitmap m_layerCollection;
-
-	float fOffsetX = 0.0f;
-	float fOffsetY = 0.0f;
-
-	double mox, moy;
-	double mxMax, mxMin, myMax, myMin;
-
 	CPoint m_sPt, m_ePt;
-
-	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
-	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
-	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
-	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
-	afx_msg void OnSize(UINT nType, int cx, int cy);
-
-	void CChildView::DeviceToWorld(long m_sPtx, long m_sPty, double& mx, double& my);
 
 	CDC memDC;  // 처리 CDC을 지정 한다.
 	// 빈공간을 새롭게 만든다.
@@ -64,5 +45,15 @@ public:
 
 	CBitmap m_background;
 	BITMAP m_Bitmap;
+
+	CRect m_bgRect;   // 화면 전체의 크기 - client 윈도의 전체크기
+	CBrush m_bkgBrush;
+	float ViewScale;
+
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 };
 
