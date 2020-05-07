@@ -13,6 +13,18 @@
 
 extern CFourthlohgicProjectApp theApp;
 // CChildView
+CPoint m_aPt, m_bPt;
+int zoomWidth = 0;
+int zoomHeight = 0;
+//Find the position "factor"
+double dXFactor = 0.0;
+double dYFactor = 0.0;
+
+//Find the origin
+int left = 0;
+int right = 0;
+
+CPoint m_cPt;
 
 CChildView::CChildView()
 {
@@ -24,7 +36,6 @@ CChildView::CChildView()
 	m_background.GetObject(sizeof(BITMAP), (LPVOID)&m_Bitmap);
 
 	m_ePt = CPoint(0, 0);
-	
 
 	m_bkgBrush.CreateSolidBrush(0x00000000);
 
@@ -68,8 +79,8 @@ void CChildView::OnPaint()
 
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	//---------------------------------------------------
-	GetClientRect(&tmpRect);
 	CDC* pDC = GetDC();
+
 
    // 이미 배경은 OnInitDialog() 혹은 OnInitialUpdate()에서 로드되어 있으므로 다시 할 필요는 없다.
 	memDC.CreateCompatibleDC(pDC);
@@ -88,10 +99,10 @@ void CChildView::OnPaint()
 	memDC.SelectObject(&m_background);   // 배경 그림을 선택하고
 
 	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
+	
 
-
-	mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth , m_Bitmap.bmHeight,
-		&memDC, m_ePt.x -m_Zoom, m_ePt.y - m_Zoom, m_Bitmap.bmWidth/m_Zoom, m_Bitmap.bmHeight/m_Zoom, SRCCOPY);
+	mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight,
+		&memDC, m_ePt.x, m_ePt.y, m_Bitmap.bmWidth/ m_Zoom, m_Bitmap.bmHeight / m_Zoom, SRCCOPY);
 	// ==> 배경을 메모리버퍼에 복사 한다. 아직 화면에는 나타나지 않는다.
 	//따라서 그림은 화면에 나타나지 않고, 디버깅이 힘들다.
 	//디버깅을 싶게 한다면
@@ -146,9 +157,10 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
+	//m_bPt = point;
 	CWnd::OnMouseMove(nFlags, point);
-
-	if (nFlags & MK_LBUTTON)
+	
+	if (nFlags)
 	{
 		// 이동 크기 구하기
 		/*CSize offset = point - m_sPt;
@@ -193,6 +205,7 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 		}
 
 		m_sPt = point;
+
 		Invalidate();
 	}
 }
@@ -223,17 +236,62 @@ void CChildView::OnSize(UINT nType, int cx, int cy)
 BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	if (zDelta <= 0)
+	//ScreenToClient(&pt);
+	if (zDelta < 0)
 	{
 		m_Zoom += 1.25f;
+		//m_bPt = pt;
 	}
 	else
 	{
 		m_Zoom -= 0.8f;
+		//m_bPt = pt;
 	}
+	int width = m_bgRect.right - m_bgRect.left;
+	int height = m_bgRect.bottom - m_bgRect.top;
 
-	m_ePt = pt;
 
-	Invalidate(0);
+	m_cPt.x = (m_ePt.x + m_Bitmap.bmWidth / m_Zoom) / 2;
+	m_cPt.y = (m_ePt.y + m_Bitmap.bmHeight / m_Zoom) / 2;
+	//위쪽 꼭지
+	//m_ePt.x = pt.x - ((pt.x - m_ePt.x) / 1.25f);
+	//m_ePt.y = pt.y - ((pt.y - m_ePt.y) / 0.8f);
+
+
+	//zoomWidth = (int)(0.5 + m_Bitmap.bmWidth * m_Zoom);
+	//zoomHeight = (int)(0.5 + m_Bitmap.bmHeight * m_Zoom);
+	//CRect rcClient;
+	//GetClientRect(&rcClient);
+	////Find the position "factor"
+	//dXFactor = (double)rcClient.Width() / pt.x;
+	//dYFactor = (double)rcClient.Height() / pt.y;
+
+	////Find the origin
+	//left = pt.x - zoomWidth / dXFactor;
+	//right = pt.y - zoomHeight / dYFactor;
+
+	
+	//int width = m_bgRect.right - m_bgRect.left;
+	//int height = m_bgRect.bottom - m_bgRect.top;
+
+	////위쪽 꼭지
+	////m_ePt = pt;
+	////m_bPt = pt;
+	//int zoomWidth = (int)(0.5 + m_Bitmap.bmWidth * m_Zoom);
+	//int zoomHeight = (int)(0.5 + m_Bitmap.bmHeight * m_Zoom);
+
+	//int left = pt.x - zoomWidth / 2;
+	//int right = pt.y - zoomHeight / 2;
+
+	//m_ePt.x = pt.x / m_Zoom;
+	//m_ePt.y = pt.y / m_Zoom;
+	////m_bPt.x = pt.x;
+	////m_bPt.y = pt.y;
+	////오른쪽 꼭지
+
+	//m_aPt.x = pt.x - ((width - pt.x) * m_Zoom);
+	//m_aPt.y = pt.y - ((width - pt.y) * m_Zoom);
+
+	Invalidate();
 	return CWnd::OnMouseWheel(nFlags, zDelta, pt);
 }
