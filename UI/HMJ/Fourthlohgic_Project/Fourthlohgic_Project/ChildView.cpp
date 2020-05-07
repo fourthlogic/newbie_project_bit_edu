@@ -23,8 +23,11 @@ CChildView::CChildView()
 	m_background.Attach(image.Detach());
 	m_background.GetObject(sizeof(BITMAP), (LPVOID)&m_Bitmap);
 
-	//m_ePt.x = 0;
-	//m_ePt.y = 0;
+	m_ePt.x = 0;
+	m_ePt.y = 0;
+
+	newWidth = m_Bitmap.bmWidth;
+	newHeight = m_Bitmap.bmHeight;
 
 	m_bkgBrush.CreateSolidBrush(0x00000000);
 }
@@ -68,6 +71,9 @@ void CChildView::OnPaint()
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	//---------------------------------------------------
 	CDC* pDC = GetDC();
+	CString str;
+	str.Format(_T("X = %d, Y = %d"), m_pos.x, m_pos.y);
+	dc.TextOut(m_pos.x, m_pos.y, str);
 
    // 이미 배경은 OnInitDialog() 혹은 OnInitialUpdate()에서 로드되어 있으므로 다시 할 필요는 없다.
 	memDC.CreateCompatibleDC(pDC);
@@ -84,8 +90,9 @@ void CChildView::OnPaint()
 	//우선 배경 그림이 맨 밑이므로 배경을 메모리에 복사 한다.
 
 	memDC.SelectObject(&m_background);   // 배경 그림을 선택하고
+	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
 	//mdcOffScreen.BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, 0, 0, SRCCOPY);
-	mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, m_ePt.x, m_ePt.y, m_Bitmap.bmWidth, m_Bitmap.bmHeight, SRCCOPY);
+	mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, m_ePt.x, m_ePt.y, newWidth, newHeight, SRCCOPY);
 	// ==> 배경을 메모리버퍼에 복사 한다. 아직 화면에는 나타나지 않는다.
 	//따라서 그림은 화면에 나타나지 않고, 디버깅이 힘들다.
 	//디버깅을 싶게 한다면
@@ -145,6 +152,7 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
 	CWnd::OnMouseMove(nFlags, point);
+	m_pos = point;
 
 	if (nFlags & MK_LBUTTON)
 	{
@@ -216,18 +224,30 @@ void CChildView::OnSize(UINT nType, int cx, int cy)
 BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-
 	int width = m_bgRect.right - m_bgRect.left;
 	int height = m_bgRect.bottom - m_bgRect.top;
 
+	
 	if (zDelta <= 0)// 휠 내릴때
 	{
-		ViewScale += 0.1f;
+		ViewScale = 1.25f;
 	}
 	else// 휠 올릴때
 	{
-		ViewScale -= 0.1f;
+		ViewScale = 0.75f;
 	}
+	
+	//왼쪽위 꼭짓점
+	m_ePt.x = m_pos.x - (((m_pos.x - m_ePt.x) / (double)width) * ((double)width * ViewScale));
+	m_ePt.y = m_pos.y - (((m_pos.y - m_ePt.y) / (double)height) * ((double)height * ViewScale));
+	//m_ePt.x = m_pos.x - ((m_pos.x - m_ePt.x) * ViewScale);
+	//m_ePt.y = m_pos.y - ((m_pos.y - m_ePt.y) * ViewScale);
+
+	// 오른쪽 아래 꼭짓점
+	newWidth = m_pos.x + ((((double)width - m_pos.x) / (double)width) * ((double)width * ViewScale)) - m_ePt.x;
+	newHeight = m_pos.y + ((((double)height - m_pos.y) / (double)height) * ((double)height * ViewScale)) - m_ePt.y;
+	//m_aPt.x = (m_pos.x + ((width - m_pos.x) * ViewScale)) - m_ePt.x;
+	//m_aPt.y = (m_pos.y + ((height - m_pos.y) * ViewScale)) - m_ePt.y;
 
 	Invalidate();
 	return CWnd::OnMouseWheel(nFlags, zDelta, pt);
