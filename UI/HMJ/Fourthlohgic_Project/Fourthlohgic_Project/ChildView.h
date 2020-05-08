@@ -35,7 +35,7 @@ protected:
 public:
 	CImage image;
 
-	CPoint m_sPt, m_ePt;
+	CPoint m_sPt, m_ePt, m_aPt;
 
 	CDC memDC;  // 처리 CDC을 지정 한다.
 	// 빈공간을 새롭게 만든다.
@@ -49,6 +49,11 @@ public:
 	CRect m_bgRect;   // 화면 전체의 크기 - client 윈도의 전체크기
 	CBrush m_bkgBrush;
 	float ViewScale;
+
+	//테스트
+	CPoint m_pos;
+	double newWidth;
+	double newHeight;
 
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);

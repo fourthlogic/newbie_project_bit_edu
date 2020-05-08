@@ -7,13 +7,13 @@ using namespace std;
 
 
 // 최소제곱법을 통해 교점 표시
-void drawXandLine(Mat& src, vector<Point>& cols, vector<Point>& rows);
+void drawXandLine(Mat& src, Mat& dst, vector<Point>& LCirCenters, vector<Point>& BCirCenters);
 
 // 최소제곱법 함수
-Point2f LeastSquared(vector<Point>& pts);
+Vec2f LeastSquared(vector<Point>& pts);
 
 // 최소제곱법 함수 (x, y 좌표 스위칭 후 계산)
-Point2f LeastSquared_Reverse(vector<Point>& pts);
+Vec2f LeastSquared_Reverse(vector<Point>& pts);
 
 // 3점을 통해 외곽 좌표 ROI 선택
 void OutermostROI(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, int range);
@@ -56,8 +56,8 @@ void main()
     OutermostROI2(src, Ldst, Bdst, threePoints, LEquation, BEquation, 20); // 3점이용 외곽 수식 계산
     CircleCenterDetection(Ldst, Bdst, LCircles, BCircles); // ROI 이미지를 통해 원의 중심좌표 추출 (허프서클)
     pointsRollBack(LEquation, BEquation, LCircles, BCircles, LCirCenters, BCirCenters);
-    DrawCircleOnImage(src, newImage, LCirCenters, BCirCenters); // 추출된 중심좌표를 통해 원 그리기
-    drawXandLine(newImage, LCirCenters, BCirCenters);
+    //DrawCircleOnImage(src, newImage, LCirCenters, BCirCenters); // 추출된 중심좌표를 통해 원 그리기
+    drawXandLine(src, newImage, LCirCenters, BCirCenters);
     imshow("Ldst", Ldst);
     imshow("Bdst", Bdst);
     imshow("circleImage", newImage);
@@ -398,12 +398,12 @@ void CornerCoordinate(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& dst)
 
 
 // 최소제곱법 함수
-Point2f LeastSquared(vector<Point>& pts)
+Vec2f LeastSquared(vector<Point>& pts)
 {
     double a, b;
     double xx = 0, x = 0, xy = 0, y = 0;
     int n = pts.size();
-    Point2f result;
+    Vec2f result;
     for (int i = 0; i < n; i++)
     {
         xx += (pts[i].x) * (pts[i].x);
@@ -414,19 +414,19 @@ Point2f LeastSquared(vector<Point>& pts)
     }
     a = (n * xy - x * y) / (n * xx - x * x);
     b = (xx * y - x * xy) / (n * xx - x * x);
-    result.x = a;
-    result.y = b;
+    result[0] = a;
+    result[1] = b;
     
     //cout << "y=" << a << "x+" << b << endl; // y=ax+b
     return result;
 }
 // 최소제곱법 x, y좌표 스위칭 후 계산한 뒤 나온 식을 다시 y=x 대칭이동
-Point2f LeastSquared_Reverse(vector<Point>& pts)
+Vec2f LeastSquared_Reverse(vector<Point>& pts)
 {
     double a, b;
     double xx = 0, x = 0, xy = 0, y = 0;
     int n = pts.size();
-    Point2f result;
+    Vec2f result;
     for (int i = 0; i < n; i++)
     {
         xx += (pts[i].y) * (pts[i].y);
@@ -437,38 +437,57 @@ Point2f LeastSquared_Reverse(vector<Point>& pts)
     }
     a = (n * xy - x * y) / (n * xx - x * x);
     b = (xx * y - x * xy) / (n * xx - x * x);
-    result.x = 1/a;
-    result.y = -b/a;
-
+    // x=ya+b ==> y = (1/a) * x - b/a
+    result[0] = 1/a;
+    result[1] = -b/a;
+    
     return result;
 }
 
 // 최소제곱법을 통해 교점 표시
-void drawXandLine(Mat& src, vector<Point>& cols, vector<Point>& rows)
+void drawXandLine(Mat& src, Mat& dst, vector<Point>& LCirCenters, vector<Point>& BCirCenters)
 {
-    Point2f const_cols, const_rows;
+    if (!src.data)
+        return;
+    if (!dst.data)
+        cvtColor(src, dst, COLOR_GRAY2BGR);
+    Vec2f LEquation, BEquation;
     Point target, temp1, temp2;
-    const_cols = LeastSquared_Reverse(cols);
-    const_rows = LeastSquared(rows);
+    LEquation = LeastSquared_Reverse(LCirCenters);
+    BEquation = LeastSquared(BCirCenters);
 
-    target.x = cvRound((const_rows.y - const_cols.y) / (const_cols.x - const_rows.x));
-    target.y = cvRound((const_cols.x * (const_rows.y - const_cols.y)) / (const_cols.x - const_rows.x) + const_cols.y);
+    target.x = cvRound((BEquation[1] - LEquation[1]) / (LEquation[0] - BEquation[0]));
+    target.y = cvRound((LEquation[0] * (BEquation[1] - LEquation[1])) / (LEquation[0] - BEquation[0]) + LEquation[1]);
 
     // 주황색 직선의 방정식 그리기
-    temp1 = { cvRound(-const_cols.y / const_cols.x), 0 }; // y=0 이고, 최소제곱법 직선의 방정식을 지나는 점
-    temp2 = { cvRound((target.y + 20 - const_cols.y) / const_cols.x), target.y + 20 }; // target에서 좀 더 아래쪽의 점
-    line(src, temp1, temp2, Scalar(0, 127, 255));
-    temp1 = { src.cols, cvRound(const_rows.x * src.cols + const_rows.y) }; // x = src.cols 이고, 최소제곱법 직선의 방정식을 지나는 점
-    temp2 = { target.x - 20, cvRound(const_rows.x * (target.x - 20) + const_rows.y) }; // target에서 좀 더 왼쪽의 점
-    line(src, temp1, temp2, Scalar(0, 127, 255));
+    temp1 = { cvRound(-LEquation[1] / LEquation[0]), 0 }; // y=0 이고, 최소제곱법 직선의 방정식을 지나는 점
+    temp2 = { cvRound((target.y + 20 - LEquation[1]) / LEquation[0]), target.y + 20 }; // target에서 좀 더 아래쪽의 점
+    line(dst, temp1, temp2, Scalar(0, 127, 255));
+    temp1 = { dst.cols, cvRound(BEquation[0] * dst.cols + BEquation[1]) }; // x = src.cols 이고, 최소제곱법 직선의 방정식을 지나는 점
+    temp2 = { target.x - 20, cvRound(BEquation[0] * (target.x - 20) + BEquation[1]) }; // target에서 좀 더 왼쪽의 점
+    line(dst, temp1, temp2, Scalar(0, 127, 255));
 
     // 라임색 X 그리기
     temp1 = { target.x - 7, target.y - 7 };
     temp2 = { target.x + 7,target.y + 7 };
-    line(src, temp1, temp2, Scalar(0, 255, 191));
+    line(dst, temp1, temp2, Scalar(0, 255, 191));
     temp1 = { target.x - 7, target.y + 7 };
     temp2 = { target.x + 7,target.y - 7 };
-    line(src, temp1, temp2, Scalar(0, 255, 191));
+    line(dst, temp1, temp2, Scalar(0, 255, 191));
 
     //cout << "교점의 좌표 = " << target << endl;
+
+    for (int i = 0; i < LCirCenters.size(); i++)
+    {
+        Point center(LCirCenters[i].x, LCirCenters[i].y);
+        if (4 > abs(LEquation[0] * center.x - center.y + LEquation[1]) / sqrt(pow(LEquation[0], 2) + 1))
+			circle(dst, center, 5, Scalar(0, 0, 255), 1, -1);
+    }
+    
+    for (int i = 0; i < BCirCenters.size(); i++)
+    {
+        Point center(BCirCenters[i].x, BCirCenters[i].y);
+        if (4 > abs(BEquation[0] * center.x - center.y + BEquation[1]) / sqrt(pow(BEquation[0], 2) + 1))
+			circle(dst, center, 5, Scalar(0, 0, 255), 1, -1);
+    }
 }

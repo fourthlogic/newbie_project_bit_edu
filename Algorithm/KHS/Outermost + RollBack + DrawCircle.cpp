@@ -14,21 +14,43 @@ void DrawCircleOnImage(Mat& src, Mat& dst, vector<Point>& LCirCenters, vector<Po
 // 3점을 통해 외곽 좌표 ROI 선택
 void OutermostROI(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, Vec3f& LEquation, Vec3f& BEquation, int range);
 // 좌표 원복 함수
-void pointsRollBack(Vec3f& LEquation, Vec3f& BEquation, vector<Vec3f>& LCircles, vector<Vec3f>& BCircles, vector<Point>& LCirCenters, vector<Point>& BCirCenters);
+void pointsRollBack(Vec3f& LEquation, Vec3f& BEquation, vector<Vec3f>& LCircles, vector<Vec3f>& BCircles, vector<Point>& LCirCenters, vector<Point>& BCirCenters, int range);
 // 최소제곱법 함수
 Point2f LeastSquared(vector<Point>& pts);
 // 최소제곱법 x, y좌표 스위칭 후 계산한 뒤 나온 식을 다시 y=x 대칭이동
 Point2f LeastSquared_Reverse(vector<Point>& pts);
 // 최소제곱법을 통해 교점 표시
 void drawXandLine(Mat& src, vector<Point>& cols, vector<Point>& rows);
+// 수정중
+void Outermost(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, Vec3f& LEquation, Vec3f& BEquation, int range);
+void RollBack(Vec3f& LEquation, Vec3f& BEquation, vector<Vec3f>& LCircles, vector<Vec3f>& BCircles, vector<Point>& LCirCenters, vector<Point>& BCirCenters, int range = 20);
 
+void onMouse2(int event, int x, int y, int flags, void* param)
+{
+	switch (event)
+	{
+	case EVENT_LBUTTONDOWN:
+		cout << "x = " << x << " " << "y = " << y << endl;
+		cout << "img Value = " << ((int)((Mat*)param)->ptr<uchar>(y)[x]) << endl;
+		//cout << (int)(img.ptr<uchar>(y)[x]) << endl;
+		//cout << "마우스 왼쪽 버튼 누르기--" << *(int*)param << endl;
+		break;
+	case EVENT_RBUTTONDOWN:
+		//cout << "마우스 오른쪽 버튼 누르기--" << endl;
+		break;
+	}
+}
 
 void main()
 {
 	time_t start;
 	time_t end;
-	Mat src = imread("image/a1.png", IMREAD_GRAYSCALE);
+	Mat src = imread("image/asss.png", IMREAD_GRAYSCALE);
+	//Mat src = imread("image/ah.jpg", IMREAD_GRAYSCALE);
+	if (!src.data)
+		return;
 	namedWindow("src Image", WINDOW_AUTOSIZE);
+	setMouseCallback("src Image", onMouse2, (void*)&src);
 	imshow("src Image", src);
 	start = clock();
 	vector<Point> threePoints; // 외곽 3점 좌표 값
@@ -42,24 +64,23 @@ void main()
 	Mat Bdst; // B 이미지
 	Mat newImage; // 최종 이미지
 	CornerCoordinate(src, Ldst, Bdst, threePoints); // 3점 좌표 추출
-	OutermostROI(src, Ldst, Bdst, threePoints, LEquation, BEquation, 20); // 3점이용 외곽 수식 계산
+	Outermost(src, Ldst, Bdst, threePoints, LEquation, BEquation, 15); // 3점이용 외곽 수식 계산
 	CircleCenterDetection(Ldst, Bdst, LCircles, BCircles); // ROI 이미지를 통해 원의 중심좌표 추출 (허프서클)
-	pointsRollBack(LEquation, BEquation, LCircles, BCircles, LCirCenters, BCirCenters); //
+	//pointsRollBack(LEquation, BEquation, LCircles, BCircles, LCirCenters, BCirCenters, 20); //
+	RollBack(LEquation, BEquation, LCircles, BCircles, LCirCenters, BCirCenters, 15); //
 	DrawCircleOnImage(src, newImage, LCirCenters, BCirCenters); // 추출된 중심좌표를 통해 원 그리기
-	drawXandLine(newImage, LCirCenters, BCirCenters); //
+	//drawXandLine(newImage, LCirCenters, BCirCenters); //
 	end = clock();
 	cout << "time = " << end - start << endl;
 	imshow("Ldst", Ldst);
 	imshow("Bdst", Bdst);
 	imshow("newImage", newImage);
-	//imshow("newImage", newImage);
-
 	waitKey();
 }
 
 
 // 기존 좌표로 변환
-void pointsRollBack(Vec3f& LEquation, Vec3f& BEquation, vector<Vec3f>& LCircles, vector<Vec3f>& BCircles, vector<Point>& LCirCenters, vector<Point>& BCirCenters)
+void pointsRollBack(Vec3f& LEquation, Vec3f& BEquation, vector<Vec3f>& LCircles, vector<Vec3f>& BCircles, vector<Point>& LCirCenters, vector<Point>& BCirCenters, int range = 20)
 {
 	double rotateX;
 	double rotateY;
@@ -93,7 +114,7 @@ void pointsRollBack(Vec3f& LEquation, Vec3f& BEquation, vector<Vec3f>& LCircles,
 		for (int i = 0; i < BCircles.size(); i++)
 		{
 			rotateX = BCircles[i][0] + BEquation[2]; // x + st.x
-			rotateY = -20 + (BCircles[i][1] + 1) + BEquation[1]; // hb - y -1 + b
+			rotateY = (BCircles[i][1] + 1) + BEquation[1] - range; // hb - y -1 + b
 			BCirCenters[i].x = rotateX;
 			BCirCenters[i].y = rotateY;
 		}
@@ -104,7 +125,7 @@ void pointsRollBack(Vec3f& LEquation, Vec3f& BEquation, vector<Vec3f>& LCircles,
 		for (int i = 0; i < BCircles.size(); i++)
 		{
 			rotateX = BCircles[i][0] + BEquation[2]; // x + st.x
-			rotateY = BEquation[0] * rotateX + BEquation[1] - (20 - BCircles[i][1] - 1); // alpha * x + beta - y
+			rotateY = BEquation[0] * rotateX + BEquation[1] - (range - BCircles[i][1] - 1); // alpha * x + beta - y
 			BCirCenters[i].x = rotateX;
 			BCirCenters[i].y = rotateY;
 		}
@@ -114,11 +135,11 @@ void pointsRollBack(Vec3f& LEquation, Vec3f& BEquation, vector<Vec3f>& LCircles,
 // 수식값 적용
 void OutermostROI(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, Vec3f& LEquation, Vec3f& BEquation, int range = 20)
 {
-	int hL = abs(pts[0].y - pts[1].y);
+	int hL = sqrt(pow(pts[0].y - pts[1].y, 2) + pow(pts[0].x - pts[1].x, 2));
 	int wL = range;
 
 	int hB = range;
-	int wB = abs(pts[1].x - pts[2].x);
+	int wB = sqrt(pow(pts[1].y - pts[2].y, 2) + pow(pts[1].x - pts[2].x, 2));
 
 	Ldst = Mat(hL, wL, CV_8UC1, Scalar(0));
 	Bdst = Mat(hB, wB, CV_8UC1, Scalar(0));
@@ -142,12 +163,13 @@ void OutermostROI(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, Vec3f& LEq
 			for (int x = 0; x < wL; x++)
 			{
 				rotateX = x + BetaL;
-				Ldst.ptr<uchar>(y - pts[0].y)[x] = src.ptr<uchar>(y)[(int)rotateX];
+				Ldst.ptr<uchar>(y - pts[0].y)[x] = src.ptr<uchar>(y)[cvRound(rotateX)];
+
 			}
 		}
 	}
 	else {
-		LEquation[0] = AlphaL = ((double)pts[1].y - pts[0].y) / ((double)pts[1].x - pts[0].x);
+		LEquation[0] = AlphaL = (double)(pts[1].y - pts[0].y) / (pts[1].x - pts[0].x);
 		LEquation[1] = BetaL = pts[0].y - (AlphaL * pts[0].x);
 		LEquation[2] = pts[0].y;
 
@@ -156,7 +178,9 @@ void OutermostROI(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, Vec3f& LEq
 			for (int x = 0; x < wL; x++)
 			{
 				rotateX = (y - BetaL) / AlphaL + x;
-				Ldst.ptr<uchar>(y - pts[0].y)[x] = src.ptr<uchar>(y)[(int)rotateX];
+				Ldst.ptr<uchar>(y - pts[0].y)[x] = src.ptr<uchar>(y)[cvRound(rotateX)];
+				//imshow("Ldst", Ldst);
+				//waitKey();
 			}
 		}
 	}
@@ -172,12 +196,12 @@ void OutermostROI(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, Vec3f& LEq
 			for (int y = 0; y < hB; y++)
 			{
 				rotateY = y + BetaB;
-				Bdst.ptr<uchar>(hB - y - 1)[x - pts[1].x] = src.ptr<uchar>((int)rotateY)[x];
+				Bdst.ptr<uchar>(hB - y - 1)[x - pts[1].x] = src.ptr<uchar>(cvRound(rotateY))[x];
 			}
 		}
 	}
 	else {
-		BEquation[0] = AlphaB = ((double)pts[2].y - pts[1].y) / ((double)pts[2].x - pts[1].x);
+		BEquation[0] = AlphaB = (double)(pts[2].y - pts[1].y) / (pts[2].x - pts[1].x);
 		BEquation[1] = BetaB = pts[1].y - (AlphaB * pts[1].x);
 		BEquation[2] = pts[1].x;
 
@@ -186,7 +210,187 @@ void OutermostROI(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, Vec3f& LEq
 			for (int y = 0; y < hB; y++)
 			{
 				rotateY = AlphaB * x + BetaB - y;
-				Bdst.ptr<uchar>(hB - y - 1)[x - pts[1].x] = src.ptr<uchar>((int)rotateY)[x];
+				Bdst.ptr<uchar>(hB - y - 1)[x - pts[1].x] = src.ptr<uchar>(cvRound(rotateY))[x];
+			}
+		}
+	}
+
+}
+
+// 수정중
+void RollBack(Vec3f& LEquation, Vec3f& BEquation, vector<Vec3f>& LCircles, vector<Vec3f>& BCircles, vector<Point>& LCirCenters, vector<Point>& BCirCenters, int range)
+{
+	double rotateX;
+	double rotateY;
+	double t_Alpha, t_beta;
+	if (LEquation[0] == 0)
+	{
+		LCirCenters.resize(LCircles.size());
+		for (int i = 0; i < LCircles.size(); i++)
+		{
+			rotateY = LCircles[i][1] + LEquation[2];
+			rotateX = LCircles[i][0] + LEquation[1];
+			LCirCenters[i].x = rotateX;
+			LCirCenters[i].y = rotateY;
+		}
+	}
+	else
+	{
+		LCirCenters.resize(LCircles.size());
+		t_Alpha = -1 / LEquation[0];
+
+
+		for (int i = 0; i < LCircles.size(); i++)
+		{
+			// ( center.y + st.y - beta ) / alpha  == X
+			rotateX = (LCircles[i][1] + LEquation[2] - LEquation[1]) / LEquation[0];
+			// cneter.y + st.y - tA * X
+			t_beta = LCircles[i][1] + LEquation[2] - (t_Alpha * rotateX);
+			// center.y + B
+			rotateX = (LCircles[i][1] + LEquation[2] - t_beta) / t_Alpha + LCircles[i][0];
+			// tA * (X + st.x) + B
+			rotateY = t_Alpha * (rotateX)+t_beta;
+
+			LCirCenters[i].x = rotateX;
+			LCirCenters[i].y = rotateY;
+		}
+	}
+
+	if (BEquation[0] == 0)
+	{
+
+		BCirCenters.resize(BCircles.size());
+		for (int i = 0; i < BCircles.size(); i++)
+		{
+			rotateX = BCircles[i][0] + BEquation[2]; // x + st.x
+			rotateY = BCircles[i][1] + BEquation[1]; // y + st.y - range
+			BCirCenters[i].x = rotateX;
+			BCirCenters[i].y = rotateY;
+		}
+	}
+	else
+	{
+		BCirCenters.resize(BCircles.size());
+		t_Alpha = -1 / BEquation[0];
+
+		for (int i = 0; i < BCircles.size(); i++)
+		{
+			// Y  = alpha * (center.x + st.x) + beta
+			rotateY = BEquation[0] * (BCircles[i][0] + BEquation[2]) + BEquation[1];
+			// beat =  Y + st.y tA * (center.x + st.x)
+			t_beta = rotateY + BCircles[i][1] - t_Alpha * (BCircles[i][0] + BEquation[2]);
+
+			// Y  = alpha * (center.x + st.x) + beta
+			rotateY = t_Alpha * (BCircles[i][0] + BEquation[2]) + t_beta;
+
+			// X = (Y - B) / tA
+			rotateX = (rotateY - t_beta )/ t_Alpha;
+
+			BCirCenters[i].x = cvRound(rotateX);
+			BCirCenters[i].y = cvRound(rotateY);
+		}
+	}
+}
+
+// 수정중
+void Outermost(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, Vec3f& LEquation, Vec3f& BEquation, int range = 20)
+{
+	double AlphaL, BetaL;
+	double AlphaB, BetaB;
+	int rotateX, rotateY;
+	double t_Alpha, t_beta;
+
+	int hL = sqrt(pow(pts[0].y - pts[1].y, 2) + pow(pts[0].x - pts[1].x, 2));
+	int wL = range;
+
+	int hB = range;
+	int wB = sqrt(pow(pts[1].y - pts[2].y, 2) + pow(pts[1].x - pts[2].x, 2));
+
+	Ldst = Mat(hL, wL, CV_8UC1, Scalar(0));
+	Bdst = Mat(hB, wB, CV_8UC1, Scalar(0));
+
+	// 수정중
+	if (pts[1].x == pts[0].x) {
+		LEquation[0] = AlphaL = 0;
+		LEquation[1] = BetaL = pts[0].x;
+		LEquation[2] = pts[0].y;
+
+		for (int y = 0; y < hL; y++)
+		{
+			rotateY = pts[0].y + y;
+			for (int x = 0; x < wL; x++)
+			{
+				rotateX = BetaL + x;
+				Ldst.ptr<uchar>(y)[x] = src.ptr<uchar>(rotateY)[rotateX];
+			}
+		}
+	}
+	else {
+		LEquation[0] = AlphaL = (double)(pts[1].y - pts[0].y) / (pts[1].x - pts[0].x);
+		LEquation[1] = BetaL = pts[0].y - (AlphaL * pts[0].x);
+		LEquation[2] = pts[0].y;
+
+		t_Alpha = -1 / AlphaL;
+
+		for (int y = 0; y < hL; y++)
+		{
+			rotateX = (y + pts[0].y - BetaL) / AlphaL;
+			t_beta = y - t_Alpha * rotateX;
+			for (int x = 0; x < wL; x++)
+			{
+				rotateY = t_Alpha * (rotateX + x) + t_beta;
+				Ldst.ptr<uchar>(y)[x] = src.ptr<uchar>(rotateY)[rotateX];
+			}
+		}
+
+
+		//for (int y = pts[0].y; y < pts[0].y + hL; y++)
+		//{
+		//	rotateX = (y - BetaL) / AlphaL;
+		//	t_beta = y - t_Alpha * rotateX;
+		//	for (int x = rotateX; x < rotateX + wL; x++)
+		//	{
+		//		rotateY = t_Alpha * x + t_beta;
+		//		Ldst.ptr<uchar>(y - pts[0].y)[x - rotateX] = src.ptr<uchar>(rotateY)[x];
+		//	}
+		//}
+	}
+
+	if (pts[2].y == pts[1].y) {
+
+		BEquation[0] = AlphaB = 0;
+		BetaB = pts[1].y;
+		BEquation[1] = pts[1].y - range + 1;
+		BEquation[2] = pts[1].x;
+		int YBottom = hB;
+		for (int y = 0; y < hB; y++)
+		{
+			rotateY = BetaB - y;
+			YBottom--;
+			for (int x = 0; x < wB; x++)
+			{
+				rotateX = pts[1].x + x;
+				Bdst.ptr<uchar>(YBottom)[x] = src.ptr<uchar>(rotateY)[rotateX];
+			}
+		}
+	}
+	else {
+		BEquation[0] = AlphaB = (double)(pts[2].y - pts[1].y) / (pts[2].x - pts[1].x);
+		BetaB = pts[1].y - (AlphaB * pts[1].x);
+		BEquation[1] = BetaB - range + 1;
+		BEquation[2] = pts[1].x;
+
+		t_Alpha = -1 / AlphaB;
+		for (int x = pts[1].x; x < pts[1].x + wB; x++)
+		{
+			rotateY = AlphaB * x + BetaB;
+			t_beta = rotateY - t_Alpha * x;
+			for (int y = rotateY; y > rotateY - hB; y--)
+			{
+				rotateX = (y - t_beta) / t_Alpha;
+				Bdst.ptr<uchar>(hB - (rotateY - y) - 1)[x - pts[1].x] = src.ptr<uchar>(y)[rotateX];
+				//imshow("Bdst", Bdst);
+				//waitKey();
 			}
 		}
 	}
@@ -202,8 +406,8 @@ void CircleCenterDetection(Mat& Ldst, Mat& Bdst, vector<Vec3f>& LdstCircles, vec
 	Canny(Bdst, Bedge, 100, 150);
 	//imshow("Ledge", Ledge);
 	//imshow("Bedge", Bedge);
-	HoughCircles(Ledge, LdstCircles, HOUGH_GRADIENT, 1, 3, 100, 5, 3, 4);
-	HoughCircles(Bedge, BdstCircles, HOUGH_GRADIENT, 1, 3, 100, 5, 3, 4);
+	HoughCircles(Ledge, LdstCircles, HOUGH_GRADIENT, 1, 6, 100, 4, 2, 3);
+	HoughCircles(Bedge, BdstCircles, HOUGH_GRADIENT, 1, 6, 100, 4, 2, 3);
 }
 
 // 원 중심을 통해 새로운 이미지에 서클 그리기
