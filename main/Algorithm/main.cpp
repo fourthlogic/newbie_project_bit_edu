@@ -6,60 +6,57 @@ using namespace cv;
 using namespace std;
 
 
-// ìµœì†Œì œê³±ë²•ì„ í†µí•´ êµì  í‘œì‹œ
-void drawXandLine(Mat& src, Mat& dst, vector<Point>& LCirCenters, vector<Point>& BCirCenters);
+// ÃÖ¼ÒÁ¦°ö¹ıÀ» ÅëÇØ ±³Á¡ Ç¥½Ã
+void Drawing(Mat& src, Mat& dst, vector<Point>& HCirCenters, vector<Point>& VCirCenters);
 
-// ìµœì†Œì œê³±ë²• í•¨ìˆ˜
-Vec2f LeastSquared(vector<Point>& pts);
+// ÃÖ¼ÒÁ¦°ö¹ı ÇÔ¼ö
+Vec2f LSM_Horizontal(vector<Point>& pts);
 
-// ìµœì†Œì œê³±ë²• í•¨ìˆ˜ (x, y ì¢Œí‘œ ìŠ¤ìœ„ì¹­ í›„ ê³„ì‚°)
-Vec2f LeastSquared_Reverse(vector<Point>& pts);
+// ÃÖ¼ÒÁ¦°ö¹ı ÇÔ¼ö (x, y ÁÂÇ¥ ½ºÀ§Äª ÈÄ °è»ê)
+Vec2f LSM_Vertical(vector<Point>& pts);
 
-// 3ì ì„ í†µí•´ ì™¸ê³½ ì¢Œí‘œ ROI ì„ íƒ
-void OutermostROI(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, int range);
 
-// 3ì  ì¢Œí‘œ ì¶”ì¶œ ìˆ˜ì •
-void CornerCoordinate(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& dst);
-
-// ë³€í™˜ëœ ì´ë¯¸ì§€ë¥¼ í†µí•´ ì› ì¤Œì‹¬ ì¶”ì¶œ
-void CircleCenterDetection(Mat& Ldst, Mat& Bdst, vector<Vec3f>& LdstCircles, vector<Vec3f>& BdstCircles);
-
-// ì› ì¤‘ì‹¬ì„ í†µí•´ ìƒˆë¡œìš´ ì´ë¯¸ì§€ì— ì„œí´ ê·¸ë¦¬ê¸°
-void DrawCircleOnImage(Mat& src, Mat& dst, vector<Point>& LCirCenters, vector<Point>& BCirCenters);
-
-// ìˆ˜ì‹ê°’ ì ìš©
-void OutermostROI2(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, Vec3f& LEquation, Vec3f& BEquation, int range);
-
-void pointsRollBack(Vec3f& LEquation, Vec3f& BEquation, vector<Vec3f>& LCircles, vector<Vec3f>& BCircles, vector<Point>& LCirCenters, vector<Point>& BCirCenters);
+// 3Á¡ ÁÂÇ¥ ÃßÃâ ¼öÁ¤
+void CornerCoordinate(Mat& src, vector<Point>& conerPts);
+//¹ÌºĞ¿¬»ê ÇÔ¼ö
+void Differential(Mat& src, Mat& dst);
+//¿ø °ËÃâ
+void CircleDetection(Mat& src, vector<Point>& circles, vector<Point>& conerPts, int radMin, int radMax, int value);
+//ROI ÁÂÇ¥ °ËÃâ
+void ROI_Points(Mat& src, vector<Point>& conerPts, vector<Point>& vConerPts, vector<Point>& hConerPts, int range);
 
 void main()
 {
     time_t start;
     time_t end;
-    start = clock();
-    Mat src = imread("images/a1.png", IMREAD_GRAYSCALE);
+    Mat src = imread("image/a (8).png", IMREAD_GRAYSCALE);
     namedWindow("src Image", WINDOW_AUTOSIZE);
-    imshow("src Image", src);
+    //imshow("src Image", src);
+    start = clock();
 
-    vector<Point> threePoints; // ì™¸ê³½ 3ì  ì¢Œí‘œ ê°’
-    vector<Vec3f> LCircles; // Lí—ˆí”„ì„œí´ ì¢Œí‘œ ê°’
-    vector<Vec3f> BCircles; // Bí—ˆí”„ì„œí´ ì¢Œí‘œ ê°’
-    Vec3f LEquation; // L ë°©ì •ì‹ ê°’
-    Vec3f BEquation; // B ë°©ì •ì‹ ê°’
-    vector<Point> LCirCenters; // L ì¤‘ì‹¬ ì¢Œí‘œë“¤ì˜ ê°’ 
-    vector<Point> BCirCenters; // B ì¤‘ì‹¬ ì¢Œí‘œë“¤ì˜ ê°’ 
+    vector<Point> conerpts; // ¿Ü°û 3Á¡ ÁÂÇ¥ °ª
+  
+    vector<Point> vConerPts; // L Áß½É ÁÂÇ¥µéÀÇ °ª 
+    vector<Point> hConerPts; // B Áß½É ÁÂÇ¥µéÀÇ °ª 
 
-    Mat Ldst;
-    Mat Bdst;
+    vector<Point> VCirCenters;
+    vector<Point> HCirCenters;
+
     Mat newImage;
-    CornerCoordinate(src, Ldst, Bdst, threePoints); // 3ì  ì¢Œí‘œ ì¶”ì¶œ
-    OutermostROI2(src, Ldst, Bdst, threePoints, LEquation, BEquation, 20); // 3ì ì´ìš© ì™¸ê³½ ìˆ˜ì‹ ê³„ì‚°
-    CircleCenterDetection(Ldst, Bdst, LCircles, BCircles); // ROI ì´ë¯¸ì§€ë¥¼ í†µí•´ ì›ì˜ ì¤‘ì‹¬ì¢Œí‘œ ì¶”ì¶œ (í—ˆí”„ì„œí´)
-    pointsRollBack(LEquation, BEquation, LCircles, BCircles, LCirCenters, BCirCenters);
-    //DrawCircleOnImage(src, newImage, LCirCenters, BCirCenters); // ì¶”ì¶œëœ ì¤‘ì‹¬ì¢Œí‘œë¥¼ í†µí•´ ì› ê·¸ë¦¬ê¸°
-    drawXandLine(src, newImage, LCirCenters, BCirCenters);
-    imshow("Ldst", Ldst);
-    imshow("Bdst", Bdst);
+ 
+    CornerCoordinate(src,conerpts); // 3Á¡ ÁÂÇ¥ ÃßÃâ
+    
+    ROI_Points(src, conerpts, VCirCenters, HCirCenters, 20);
+    time_t circle_start, circle_end;
+    circle_start = clock();
+    CircleDetection(src, vConerPts, VCirCenters, 2, 4, 130);
+    CircleDetection(src, hConerPts, HCirCenters, 2, 4, 130);
+ 
+    
+    Drawing(src, newImage, vConerPts, hConerPts);
+    circle_end = clock();
+    cout << "circle: " << circle_end - circle_start << endl;
+    
     imshow("circleImage", newImage);
 
     end = clock();
@@ -67,298 +64,22 @@ void main()
     waitKey();
 }
 
-void FindingEquations(vector<Point>& threePoints, vector<Vec2f>& Equations)
+
+
+
+// 3Á¡ ÁÂÇ¥ ÃßÃâ ¼öÁ¤ÆÇ
+void CornerCoordinate(Mat& src, vector<Point>& conerPts)
 {
-    if (Equations.size() < 2)
-        Equations.resize(2);
+    Mat grayImage = src.clone();
 
-    if (threePoints[1].x == threePoints[0].x)
-    {
-        Equations[0][0] = 0;
-        Equations[0][1] = threePoints[0].x;
-    }
-    else
-    {
-        Equations[0][0] = ((double)threePoints[1].y - threePoints[0].y) / ((double)threePoints[1].x - threePoints[0].x);
-        Equations[0][1] = threePoints[0].y - (Equations[0][0] * threePoints[0].x);
-    }
-
-    if (threePoints[2].x == threePoints[1].x) {
-
-        Equations[1][0] = 0;
-        Equations[1][1] = threePoints[1].x;
-    }
-    else {
-        Equations[1][0] = ((double)threePoints[2].y - threePoints[1].y) / ((double)threePoints[2].x - threePoints[1].x);
-        Equations[1][1] = threePoints[1].y - (Equations[1][0] * threePoints[1].x);
-    }
-}
-
-// ê¸°ì¡´ ì¢Œí‘œë¡œ ë³€í™˜
-void pointsRollBack(Vec3f& LEquation, Vec3f& BEquation, vector<Vec3f>& LCircles, vector<Vec3f>& BCircles, vector<Point>& LCirCenters, vector<Point>& BCirCenters)
-{
-    double rotateX;
-    double rotateY;
-    if (LEquation[0] == 0)
-    {
-        LCirCenters.resize(LCircles.size());
-        for (int i = 0; i < LCircles.size(); i++)
-        {
-            rotateY = LCircles[i][1] + LEquation[2];
-            rotateX = LCircles[i][0] + LEquation[1];
-            LCirCenters[i].x = rotateX;
-            LCirCenters[i].y = rotateY;
-        }
-    }
-    else
-    {
-        LCirCenters.resize(LCircles.size());
-        for (int i = 0; i < LCircles.size(); i++)
-        {
-            rotateY = LCircles[i][1] + LEquation[2];
-            rotateX = (rotateY - LEquation[1]) / LEquation[0] + LCircles[i][0];
-            LCirCenters[i].x = rotateX;
-            LCirCenters[i].y = rotateY;
-        }
-    }
-
-    if (BEquation[0] == 0)
-    {
-
-        BCirCenters.resize(BCircles.size());
-        for (int i = 0; i < BCircles.size(); i++)
-        {
-            rotateX = BCircles[i][0] + BEquation[2]; // x + st.x
-            rotateY = -20 + (BCircles[i][1] + 1) + BEquation[1]; // hb - y -1 + b
-            BCirCenters[i].x = rotateX;
-            BCirCenters[i].y = rotateY;
-        }
-        //rotateY = y + BetaB;
-        //rotateY = hB - BCircles[i][1] - 1 + BEquation[1];
-    }
-    else
-    {
-        BCirCenters.resize(BCircles.size());
-        for (int i = 0; i < BCircles.size(); i++)
-        {
-            rotateX = BCircles[i][0] + BEquation[2]; // x + st.x
-            rotateY = BEquation[0] * rotateX + BEquation[1] - (20 - BCircles[i][1] - 1); // alpha * x + beta - y
-            BCirCenters[i].x = rotateX;
-            BCirCenters[i].y = rotateY;
-        }
-
-
-        //rotateY = AlphaB * x + BetaB - (hB - y - 1);
-        //Bdst.ptr<uchar>(hB - y - 1)[x - pts[1].x] = src.ptr<uchar>((int)rotateY)[x];
-    }
-}
-
-// ìˆ˜ì‹ê°’ ì ìš©
-void OutermostROI2(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, Vec3f& LEquation, Vec3f& BEquation, int range = 20)
-{
-    int hL = abs(pts[0].y - pts[1].y);
-    int wL = range;
-
-    int hB = range;
-    int wB = abs(pts[1].x - pts[2].x);
-
-    Ldst = Mat(hL, wL, CV_8UC1, Scalar(0));
-    Bdst = Mat(hB, wB, CV_8UC1, Scalar(0));
-
-    double AlphaL;
-    double BetaL;
-
-    double AlphaB;
-    double BetaB;
-
-    double rotateX;
-    double rotateY;
-
-    if (pts[1].x == pts[0].x) {
-        LEquation[0] = AlphaL = 0;
-        LEquation[1] = BetaL = pts[0].x;
-        LEquation[2] = pts[0].y;
-
-        for (int y = pts[0].y; y < pts[0].y + hL; y++)
-        {
-            for (int x = 0; x < wL; x++)
-            {
-                rotateX = x + BetaL;
-                Ldst.ptr<uchar>(y - pts[0].y)[x] = src.ptr<uchar>(y)[(int)rotateX];
-            }
-        }
-    }
-    else {
-        LEquation[0] = AlphaL = ((double)pts[1].y - pts[0].y) / ((double)pts[1].x - pts[0].x);
-        LEquation[1] = BetaL = pts[0].y - (AlphaL * pts[0].x);
-        LEquation[2] = pts[0].y;
-
-        for (int y = pts[0].y; y < pts[0].y + hL; y++)
-        {
-            for (int x = 0; x < wL; x++)
-            {
-                rotateX = (y - BetaL) / AlphaL + x;
-                Ldst.ptr<uchar>(y - pts[0].y)[x] = src.ptr<uchar>(y)[(int)rotateX];
-            }
-        }
-    }
-
-    if (pts[2].x == pts[1].x) {
-
-        BEquation[0] = AlphaB = 0;
-        BEquation[1] = BetaB = pts[1].x;
-        BEquation[2] = pts[1].x;
-
-        for (int x = pts[1].x; x < pts[1].x + wB; x++)
-        {
-            for (int y = 0; y < hB; y++)
-            {
-                rotateY = y + BetaB;
-                Bdst.ptr<uchar>(hB - y - 1)[x - pts[1].x] = src.ptr<uchar>((int)rotateY)[x];
-            }
-        }
-    }
-    else {
-        BEquation[0] = AlphaB = ((double)pts[2].y - pts[1].y) / ((double)pts[2].x - pts[1].x);
-        BEquation[1] = BetaB = pts[1].y - (AlphaB * pts[1].x);
-        BEquation[2] = pts[1].x;
-
-        for (int x = pts[1].x; x < pts[1].x + wB; x++)
-        {
-            for (int y = 0; y < hB; y++)
-            {
-                rotateY = AlphaB * x + BetaB - y;
-                Bdst.ptr<uchar>(hB - y - 1)[x - pts[1].x] = src.ptr<uchar>((int)rotateY)[x];
-            }
-        }
-    }
-
-}
-
-// 3ì ì„ í†µí•´ ê¸°ìš¸ê¸°ë¥¼ ì´ìš©í•˜ì—¬ ì¶”ì¶œëœ ë¶€ë¶„ì˜ ROI Image ìƒì„±
-void OutermostROI(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, int range = 20)
-{
-    int hL = abs(pts[0].y - pts[1].y);
-    int wL = range;
-
-    int hB = range;
-    int wB = abs(pts[1].x - pts[2].x);
-
-    Ldst = Mat(hL, wL, CV_8UC1, Scalar(0));
-    Bdst = Mat(hB, wB, CV_8UC1, Scalar(0));
-
-    double AlphaL;
-    double BetaL;
-
-    double AlphaB;
-    double BetaB;
-
-    double rotateX;
-    double rotateY;
-
-    if (pts[1].x == pts[0].x) {
-        AlphaL = 0;
-        BetaL = pts[0].x;
-
-        for (int y = pts[0].y; y < pts[0].y + hL; y++)
-        {
-            for (int x = 0; x < wL; x++)
-            {
-                rotateX = x + BetaL;
-                Ldst.ptr<uchar>(y - pts[0].y)[x] = src.ptr<uchar>(y)[(int)rotateX];
-            }
-        }
-    }
-    else {
-        AlphaL = ((double)pts[1].y - pts[0].y) / ((double)pts[1].x - pts[0].x);
-        BetaL = pts[0].y - (AlphaL * pts[0].x);
-
-        for (int y = pts[0].y; y < pts[0].y + hL; y++)
-        {
-            for (int x = 0; x < wL; x++)
-            {
-                rotateX = (y - BetaL) / AlphaL + x;
-                Ldst.ptr<uchar>(y - pts[0].y)[x] = src.ptr<uchar>(y)[(int)rotateX];
-            }
-        }
-    }
-
-    if (pts[2].x == pts[1].x) {
-
-        AlphaB = 0;
-        BetaB = pts[1].x;
-        for (int x = pts[1].x; x < pts[1].x + wB; x++)
-        {
-            for (int y = 0; y < hB; y++)
-            {
-                rotateY = y + BetaB;
-                Bdst.ptr<uchar>(hB - y - 1)[x - pts[1].x] = src.ptr<uchar>((int)rotateY)[x];
-            }
-        }
-    }
-    else {
-        AlphaB = ((double)pts[2].y - pts[1].y) / ((double)pts[2].x - pts[1].x);
-        BetaB = pts[1].y - (AlphaB * pts[1].x);
-
-        for (int x = pts[1].x; x < pts[1].x + wB; x++)
-        {
-            for (int y = 0; y < hB; y++)
-            {
-                rotateY = AlphaB * x + BetaB - y;
-                Bdst.ptr<uchar>(hB - y - 1)[x - pts[1].x] = src.ptr<uchar>((int)rotateY)[x];
-            }
-        }
-    }
-
-}
-
-// ë³€í™˜ëœ ì´ë¯¸ì§€ë¥¼ í†µí•´ ì› ì¤Œì‹¬ ì¶”ì¶œ
-void CircleCenterDetection(Mat& Ldst, Mat& Bdst, vector<Vec3f>& LdstCircles, vector<Vec3f>& BdstCircles)
-{
-    Mat Ledge;
-    Mat Bedge;
-    Canny(Ldst, Ledge, 100, 150);
-    Canny(Bdst, Bedge, 100, 150);
-    //imshow("Ledge", Ledge);
-    //imshow("Bedge", Bedge);
-    HoughCircles(Ledge, LdstCircles, HOUGH_GRADIENT, 1, 3, 100, 5, 3, 4);
-    HoughCircles(Bedge, BdstCircles, HOUGH_GRADIENT, 1, 3, 100, 5, 3, 4);
-}
-
-// ì› ì¤‘ì‹¬ì„ í†µí•´ ìƒˆë¡œìš´ ì´ë¯¸ì§€ì— ì„œí´ ê·¸ë¦¬ê¸°
-void DrawCircleOnImage(Mat& src, Mat& dst, vector<Point>& LCirCenters, vector<Point>& BCirCenters)
-{
-    if (!src.data)
-        return;
-    if (!dst.data)
-        cvtColor(src, dst, COLOR_GRAY2BGR);
-
-    for (int i = 0; i < LCirCenters.size(); i++)
-    {
-        Point center(cvRound(LCirCenters[i].x), cvRound(LCirCenters[i].y));
-        circle(dst, center, 5, Scalar(0, 0, 255), 1, -1);
-    }
-
-    for (int i = 0; i < BCirCenters.size(); i++)
-    {
-        Point center(cvRound(BCirCenters[i].x), cvRound(BCirCenters[i].y));
-        circle(dst, center, 5, Scalar(0, 0, 255), 1, -1);
-    }
-}
-
-// 3ì  ì¢Œí‘œ ì¶”ì¶œ ìˆ˜ì •íŒ
-void CornerCoordinate(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& dst)
-{
-    Mat img_gray = src.clone();
-
-    threshold(img_gray, img_gray, 110, 255, THRESH_TOZERO); // min_grayscaleì´ ì•ˆë˜ë©´ 0
-    threshold(img_gray, img_gray, 160, 255, THRESH_TOZERO_INV); // min_grayscaleì´ ë„˜ì–´ë„ 0
+    threshold(grayImage, grayImage, 110, 255, THRESH_TOZERO); // min_grayscaleÀÌ ¾ÈµÇ¸é 0
+    threshold(grayImage, grayImage, 158, 255, THRESH_TOZERO_INV); // min_grayscaleÀÌ ³Ñ¾îµµ 0
 
     Matx <uchar, 3, 3> mask(0, 1, 0, 1, 1, 1, 0, 1, 0);
-    morphologyEx(img_gray, img_gray, MORPH_OPEN, mask); // ì™¸ê³½ì˜ ì†”íŠ¸ë¥¼ ì œê±°í•˜ê¸° ìœ„í•´
+    morphologyEx(grayImage, grayImage, MORPH_OPEN, mask); // ¿Ü°ûÀÇ ¼ÖÆ®¸¦ Á¦°ÅÇÏ±â À§ÇØ
 
     vector<vector<Point>> contours;
-    findContours(img_gray, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+    findContours(grayImage, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
     vector<Point2f> approx;
     vector<Point2f> corners;
@@ -366,7 +87,7 @@ void CornerCoordinate(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& dst)
     for (size_t i = 0; i < contours.size(); i++)
     {
         approxPolyDP(Mat(contours[i]), approx, arcLength(Mat(contours[i]), true) * 0.07, true);
-        if (fabs(contourArea(Mat(approx))) > 10000)  //ë©´ì ì´ ì¼ì •í¬ê¸° ì´ìƒì´ì–´ì•¼ í•œë‹¤. 
+        if (fabs(contourArea(Mat(approx))) > 10000)  //¸éÀûÀÌ ÀÏÁ¤Å©±â ÀÌ»óÀÌ¾î¾ß ÇÑ´Ù. 
         {
             int size = approx.size();
 
@@ -376,18 +97,18 @@ void CornerCoordinate(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& dst)
             }
         }
     }
-
+    //0(top) ºÎÅÍ ¹İ½Ã°è ¹æÇâ(²ÀÁşÁ¡) 
     double distance0to1 = sqrt(pow(corners[0].x - corners[1].x, 2) + pow(corners[0].y - corners[1].y, 2));
     double distance0to3 = sqrt(pow(corners[0].x - corners[3].x, 2) + pow(corners[0].y - corners[3].y, 2));
     if (distance0to1 < distance0to3)
     {
         for (int i = 1; i < corners.size(); i++)
-            dst.push_back(corners[i]);
+            conerPts.push_back(corners[i]);
     }
     else
     {
         for (int i = 0; i < corners.size() - 1; i++)
-            dst.push_back(corners[i]);
+            conerPts.push_back(corners[i]);
     }
 
     //cout << "tl = " << dst[0] << endl;
@@ -397,11 +118,13 @@ void CornerCoordinate(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& dst)
 }
 
 
-// ìµœì†Œì œê³±ë²• í•¨ìˆ˜
-Vec2f LeastSquared(vector<Point>& pts)
+// ÃÖ¼ÒÁ¦°ö¹ı ÇÔ¼ö
+Vec2f LSM_Horizontal(vector<Point>& pts)
 {
+    //y=ax+b
     double a, b;
     double xx = 0, x = 0, xy = 0, y = 0;
+
     int n = pts.size();
     Vec2f result;
     for (int i = 0; i < n; i++)
@@ -410,19 +133,20 @@ Vec2f LeastSquared(vector<Point>& pts)
         x += (pts[i].x);
         xy += (pts[i].x) * (pts[i].y);
         y += (pts[i].y);
-        
+
     }
     a = (n * xy - x * y) / (n * xx - x * x);
     b = (xx * y - x * xy) / (n * xx - x * x);
     result[0] = a;
     result[1] = b;
-    
     //cout << "y=" << a << "x+" << b << endl; // y=ax+b
+
     return result;
 }
-// ìµœì†Œì œê³±ë²• x, yì¢Œí‘œ ìŠ¤ìœ„ì¹­ í›„ ê³„ì‚°í•œ ë’¤ ë‚˜ì˜¨ ì‹ì„ ë‹¤ì‹œ y=x ëŒ€ì¹­ì´ë™
-Vec2f LeastSquared_Reverse(vector<Point>& pts)
+// ÃÖ¼ÒÁ¦°ö¹ı x, yÁÂÇ¥ ½ºÀ§Äª ÈÄ °è»êÇÑ µÚ ³ª¿Â ½ÄÀ» ´Ù½Ã y=x ´ëÄªÀÌµ¿
+Vec2f LSM_Vertical(vector<Point>& pts)
 {
+    //x=ay+b
     double a, b;
     double xx = 0, x = 0, xy = 0, y = 0;
     int n = pts.size();
@@ -438,36 +162,36 @@ Vec2f LeastSquared_Reverse(vector<Point>& pts)
     a = (n * xy - x * y) / (n * xx - x * x);
     b = (xx * y - x * xy) / (n * xx - x * x);
     // x=ya+b ==> y = (1/a) * x - b/a
-    result[0] = 1/a;
-    result[1] = -b/a;
-    
+    result[0] = 1 / a;
+    result[1] = -b / a;
+
     return result;
 }
 
-// ìµœì†Œì œê³±ë²•ì„ í†µí•´ êµì  í‘œì‹œ
-void drawXandLine(Mat& src, Mat& dst, vector<Point>& LCirCenters, vector<Point>& BCirCenters)
+// ÃÖ¼ÒÁ¦°ö¹ıÀ» ÅëÇØ ±³Á¡ Ç¥½Ã
+void Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vector<Point>& hCirCenters)
 {
     if (!src.data)
         return;
     if (!dst.data)
         cvtColor(src, dst, COLOR_GRAY2BGR);
-    Vec2f LEquation, BEquation;
+    Vec2f vEquation, hEquation;
     Point target, temp1, temp2;
-    LEquation = LeastSquared_Reverse(LCirCenters);
-    BEquation = LeastSquared(BCirCenters);
+    vEquation = LSM_Vertical(vCirCenters);
+    hEquation = LSM_Horizontal(hCirCenters);
 
-    target.x = cvRound((BEquation[1] - LEquation[1]) / (LEquation[0] - BEquation[0]));
-    target.y = cvRound((LEquation[0] * (BEquation[1] - LEquation[1])) / (LEquation[0] - BEquation[0]) + LEquation[1]);
+    target.x = cvRound((hEquation[1] - vEquation[1]) / (vEquation[0] - hEquation[0]));
+    target.y = cvRound((vEquation[0] * (hEquation[1] - vEquation[1])) / (vEquation[0] - hEquation[0]) + vEquation[1]);
 
-    // ì£¼í™©ìƒ‰ ì§ì„ ì˜ ë°©ì •ì‹ ê·¸ë¦¬ê¸°
-    temp1 = { cvRound(-LEquation[1] / LEquation[0]), 0 }; // y=0 ì´ê³ , ìµœì†Œì œê³±ë²• ì§ì„ ì˜ ë°©ì •ì‹ì„ ì§€ë‚˜ëŠ” ì 
-    temp2 = { cvRound((target.y + 20 - LEquation[1]) / LEquation[0]), target.y + 20 }; // targetì—ì„œ ì¢€ ë” ì•„ë˜ìª½ì˜ ì 
+    // ÁÖÈ²»ö Á÷¼±ÀÇ ¹æÁ¤½Ä ±×¸®±â
+    temp1 = { cvRound(-vEquation[1] / vEquation[0]), 0 }; // y=0 ÀÌ°í, ÃÖ¼ÒÁ¦°ö¹ı Á÷¼±ÀÇ ¹æÁ¤½ÄÀ» Áö³ª´Â Á¡
+    temp2 = { cvRound((target.y + 20 - vEquation[1]) / vEquation[0]), target.y + 20 }; // target¿¡¼­ Á» ´õ ¾Æ·¡ÂÊÀÇ Á¡
     line(dst, temp1, temp2, Scalar(0, 127, 255));
-    temp1 = { dst.cols, cvRound(BEquation[0] * dst.cols + BEquation[1]) }; // x = src.cols ì´ê³ , ìµœì†Œì œê³±ë²• ì§ì„ ì˜ ë°©ì •ì‹ì„ ì§€ë‚˜ëŠ” ì 
-    temp2 = { target.x - 20, cvRound(BEquation[0] * (target.x - 20) + BEquation[1]) }; // targetì—ì„œ ì¢€ ë” ì™¼ìª½ì˜ ì 
+    temp1 = { dst.cols, cvRound(hEquation[0] * dst.cols + hEquation[1]) }; // x = src.cols ÀÌ°í, ÃÖ¼ÒÁ¦°ö¹ı Á÷¼±ÀÇ ¹æÁ¤½ÄÀ» Áö³ª´Â Á¡
+    temp2 = { target.x - 20, cvRound(hEquation[0] * (target.x - 20) + hEquation[1]) }; // target¿¡¼­ Á» ´õ ¿ŞÂÊÀÇ Á¡
     line(dst, temp1, temp2, Scalar(0, 127, 255));
 
-    // ë¼ì„ìƒ‰ X ê·¸ë¦¬ê¸°
+    // ¶óÀÓ»ö X ±×¸®±â
     temp1 = { target.x - 7, target.y - 7 };
     temp2 = { target.x + 7,target.y + 7 };
     line(dst, temp1, temp2, Scalar(0, 255, 191));
@@ -475,19 +199,170 @@ void drawXandLine(Mat& src, Mat& dst, vector<Point>& LCirCenters, vector<Point>&
     temp2 = { target.x + 7,target.y - 7 };
     line(dst, temp1, temp2, Scalar(0, 255, 191));
 
-    //cout << "êµì ì˜ ì¢Œí‘œ = " << target << endl;
+    //cout << "±³Á¡ÀÇ ÁÂÇ¥ = " << target << endl;
 
-    for (int i = 0; i < LCirCenters.size(); i++)
+    for (int i = 0; i < vCirCenters.size(); i++)
     {
-        Point center(LCirCenters[i].x, LCirCenters[i].y);
-        if (4 > abs(LEquation[0] * center.x - center.y + LEquation[1]) / sqrt(pow(LEquation[0], 2) + 1))
-			circle(dst, center, 5, Scalar(0, 0, 255), 1, -1);
+        Point center(vCirCenters[i].x, vCirCenters[i].y);
+        if (4 > abs(vEquation[0] * center.x - center.y + vEquation[1]) / sqrt(pow(vEquation[0], 2) + 1))
+            circle(dst, center, 5, Scalar(0, 0, 255), 1, -1);
     }
-    
-    for (int i = 0; i < BCirCenters.size(); i++)
+
+    for (int i = 0; i < hCirCenters.size(); i++)
     {
-        Point center(BCirCenters[i].x, BCirCenters[i].y);
-        if (4 > abs(BEquation[0] * center.x - center.y + BEquation[1]) / sqrt(pow(BEquation[0], 2) + 1))
-			circle(dst, center, 5, Scalar(0, 0, 255), 1, -1);
+        Point center(hCirCenters[i].x, hCirCenters[i].y);
+        if (4 > abs(hEquation[0] * center.x - center.y + hEquation[1]) / sqrt(pow(hEquation[0], 2) + 1))
+            circle(dst, center, 5, Scalar(0, 0, 255), 1, -1);
+    }
+}
+
+void NoiseRemove(Mat& src, Mat& dst, int min,int value) {
+    uchar* srcPtr;
+    uchar* dstPtr;
+    for (int x = 0; x < src.rows; x++) {
+        srcPtr = src.ptr < uchar >(x);
+        dstPtr = dst.ptr < uchar >(x);
+
+        for (int y = 0; y < src.cols; y++) {
+            if (srcPtr[y] > min)
+                dstPtr[y] = value;
+        }
+    }
+}
+void Differential(Mat& src, Mat& dst) {
+    Mat dstY, dstX;
+
+
+    float prewittY[] = {
+        -1,0,1,
+        -1,0,1,
+        -1,0,1
+    };
+    float prewittX[] = {
+        -1,-1,-1,
+        0,0,0,
+        1,1,1
+    };
+    Mat maskY(3, 3, CV_32F, prewittY);
+    Mat maskX(3, 3, CV_32F, prewittX);
+
+    filter2D(src, dstY, CV_32F, maskY, Point(-1, -1), 3, 1);	
+    filter2D(src, dstX, CV_32F, maskX, Point(-1, -1), 3, 1);	
+
+    magnitude(dstY, dstX, dst);	//SQRT(dst1^2, dst2^2)
+    
+    dst.convertTo(dst, CV_8U);
+}
+
+void CircleDetection(Mat& src, vector<Point>& Circles, vector<Point>& conerPts, int radMin, int radMax,int value) {
+    vector<vector<Point>> vpts;
+    vpts.push_back(conerPts);
+
+    Mat mask = Mat::zeros(src.size(), CV_8UC1);
+    fillPoly(mask, vpts, Scalar(255, 255, 255), 8, 0);
+    Mat ROI;
+    bitwise_and(src, mask, ROI);
+
+
+    Mat imgThreshold = ROI.clone();
+    Mat imgHoughCir = ROI.clone();
+    threshold(imgThreshold, imgThreshold, 100, 250, THRESH_BINARY_INV);
+
+    //==================
+  /*  imshow("c", imgThreshold);
+    waitKey(0);*/
+    //==================
+
+    vector<vector<Point>> contours;
+    findContours(imgThreshold, contours, RETR_LIST, CHAIN_APPROX_SIMPLE); // ½ÉÇÃ¸ğµå ¹éÅÍ¼ö¸¦ ÁÙÀÌ±âÀ§ÇØ
+
+    vector<Vec3f> houghCircles;
+
+
+    for (vector<Point> pts : contours) {
+        double areaValue = contourArea(pts); // ¸éÀû°ª °è»ê
+        if (areaValue < 50 && areaValue > 0) {
+            Rect rc = boundingRect(pts);
+
+            rectangle(src, rc, Scalar(255, 0, 0));
+
+            if (rc.tl().x - 3 < 0 || rc.tl().y - 3 < 0)
+                continue;
+            rc -= Point(3, 3);
+            if (rc.tl().x + rc.width + 3 > src.cols || rc.tl().y + rc.height + 3 > src.rows)
+                continue;
+            rc += Size(3, 3);
+            Mat cirRect = imgHoughCir(rc);
+
+            //rectangle(image, rc, Scalar(0, 0, 255), 1);
+            Differential(cirRect, cirRect);
+
+            /*imshow("cirRect", cirRect);
+            waitKey(0);*/
+
+            HoughCircles(cirRect, houghCircles, HOUGH_GRADIENT, 1, 6, 255, 5, radMin, radMax);
+            if (houghCircles.size() != 0)
+                Circles.push_back(Point(houghCircles[0][0] + rc.tl().x, houghCircles[0][1] + rc.tl().y));
+        }
+    }
+}
+
+void ROI_Points(Mat& src, vector<Point>& conerPts, vector<Point>& vConerPts, vector<Point>& hConerPts, int distance)
+{
+    int rotateX, rotateY;
+    double theta;
+
+    int heightV = sqrt(pow(conerPts[0].y - conerPts[1].y, 2) + pow(conerPts[0].x - conerPts[1].x, 2));
+    int widthV = distance;
+
+    int heightH = distance;
+    int widthH = sqrt(pow(conerPts[1].y - conerPts[2].y, 2) + pow(conerPts[1].x - conerPts[2].x, 2));
+
+
+    if (conerPts[1].x == conerPts[0].x) {
+        rotateY = conerPts[0].y + heightV;
+        rotateX = conerPts[0].x + widthV;
+        vConerPts.push_back(conerPts[0]);
+        vConerPts.push_back(conerPts[1]);
+        vConerPts.push_back(Point(conerPts[1].x + distance, conerPts[1].y));
+        vConerPts.push_back(Point(conerPts[0].x + distance, conerPts[0].y));
+    }
+    else {
+        theta = atan((double)((conerPts[0].x - conerPts[1].x)) / (conerPts[0].y - conerPts[1].y));
+
+        vConerPts.push_back(conerPts[0]);
+
+        vConerPts.push_back(conerPts[1]);
+
+        rotateX = widthV * cos(theta) + heightV * sin(theta) + conerPts[0].x;
+        rotateY = -widthV * sin(theta) + heightV * cos(theta) + conerPts[0].y;
+        vConerPts.push_back(Point(rotateX, rotateY));
+
+        rotateX = (distance)*cos(theta) + conerPts[0].x;
+        rotateY = -(distance)*sin(theta) + conerPts[0].y;
+        vConerPts.push_back(Point(rotateX, rotateY));
+
+    }
+
+    if (conerPts[2].y == conerPts[1].y) {
+        rotateY = conerPts[0].y + heightV;
+        rotateX = conerPts[0].x + widthV;
+        hConerPts.push_back(Point(conerPts[1].x, conerPts[1].y - distance));
+        hConerPts.push_back(conerPts[1]);
+        hConerPts.push_back(conerPts[2]);
+        hConerPts.push_back(Point(conerPts[2].x, conerPts[2].y - distance));
+    }
+    else {
+        theta = -atan((conerPts[1].y - conerPts[2].y) / (double)((conerPts[1].x - conerPts[2].x)));
+        rotateX = -distance * sin(theta) + conerPts[1].x;
+        rotateY = -distance * cos(theta) + conerPts[1].y;
+
+        hConerPts.push_back(Point(rotateX, rotateY));
+        hConerPts.push_back(conerPts[1]);
+        hConerPts.push_back(conerPts[2]);
+
+        rotateX = widthH * cos(theta) - heightH * sin(theta) + conerPts[1].x;
+        rotateY = -widthH * sin(theta) - heightH * cos(theta) + conerPts[1].y;
+        hConerPts.push_back(Point(rotateX, rotateY));
     }
 }
