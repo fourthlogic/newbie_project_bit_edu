@@ -1,39 +1,49 @@
-#include "main.h"
-
-
+#include "main(ver.ROIseparate).h"
 
 void main()
 {
     time_t start;
     time_t end;
-    Mat src = imread("image/a (8).png", IMREAD_GRAYSCALE);
-    Mat dst;
+
+    Mat src = imread("image/a (12).png", IMREAD_GRAYSCALE);
+    
+    cv::imshow("src Image", src);
     start = clock();
 
-    vector<Point> cornerpts; // 외곽 3점 좌표 값
+    vector<Point> cornerPts; // 외곽 3점 좌표 값
+    vector<Point> vCornerPts; // Vertical 
+    vector<Point> hCornerPts; // Horizontal
+    vector<Point> vCirCenters; // 중심 좌표들의 값 
+    vector<Point> hCirCenters; // 중심 좌표들의 값 
 
-    vector<Point> vCirCenters; // Vertical의 중심 좌표들의 값 
-    vector<Point> hCirCenters; // Horizontal의 중심 좌표들의 값 
+    Mat dst;
 
-    vector<Point> vertexPts;   //
+    GetCornerPoints(src, cornerPts); // 3점 좌표 추출
+    GetVertexPoints(src, cornerPts, vCornerPts, hCornerPts, 20);
 
+    CirDetectionParam data1 = { src, vCornerPts, vCirCenters, 2, 4, 100 };
+    CirDetectionParam data2 = { src, hCornerPts, hCirCenters, 2, 4, 100 };
 
-    GetCornerPoints(src, cornerpts); // 3점 좌표 추출
-    GetVertexPoints(src, cornerpts, vertexPts, 20);
-    ContourDetection(src, vCirCenters, hCirCenters, vertexPts, 2, 4, 100);
+    HANDLE hThread[2];
+    unsigned threadID[2];
+
+    hThread[0] = (HANDLE)_beginthreadex(NULL, 0, CirDetectionThread, &data1, 0, &threadID[0]);
+    if (hThread[0] == NULL)
+        return;
+    hThread[1] = (HANDLE)_beginthreadex(NULL, 0, CirDetectionThread, &data2, 0, &threadID[1]);
+
+    if (hThread[1] == NULL)
+        return;
+
+    // 여러 쓰레드 종료 대기
+    WaitForMultipleObjects(sizeof(hThread) / sizeof(HANDLE), hThread, true, INFINITE);
 
     Drawing(src, dst, vCirCenters, hCirCenters);
-
-
     end = clock();
-    imshow("result", dst);
-
     cout << end - start << endl;
+    imshow("result", dst);
     waitKey();
 }
-
-
-
 
 // 3점 좌표 추출 수정판
 void GetCornerPoints(Mat& src, vector<Point>& cornerPts)
@@ -80,7 +90,7 @@ void GetCornerPoints(Mat& src, vector<Point>& cornerPts)
     }
 }
 // 최외곽 ROI Vertex 추출
-void GetVertexPoints(Mat& src, vector<Point>& cornerPts, vector<Point>& vertexPts, int distance)
+void GetVertexPoints(Mat& src, vector<Point>& cornerPts, vector<Point>& vVertexPts, vector<Point>& hVertexPts, int distance)
 {
     int rotateX, rotateY;
     double theta;
@@ -91,166 +101,103 @@ void GetVertexPoints(Mat& src, vector<Point>& cornerPts, vector<Point>& vertexPt
     int heightH = distance;
     int widthH = sqrt(pow(cornerPts[1].y - cornerPts[2].y, 2) + pow(cornerPts[1].x - cornerPts[2].x, 2));
 
-    vertexPts.resize(6);
 
     if (cornerPts[1].x == cornerPts[0].x) {
-        vertexPts[0] = cornerPts[0];
-        vertexPts[1] = cornerPts[1];
-        vertexPts[5] = Point(cornerPts[0].x + distance, cornerPts[0].y);
-        vertexPts[4] = Point(cornerPts[1].x + distance, cornerPts[1].y);
+        vVertexPts.push_back(cornerPts[0]);
+        vVertexPts.push_back(cornerPts[1]);
+        vVertexPts.push_back(Point(cornerPts[1].x + distance, cornerPts[1].y));
+        vVertexPts.push_back(Point(cornerPts[0].x + distance, cornerPts[0].y));
     }
     else {
         theta = atan((double)((cornerPts[0].x - cornerPts[1].x)) / (cornerPts[0].y - cornerPts[1].y));
-        vertexPts[0] = cornerPts[0];
-        vertexPts[1] = cornerPts[1];
 
+        vVertexPts.push_back(cornerPts[0]);
 
-        rotateX = (distance)*cos(theta) + cornerPts[0].x;
-        rotateY = -(distance)*sin(theta) + cornerPts[0].y;
-        vertexPts[5] = Point(rotateX, rotateY);
-
+        vVertexPts.push_back(cornerPts[1]);
 
         rotateX = widthV * cos(theta) + heightV * sin(theta) + cornerPts[0].x;
         rotateY = -widthV * sin(theta) + heightV * cos(theta) + cornerPts[0].y;
-        vertexPts[4] = Point(rotateX, rotateY);
+        vVertexPts.push_back(Point(rotateX, rotateY));
+
+        rotateX = (distance)*cos(theta) + cornerPts[0].x;
+        rotateY = -(distance)*sin(theta) + cornerPts[0].y;
+        vVertexPts.push_back(Point(rotateX, rotateY));
+
     }
 
     if (cornerPts[2].y == cornerPts[1].y) {
-        vertexPts[2] = cornerPts[2];
-        vertexPts[3] = Point(cornerPts[2].x, cornerPts[2].y - distance);
-
-        vertexPts[4].x = cornerPts[1].x + vertexPts[4].x - vertexPts[1].x;
-        vertexPts[4].y = cornerPts[1].y - distance + vertexPts[4].y - vertexPts[1].y;
+        hVertexPts.push_back(Point(cornerPts[1].x, cornerPts[1].y - distance));
+        hVertexPts.push_back(cornerPts[1]);
+        hVertexPts.push_back(cornerPts[2]);
+        hVertexPts.push_back(Point(cornerPts[2].x, cornerPts[2].y - distance));
     }
     else {
         theta = -atan((cornerPts[1].y - cornerPts[2].y) / (double)((cornerPts[1].x - cornerPts[2].x)));
         rotateX = -distance * sin(theta) + cornerPts[1].x;
         rotateY = -distance * cos(theta) + cornerPts[1].y;
+        hVertexPts.push_back(Point(rotateX, rotateY));
 
-        vertexPts[4].x = rotateX + vertexPts[4].x - vertexPts[1].x;
-        vertexPts[4].y = rotateY + vertexPts[4].y - vertexPts[1].y;
 
-        vertexPts[2] = cornerPts[2];
+        hVertexPts.push_back(cornerPts[1]);
+        hVertexPts.push_back(cornerPts[2]);
+
         rotateX = widthH * cos(theta) - heightH * sin(theta) + cornerPts[1].x;
         rotateY = -widthH * sin(theta) - heightH * cos(theta) + cornerPts[1].y;
-        vertexPts[3] = Point(rotateX, rotateY);
+        hVertexPts.push_back(Point(rotateX, rotateY));
     }
 }
-// 원검출을 위한 ROI Area 추출
-void ContourDetection(Mat& src, vector<Point>& vCirCenters, vector<Point>& hCirCenters, vector<Point>& vertexPts, int radMin, int radMax, int value) {
-    //ROI 꼭짓점 
+// 원 검출 Thread
+unsigned WINAPI CirDetectionThread(void* para)
+{
+    CirDetectionParam* data = (CirDetectionParam*)para;
+    CircleDetection(data->src, data->Circles, data->conerPts, data->radMin, data->radMax, data->value);
+    return 0;
+}
+// 원 검출
+void CircleDetection(Mat& src, vector<Point>& vertexPts, vector<Point>& circles, int radMin, int radMax, int value) {
     vector<vector<Point>> vpts;
     vpts.push_back(vertexPts);
-    //ROI 처리
+
     Mat mask = Mat::zeros(src.size(), CV_8UC1);
     fillPoly(mask, vpts, Scalar(255, 255, 255), 8, 0);
     Mat ROI;
     bitwise_and(src, mask, ROI);
 
-    //findContours전용 Mat
+
     Mat imgThreshold = ROI.clone();
-    threshold(imgThreshold, imgThreshold, value, 250, THRESH_BINARY_INV);
+    Mat imgHoughCir = ROI.clone();
+    threshold(imgThreshold, imgThreshold, 100, 250, THRESH_BINARY_INV);
 
     vector<vector<Point>> contours;
-    findContours(imgThreshold, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
+    findContours(imgThreshold, contours, RETR_LIST, CHAIN_APPROX_SIMPLE); // 심플모드 백터수를 줄이기위해
 
-    //Vertical과 Horizontal 구분
-    double a = (vertexPts[1].y - vertexPts[4].y) * 1.0 / (vertexPts[1].x - vertexPts[4].x) * 1.0;
-    double b = vertexPts[1].y - a * vertexPts[1].x;
+    vector<Vec3f> houghCircles;
 
-    vector<vector<Point>> vContours, hContours;
-    for (vector<Point> pts : contours) {
-        if (a > 0) {
-            if (a * pts[0].x - pts[0].y + b < 0) {
-                vContours.push_back(pts);
-            }
-            else {
-                hContours.push_back(pts);
-            }
-        }
-        else {
-            if (a * pts[0].x - pts[0].y + b > 0) {
-                vContours.push_back(pts);
-            }
-            else {
-                hContours.push_back(pts);
-            }
-        }
-    }
-    CirDetectionParam2 cir2 = { src,vContours,vCirCenters,radMax,radMin };
-    //Thread 매개변수를 넘기기 위한 구조체 초기화
-    cir = new CirDetectionParam();
-    cir->cirCenters = &vCirCenters;
-    cir->contours = &vContours;
-    cir->src = &src;
-    cir->radMax = radMax;
-    cir->radMin = radMin;
-    cir->mut = new Mutex;
-    unsigned threadId;
-    _beginthreadex(NULL, 0, CirDetectionThread, (void*)cir, 0, &threadId);
-    CircleDetection(src, hContours, hCirCenters, radMin, radMax);
-    cir->mut->lock();
-}
-// 원 검출 Thread
-unsigned WINAPI CirDetectionThread(void* para) {
-    CirDetectionParam* cir = (CirDetectionParam*)para;
-    cir->mut->lock();
-    CircleDetection(*cir->src, *cir->contours, *cir->cirCenters, cir->radMin, cir->radMax);
-    cir->mut->unlock();
-    return 0;
-}
-// 원 검출
-void CircleDetection(Mat src, vector<vector<Point>> contours, vector<Point>& cirCenters, int radMin, int radMax) {
     for (vector<Point> pts : contours) {
         double areaValue = contourArea(pts); // 면적값 계산
         if (areaValue < 50 && areaValue > 0) {
             Rect rc = boundingRect(pts);
-#pragma region 수정 요함
+
             if (rc.tl().x - 3 < 0 || rc.tl().y - 3 < 0)
                 continue;
             rc -= Point(3, 3);
-            if (rc.tl().x + rc.width + 4 > src.cols || rc.tl().y + rc.height + 4 > src.rows)
+            if (rc.tl().x + rc.width + 3 > src.cols || rc.tl().y + rc.height + 3 > src.rows)
                 continue;
-            rc += Size(4, 4);
-#pragma endregion
+            rc += Size(3, 3);
 
-            if (IsContain(rc, cirCenters))
+            //중복 제거
+            if (IsContain(rc, circles))
                 continue;
 
-            Mat cirRect = src(rc);
+            Mat cirRect = imgHoughCir(rc);
+
             Differential(cirRect, cirRect);
 
-            vector<Vec3f> houghCircles;
             HoughCircles(cirRect, houghCircles, HOUGH_GRADIENT, 1, 6, 255, 5, radMin, radMax);
-            if (houghCircles.size() != 0) {
-                cirCenters.push_back(Point(houghCircles[0][0] + rc.tl().x, houghCircles[0][1] + rc.tl().y));
-            }
+            if (houghCircles.size() != 0)
+                circles.push_back(Point(houghCircles[0][0] + rc.tl().x, houghCircles[0][1] + rc.tl().y));
         }
     }
-}
-// 미분 함수(prewitt Edge)
-void Differential(Mat& src, Mat& dst) {
-    Mat dstX, dstY;
-
-    float prewittX[] = {
-        -1,-1,-1,
-        0,0,0,
-        1,1,1
-    };
-    float prewittY[] = {
-        -1,0,1,
-        -1,0,1,
-        -1,0,1
-    };
-    Mat maskX(3, 3, CV_32F, prewittX);
-    Mat maskY(3, 3, CV_32F, prewittY);
-
-    filter2D(src, dstX, CV_32F, maskX, Point(-1, -1), 3, 1);
-    filter2D(src, dstY, CV_32F, maskY, Point(-1, -1), 3, 1);
-
-    magnitude(dstX, dstY, dst);
-
-    dst.convertTo(dst, CV_8U);
 }
 // 사각형 내부의 점 포함 여부
 bool IsContain(Rect rc, vector<Point>& cirCenters) {
@@ -265,7 +212,30 @@ bool IsContain(Rect rc, vector<Point>& cirCenters) {
     }
     return false;
 }
-// 최소제곱법을 통해 교점 표시, 직선 및 원 그리기
+// 미분 함수(prewitt Edge)
+void Differential(Mat& src, Mat& dst) {
+    Mat dstY, dstX;
+    float prewittY[] = {
+        -1,0,1,
+        -1,0,1,
+        -1,0,1
+    };
+    float prewittX[] = {
+        -1,-1,-1,
+        0,0,0,
+        1,1,1
+    };
+    Mat maskY(3, 3, CV_32F, prewittY);
+    Mat maskX(3, 3, CV_32F, prewittX);
+
+    filter2D(src, dstY, CV_32F, maskY, Point(-1, -1), 3, 1);
+    filter2D(src, dstX, CV_32F, maskX, Point(-1, -1), 3, 1);
+
+    magnitude(dstY, dstX, dst);  
+
+    dst.convertTo(dst, CV_8U);
+}
+// 최소제곱법을 통해 Line + Circle 표시
 void Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vector<Point>& hCirCenters)
 {
     if (!src.data)
@@ -274,7 +244,7 @@ void Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vector<Point>& hCir
         cvtColor(src, dst, COLOR_GRAY2BGR);
     Vec2f vEquation, hEquation;
     Point target, temp1, temp2;
-    vEquation = LSM_Horizontal(vCirCenters);
+    vEquation = LSM_Vertical(vCirCenters);
     hEquation = LSM_Horizontal(hCirCenters);
 
     target.x = cvRound((hEquation[1] - vEquation[1]) / (vEquation[0] - hEquation[0]));
@@ -282,7 +252,6 @@ void Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vector<Point>& hCir
 
     // 주황색 직선의 방정식 그리기
     temp1 = { cvRound(-vEquation[1] / vEquation[0]), 0 }; // y=0 이고, 최소제곱법 직선의 방정식을 지나는 점
-    //temp1 = { 0, cvRound(vEquation[1]) }; // y=0 이고, 최소제곱법 직선의 방정식을 지나는 점
     temp2 = { cvRound((target.y + 20 - vEquation[1]) / vEquation[0]), target.y + 20 }; // target에서 좀 더 아래쪽의 점
     cout << vEquation[0] << " " << vEquation[1] << endl;
     line(dst, temp1, temp2, Scalar(0, 127, 255));
@@ -298,7 +267,6 @@ void Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vector<Point>& hCir
     temp2 = { target.x + 7,target.y - 7 };
     line(dst, temp1, temp2, Scalar(0, 255, 191));
 
-    //cout << "교점의 좌표 = " << target << endl;
 
     for (int i = 0; i < vCirCenters.size(); i++)
     {
@@ -361,4 +329,3 @@ Vec2f LSM_Horizontal(vector<Point>& pts)
 
     return result;
 }
-
