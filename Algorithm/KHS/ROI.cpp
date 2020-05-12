@@ -1,139 +1,66 @@
 #include "opencv2/opencv.hpp" 
 #include <iostream>  
 #include <time.h>  
+#include <thread>
+#include <Windows.h>
 
 using namespace cv;
 using namespace std;
 
-
-//=========================================================================
-// √÷ø‹∞¢ ¡¬«• ∞™¿ª ¿ÃøÎ«œø© ROIπ¸¿ß∏¶ ∞ËªÍ«œø© ¿ÃπÃ¡ˆ √ﬂ√‚ code 
-//=========================================================================
-
-Mat img;
-
-// ø‹∞˚ ROI √ﬂ√‚
-void OutLineROI(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, int range);
-
-// ø‹∞˚ ≤¿¡ˆ¡° ¡¬«• √ﬂ√‚
-void CornerCoordinate(Mat& src, vector<Point>& dst);
-
-void main()
+// ROI Ï¢åÌëú Í≤ÄÏ∂ú(6-Ìè¨Ïù∏Ìä∏)
+void ROI_Points(Mat& src, vector<Point>& conerPts, vector<Point>& vConerPts, vector<Point>& hConerPts, int distance)
 {
-	time_t start;
-	time_t end;
-	start = clock();
-	img = imread("image/a1.png", IMREAD_GRAYSCALE);
-	namedWindow("src Image", WINDOW_AUTOSIZE);
-	imshow("src Image", img);
+    int rotateX, rotateY;
+    double theta;
 
-	vector<Point> coordinates;
-	CornerCoordinate(img, coordinates);
-	end = clock();
-	cout << end - start << endl;
-	waitKey();
+    int heightV = sqrt(pow(conerPts[0].y - conerPts[1].y, 2) + pow(conerPts[0].x - conerPts[1].x, 2));
+    int widthV = distance;
+
+    int heightH = distance;
+    int widthH = sqrt(pow(conerPts[1].y - conerPts[2].y, 2) + pow(conerPts[1].x - conerPts[2].x, 2));
+
+
+    if (conerPts[1].x == conerPts[0].x) {
+        vConerPts.push_back(conerPts[0]);
+        vConerPts.push_back(conerPts[1]);
+        vConerPts.push_back(Point(conerPts[1].x + distance, conerPts[1].y));
+        vConerPts.push_back(Point(conerPts[0].x + distance, conerPts[0].y));
+    }
+    else {
+        theta = atan((double)((conerPts[0].x - conerPts[1].x)) / (conerPts[0].y - conerPts[1].y));
+
+        vConerPts.push_back(conerPts[0]);
+
+        vConerPts.push_back(conerPts[1]);
+
+        rotateX = widthV * cos(theta) + heightV * sin(theta) + conerPts[0].x;
+        rotateY = -widthV * sin(theta) + heightV * cos(theta) + conerPts[0].y;
+        vConerPts.push_back(Point(rotateX, rotateY));
+
+        rotateX = (distance)*cos(theta) + conerPts[0].x;
+        rotateY = -(distance)*sin(theta) + conerPts[0].y;
+        vConerPts.push_back(Point(rotateX, rotateY));
+
+    }
+
+    if (conerPts[2].y == conerPts[1].y) {
+        hConerPts.push_back(Point(conerPts[1].x, conerPts[1].y - distance));
+        hConerPts.push_back(conerPts[1]);
+        hConerPts.push_back(conerPts[2]);
+        hConerPts.push_back(Point(conerPts[2].x, conerPts[2].y - distance));
+    }
+    else {
+        theta = -atan((conerPts[1].y - conerPts[2].y) / (double)((conerPts[1].x - conerPts[2].x)));
+        rotateX = -distance * sin(theta) + conerPts[1].x;
+        rotateY = -distance * cos(theta) + conerPts[1].y;
+        hConerPts.push_back(Point(rotateX, rotateY));
+
+
+        hConerPts.push_back(conerPts[1]);
+        hConerPts.push_back(conerPts[2]);
+
+        rotateX = widthH * cos(theta) - heightH * sin(theta) + conerPts[1].x;
+        rotateY = -widthH * sin(theta) - heightH * cos(theta) + conerPts[1].y;
+        hConerPts.push_back(Point(rotateX, rotateY));
+    }
 }
-
-
-// 3¡°¿ª ≈Î«ÿ ø‹∞˚ ¡¬«• ROI º±≈√ 
-void OutLineROI(Mat& src, Mat& Ldst, Mat& Bdst, vector<Point>& pts, int range = 30)
-{
-	int hL = abs(pts[0].y - pts[1].y);
-	int wL = range;
-
-	int hB = range;
-	int wB = abs(pts[1].x - pts[2].x);
-
-	Ldst = Mat(hL, wL, CV_8UC1, Scalar(0));
-	Bdst = Mat(hB, wB, CV_8UC1, Scalar(0));
-
-
-	double AlphaL = ((double)pts[1].y - pts[0].y) / ((double)pts[1].x - pts[0].x);
-	double BetaL = pts[0].y - (AlphaL * pts[0].x);
-
-	double AlphaB = ((double)pts[2].y - pts[1].y) / ((double)pts[2].x - pts[1].x);
-	double BetaB = pts[1].y - (AlphaB * pts[1].x);
-
-	double rotateX;
-	double rotateY;
-
-	for (int y = pts[0].y; y < pts[0].y + hL; y++)
-	{
-		for (int x = 0; x < wL; x++)
-		{
-			rotateX = (y - BetaL) / AlphaL + x;
-			Ldst.ptr<uchar>(y - pts[0].y)[x] = src.ptr<uchar>(y)[(int)rotateX];
-		}
-	}
-
-	for (int x = pts[1].x; x < pts[1].x + wB; x++)
-	{
-		for (int y = 0; y < hB; y++)
-		{
-			rotateY = AlphaB * x + BetaB - y;
-			Bdst.ptr<uchar>(hB - y - 1)[x - pts[1].x] = src.ptr<uchar>((int)rotateY)[x];
-		}
-	}
-
-	imshow("Ldst", Ldst);
-	imshow("Bdst", Bdst);
-}
-
-// ø‹∞˚ ≤¿¡ˆ¡° ¡¬«• √ﬂ√‚
-void CornerCoordinate(Mat& src, vector<Point>& dst)
-{
-	Mat img_gray = img.clone();
-
-	threshold(img_gray, img_gray, 110, 255, THRESH_TOZERO); // min_grayscale¿Ã æ»µ«∏È 0
-	threshold(img_gray, img_gray, 160, 255, THRESH_TOZERO_INV); // min_grayscale¿Ã ≥—æÓµµ 0
-
-	Matx <uchar, 3, 3> mask(0, 1, 0, 1, 1, 1, 0, 1, 0);
-	morphologyEx(img_gray, img_gray, MORPH_OPEN, mask); // ø‹∞˚¿« º÷∆Æ∏¶ ¡¶∞≈«œ±‚ ¿ß«ÿ
-
-	vector<vector<Point>> contours;
-	findContours(img_gray, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
-	vector<Point2f> approx;
-	vector<Point2f> corners;
-
-	for (size_t i = 0; i < contours.size(); i++)
-	{
-		approxPolyDP(Mat(contours[i]), approx, arcLength(Mat(contours[i]), true) * 0.07, true);
-		if (fabs(contourArea(Mat(approx))) > 10000)  //∏È¿˚¿Ã ¿œ¡§≈©±‚ ¿ÃªÛ¿ÃæÓæﬂ «—¥Ÿ. 
-		{
-			int size = approx.size();
-
-			for (int k = 0; k < size; k++)
-			{
-				corners.push_back(approx[k]);
-			}
-		}
-	}
-
-	double distance0to1 = sqrt(pow(corners[0].x - corners[1].x, 2) + pow(corners[0].y - corners[1].y, 2));
-	double distance0to3 = sqrt(pow(corners[0].x - corners[3].x, 2) + pow(corners[0].y - corners[3].y, 2));
-	if (distance0to1 < distance0to3)
-	{
-		for (int i = 1; i < corners.size(); i++)
-			dst.push_back(corners[i]);
-	}
-	else
-	{
-		for (int i = 0; i < corners.size() - 1; i++)
-			dst.push_back(corners[i]);
-	}
-
-	cout << "tl = " << dst[0] << endl;
-	cout << "bl = " << dst[1] << endl;
-	cout << "br = " << dst[2] << endl;
-
-	Mat Ldst, Bdst;
-	OutLineROI(img, Ldst, Bdst, dst, 20);
-}
-
-
-
-
-
-
-
