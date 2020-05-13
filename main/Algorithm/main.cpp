@@ -6,9 +6,9 @@ void main()
 {
     time_t start;
     time_t end;
-    Mat src = imread("image/a (8).png", IMREAD_GRAYSCALE);
-    Mat dst;
+    Mat src = imread("image/a (7).png", IMREAD_GRAYSCALE);
     start = clock();
+    Mat dst;
 
     vector<Point> cornerpts; // 외곽 3점 좌표 값
 
@@ -177,6 +177,8 @@ void ContourDetection(Mat& src, vector<Point>& vCirCenters, vector<Point>& hCirC
             }
         }
     }
+    
+
     CirDetectionParam2 cir2 = { src,vContours,vCirCenters,radMax,radMin };
     //Thread 매개변수를 넘기기 위한 구조체 초기화
     cir = new CirDetectionParam();
@@ -203,23 +205,36 @@ unsigned WINAPI CirDetectionThread(void* para) {
 void CircleDetection(Mat src, vector<vector<Point>> contours, vector<Point>& cirCenters, int radMin, int radMax) {
     for (vector<Point> pts : contours) {
         double areaValue = contourArea(pts); // 면적값 계산
-        if (areaValue < 50 && areaValue > 0) {
+        
+        if (areaValue < 50 && areaValue >= 1) {
             Rect rc = boundingRect(pts);
 #pragma region 수정 요함
-            if (rc.tl().x - 3 < 0 || rc.tl().y - 3 < 0)
+            /*if (rc.tl().x - 3 < 0 || rc.tl().y - 3 < 0){}
                 continue;
             rc -= Point(3, 3);
             if (rc.tl().x + rc.width + 4 > src.cols || rc.tl().y + rc.height + 4 > src.rows)
                 continue;
-            rc += Size(4, 4);
+            rc += Size(4, 4);*/
+            if (rc.tl().x - 3 > 0 && rc.tl().y - 3 > 0) {
+                rc -= Point(3, 3);
+            }
+            if (rc.tl().x + rc.width + 4 < src.cols && rc.tl().y + rc.height + 4 < src.rows) {
+                rc += Size(4, 4);
+            }
+            else {
+                rc.width = src.cols - rc.tl().x;
+                rc.height += 4;
+            }
 #pragma endregion
 
             if (IsContain(rc, cirCenters))
                 continue;
-
+            
             Mat cirRect = src(rc);
             Differential(cirRect, cirRect);
 
+           // rectangle(src, rc, Scalar(255, 0, 0));
+            
             vector<Vec3f> houghCircles;
             HoughCircles(cirRect, houghCircles, HOUGH_GRADIENT, 1, 6, 255, 5, radMin, radMax);
             if (houghCircles.size() != 0) {
@@ -274,7 +289,7 @@ void Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vector<Point>& hCir
         cvtColor(src, dst, COLOR_GRAY2BGR);
     Vec2f vEquation, hEquation;
     Point target, temp1, temp2;
-    vEquation = LSM_Horizontal(vCirCenters);
+    vEquation = LSM_Vertical(vCirCenters);
     hEquation = LSM_Horizontal(hCirCenters);
 
     target.x = cvRound((hEquation[1] - vEquation[1]) / (vEquation[0] - hEquation[0]));
@@ -284,7 +299,6 @@ void Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vector<Point>& hCir
     temp1 = { cvRound(-vEquation[1] / vEquation[0]), 0 }; // y=0 이고, 최소제곱법 직선의 방정식을 지나는 점
     //temp1 = { 0, cvRound(vEquation[1]) }; // y=0 이고, 최소제곱법 직선의 방정식을 지나는 점
     temp2 = { cvRound((target.y + 20 - vEquation[1]) / vEquation[0]), target.y + 20 }; // target에서 좀 더 아래쪽의 점
-    cout << vEquation[0] << " " << vEquation[1] << endl;
     line(dst, temp1, temp2, Scalar(0, 127, 255));
     temp1 = { dst.cols, cvRound(hEquation[0] * dst.cols + hEquation[1]) }; // x = src.cols 이고, 최소제곱법 직선의 방정식을 지나는 점
     temp2 = { target.x - 20, cvRound(hEquation[0] * (target.x - 20) + hEquation[1]) }; // target에서 좀 더 왼쪽의 점
