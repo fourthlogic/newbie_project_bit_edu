@@ -1,11 +1,24 @@
 ﻿// ChildView.cpp: CChildView 클래스의 구현
 //
 
+
 #include "pch.h"
 #include "framework.h"
 #include "Fourthlohgic_Project.h"
 #include "ChildView.h"
 
+#include <iostream>
+#include <opencv2/opencv.hpp>
+using namespace cv;
+#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console")
+#define GetRValue( rgb )    ( ( BYTE )( rgb ) )
+
+#define GetGValue( rgb )    ( ( BYTE )( ( ( WORD )( rgb ) ) >> 8 ))
+
+#define GetBValue( rgb )    ( ( BYTE )( ( rgb ) >> 16 ) )
+
+
+using namespace std;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -26,9 +39,6 @@ CChildView::CChildView()
 	m_background.Attach(image.Detach());
 	m_background.GetObject(sizeof(BITMAP), (LPVOID)&m_Bitmap);
 
-	
-	zoomWidth = m_Bitmap.bmWidth;
-	zoomWidth = m_Bitmap.bmHeight;
 	m_bkgBrush.CreateSolidBrush(0x00000000);
 
 	m_Zoom = 1.0f;
@@ -90,11 +100,10 @@ void CChildView::OnPaint()
 
 	memDC.SelectObject(&m_background);   // 배경 그림을 선택하고
 
-	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
-	
+	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);	
 
 	mdcOffScreen.StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom,
-		&memDC, m_ePt.x, m_ePt.y, zoomWidth, zoomHeight, SRCCOPY);
+		&memDC, m_ePt.x, m_ePt.y, round(zoomWidth), round(zoomHeight), SRCCOPY);
 
 	// ==> 배경을 메모리버퍼에 복사 한다. 아직 화면에는 나타나지 않는다.
 	//따라서 그림은 화면에 나타나지 않고, 디버깅이 힘들다.
@@ -150,19 +159,11 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
-	//m_bPt = point;
 	CWnd::OnMouseMove(nFlags, point);
 	m_pos = point;
-
+	
 	if (nFlags & MK_LBUTTON)
 	{
-		// 이동 크기 구하기
-		/*CSize offset = point - m_sPt;
-		CDC* pDC = GetDC();*/
-
-		//int width = m_bgRect.right - m_bgRect.left;
-		//int height = m_bgRect.bottom - m_bgRect.top;
-
 		// A영역의 사각형 그리기 //m_sPt는 기존 포인트, point는 이동
 		if (m_sPt.x < point.x) // 오른쪽으로 끌었을때
 		{
@@ -197,8 +198,9 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 			}
 		}
 
-		m_sPt = point;//::GetCursorPos(&point);
+		m_sPt = point;
 		Invalidate();
+		//::GetCursorPos(&point);
 	}
 }
 
@@ -209,8 +211,36 @@ void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 
 	CWnd::OnLButtonDown(nFlags, point);
 	m_sPt = point;
+
+	//좌표의 픽셀값
+	CDC* dc = GetDC();
+	
+	COLORREF rgb;
+	rgb = dc->GetPixel(point.x, point.y);
+
+	int R = 0, G = 0, B = 0;
+
+	R = GetRValue(rgb);
+	G = GetGValue(rgb);
+	B = GetBValue(rgb);
+
+	cout << R << " " << G << " " << B << endl << endl;
+	double pixelvale = (R + G + B) / 3.0;
+	
+	cout << pixelvale << endl;;
+
+	
 }
 
+void RGBtoGray(COLORREF& ref)
+{
+	BYTE byGray =
+		(GetRValue(ref) * 30
+			+ GetGValue(ref) * 59
+			+ GetBValue(ref) * 11) / 100;
+
+	ref = RGB(byGray, byGray, byGray);
+}
 
 void CChildView::OnSize(UINT nType, int cx, int cy)
 {
@@ -232,21 +262,24 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
+	//휠 다운
 	if (zDelta <= 0)
 	{
 		m_Zoom = 1.25f;
 	}
+	//휠 업
 	else
 	{
 		m_Zoom = 0.75f;
 	}
 
+	//시작 좌표
 	m_ePt.x += round((((float)m_pos.x / (float)m_bgRect.right) * zoomWidth)
 		- (((float)m_pos.x / (float)m_bgRect.right) * (zoomWidth * m_Zoom)));
 	m_ePt.y += round((((float)m_pos.y / (float)m_bgRect.bottom) * zoomHeight)
 		- (((float)m_pos.y / (float)m_bgRect.bottom) * (zoomHeight * m_Zoom)));
 
-
+	//사각형 넓이
 	zoomWidth *= m_Zoom;
 	zoomHeight *= m_Zoom;
 
