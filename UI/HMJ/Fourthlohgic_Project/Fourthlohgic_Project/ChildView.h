@@ -45,15 +45,22 @@ public:
 
 	CBitmap m_background;
 	BITMAP m_Bitmap;
-
+	
 	CRect m_bgRect;   // 화면 전체의 크기 - client 윈도의 전체크기
 	CBrush m_bkgBrush;
 	float ViewScale;
+	float ViewValue;
 
 	//테스트
 	CPoint m_pos;
 	double newWidth;
 	double newHeight;
+
+	double width;
+	double height;
+
+	double rectWidth;
+	double rectHeight;
 
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);

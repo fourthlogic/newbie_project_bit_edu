@@ -5,6 +5,7 @@
 #include "framework.h"
 #include "Fourthlohgic_Project.h"
 #include "ChildView.h"
+#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console");
 
 
 #ifdef _DEBUG
@@ -26,8 +27,8 @@ CChildView::CChildView()
 	m_ePt.x = 0;
 	m_ePt.y = 0;
 
-	newWidth = m_Bitmap.bmWidth;
-	newHeight = m_Bitmap.bmHeight;
+	ViewScale = 1;
+	ViewValue = 1;
 
 	m_bkgBrush.CreateSolidBrush(0x00000000);
 }
@@ -92,7 +93,8 @@ void CChildView::OnPaint()
 	memDC.SelectObject(&m_background);   // 배경 그림을 선택하고
 	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
 	//mdcOffScreen.BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, 0, 0, SRCCOPY);
-	mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, m_ePt.x, m_ePt.y, newWidth, newHeight, SRCCOPY);
+	//mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, m_ePt.x, m_ePt.y, newWidth, newHeight, SRCCOPY);
+	mdcOffScreen.StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom, &memDC, m_ePt.x, m_ePt.y, rectWidth, rectHeight, SRCCOPY);
 	// ==> 배경을 메모리버퍼에 복사 한다. 아직 화면에는 나타나지 않는다.
 	//따라서 그림은 화면에 나타나지 않고, 디버깅이 힘들다.
 	//디버깅을 싶게 한다면
@@ -129,7 +131,7 @@ BOOL CChildView::OnEraseBkgnd(CDC* pDC)
 		rect2.right = m_bgRect.right;
 		rect2.top = 0;
 		rect2.bottom = m_Bitmap.bmHeight;
-		m_ePt.x = 0;
+		//m_ePt.x = 0;
 		pDC->FillRect(&rect2, &m_bkgBrush);  // B영역 칠하기
 	}
 	if (m_Bitmap.bmHeight < m_bgRect.bottom) { //아래
@@ -138,7 +140,7 @@ BOOL CChildView::OnEraseBkgnd(CDC* pDC)
 		rect2.right = m_bgRect.right;
 		rect2.top = m_Bitmap.bmHeight;
 		rect2.bottom = m_bgRect.bottom;
-		m_ePt.y = 0;
+		//m_ePt.y = 0;
 		pDC->FillRect(&rect2, &m_bkgBrush); // C영역 칠하기
 	}
 
@@ -172,8 +174,8 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 			m_ePt.x += m_sPt.x - point.x;
 			if (m_Bitmap.bmWidth > m_bgRect.right)
 			{
-				if (m_ePt.x > m_Bitmap.bmWidth - width)
-					m_ePt.x = m_Bitmap.bmWidth - width;
+				if (m_ePt.x > m_Bitmap.bmWidth - rectWidth)
+					m_ePt.x = m_Bitmap.bmWidth - rectWidth;
 			}
 		}
 			
@@ -189,8 +191,8 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 			m_ePt.y += m_sPt.y - point.y;
 			if (m_Bitmap.bmHeight > m_bgRect.bottom)
 			{
-				if (m_ePt.y > m_Bitmap.bmHeight - height)
-					m_ePt.y = m_Bitmap.bmHeight - height;
+				if (m_ePt.y > m_Bitmap.bmHeight - rectHeight)
+					m_ePt.y = m_Bitmap.bmHeight - rectHeight;
 			}
 		}
 
@@ -218,36 +220,86 @@ void CChildView::OnSize(UINT nType, int cx, int cy)
 	m_bgRect.top = 0;
 	m_bgRect.right = cx;
 	m_bgRect.bottom = cy;
+
+	
+
+	rectWidth = cx;
+	rectHeight = cy;
+
+	Invalidate();
 }
 
 
 BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	int width = m_bgRect.right - m_bgRect.left;
-	int height = m_bgRect.bottom - m_bgRect.top;
-
-	
 	if (zDelta <= 0)// 휠 내릴때
 	{
-		ViewScale = 1.25f;
+		ViewScale = 1.2f;
+		ViewValue *= 1.2f;
 	}
 	else// 휠 올릴때
 	{
 		ViewScale = 0.75f;
+		ViewValue *= 0.75f;
 	}
 	
 	//왼쪽위 꼭짓점
-	m_ePt.x = m_pos.x - (((m_pos.x - m_ePt.x) / (double)width) * ((double)width * ViewScale));
-	m_ePt.y = m_pos.y - (((m_pos.y - m_ePt.y) / (double)height) * ((double)height * ViewScale));
+	//m_ePt.x = (m_pos.x - (((m_pos.x - m_ePt.x) / rectWidth) * (rectWidth * ViewScale)));
+	//m_ePt.y = (m_pos.y - (((m_pos.y - m_ePt.y) / rectHeight) * (rectHeight * ViewScale)));
 	//m_ePt.x = m_pos.x - ((m_pos.x - m_ePt.x) * ViewScale);
 	//m_ePt.y = m_pos.y - ((m_pos.y - m_ePt.y) * ViewScale);
 
+	m_ePt.x += round((((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth)) - (((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth * ViewScale)));
+	m_ePt.y += round((((float)m_pos.y/ (float)m_bgRect.bottom)* (float)rectHeight) - (((float)m_pos.y / (float)m_bgRect.bottom) * ((float)rectHeight * ViewScale)));
+
 	// 오른쪽 아래 꼭짓점
-	newWidth = m_pos.x + ((((double)width - m_pos.x) / (double)width) * ((double)width * ViewScale)) - m_ePt.x;
-	newHeight = m_pos.y + ((((double)height - m_pos.y) / (double)height) * ((double)height * ViewScale)) - m_ePt.y;
+	/*newWidth = m_pos.x + (((rectWidth - m_pos.x) / rectWidth) * (rectWidth * ViewScale)) - m_ePt.x;
+	newHeight = m_pos.y + (((rectHeight - m_pos.y) / rectHeight) * (rectHeight * ViewScale)) - m_ePt.y;*/
 	//m_aPt.x = (m_pos.x + ((width - m_pos.x) * ViewScale)) - m_ePt.x;
 	//m_aPt.y = (m_pos.y + ((height - m_pos.y) * ViewScale)) - m_ePt.y;
+	int a = (((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth)) - (((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth * ViewScale));
+	rectWidth *= ViewScale;
+	rectHeight *= ViewScale;
+	//rectWidth *= ViewScale;
+	//rectHeight *=  ViewScale;
+	printf("a : %d ", a);
+
+	printf("m_ePt.x : %d ", m_ePt.x);
+	printf("m_ePt.y : %d ", m_ePt.y);
+	
+	printf("m_pos.x : %d ", m_pos.x);
+	printf("m_pos.y : %d ", m_pos.y);
+	printf("rectWidth : %f ", rectWidth);
+	printf("rectHeight : %f ", rectHeight);
+	printf("width : %d ", m_bgRect.right);
+	printf("height : %d ", m_bgRect.bottom);
+	printf("\n");
+
+
+
+	/*if (m_ePt.x <= 0)
+	{
+		m_ePt.x = 0;
+	}
+	if (m_ePt.y <= 0)
+	{
+		m_ePt.y = 0;
+	}*/
+
+	//rectWidth = newWidth - m_ePt.x;
+	//rectHeight = newHeight - m_ePt.y;
+
+
+	/*CDC* pDC = GetDC();
+	CBrush brush;
+	CPen hpen(PS_SOLID, 1, RGB(255, 0, 0));
+	CPen* p = pDC->SelectObject(&hpen);
+	brush.CreateStockObject(NULL_BRUSH);
+	CBrush* pOldBrush = pDC->SelectObject(&brush);
+	CRect rect((int)m_ePt.x, (int)m_ePt.y, newWidth, newHeight);
+	pDC->Rectangle(rect);
+	pDC->SelectObject(pOldBrush);*/
 
 	Invalidate();
 	return CWnd::OnMouseWheel(nFlags, zDelta, pt);
