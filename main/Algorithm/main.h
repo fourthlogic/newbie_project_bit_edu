@@ -51,6 +51,3 @@ Vec2f LSM_Vertical(vector<Point>& pts);
 Vec2f LSM_Horizontal(vector<Point>& pts);
 //ROI ¡¬«• ∞À√‚
 void GetVertexPoints(Mat& src, vector<Point>& cornerPts, vector<Point>& vertexPts, int distance);
-
-
-

@@ -6,7 +6,7 @@ void main()
 {
     time_t start;
     time_t end;
-    Mat src = imread("image/a (8).png", IMREAD_GRAYSCALE);
+    Mat src = imread("ori_images/a4.png", IMREAD_GRAYSCALE);
     Mat dst;
     start = clock();
 
@@ -15,15 +15,13 @@ void main()
     vector<Point> vCirCenters; // Vertical의 중심 좌표들의 값 
     vector<Point> hCirCenters; // Horizontal의 중심 좌표들의 값 
 
-    vector<Point> vertexPts;   //
-
+    vector<Point> vertexPts;
 
     GetCornerPoints(src, cornerpts); // 3점 좌표 추출
     GetVertexPoints(src, cornerpts, vertexPts, 20);
     ContourDetection(src, vCirCenters, hCirCenters, vertexPts, 2, 4, 100);
 
     Drawing(src, dst, vCirCenters, hCirCenters);
-
 
     end = clock();
     imshow("result", dst);
@@ -32,19 +30,16 @@ void main()
     waitKey();
 }
 
-
-
-
-// 3점 좌표 추출 수정판
+// 3점 좌표 추출
 void GetCornerPoints(Mat& src, vector<Point>& cornerPts)
 {
     Mat grayImage = src.clone();
-
-    threshold(grayImage, grayImage, 110, 255, THRESH_TOZERO); // min_grayscale이 안되면 0
-    threshold(grayImage, grayImage, 158, 255, THRESH_TOZERO_INV); // min_grayscale이 넘어도 0
-
+    // 110~158 사이값만 추출 (회색)
+    threshold(grayImage, grayImage, 110, 255, THRESH_TOZERO);
+    threshold(grayImage, grayImage, 158, 255, THRESH_TOZERO_INV);
+    // 외곽 다듬기
     Matx <uchar, 3, 3> mask(0, 1, 0, 1, 1, 1, 0, 1, 0);
-    morphologyEx(grayImage, grayImage, MORPH_OPEN, mask); // 외곽의 솔트를 제거하기 위해
+    morphologyEx(grayImage, grayImage, MORPH_OPEN, mask);
 
     vector<vector<Point>> contours;
     findContours(grayImage, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
@@ -55,7 +50,7 @@ void GetCornerPoints(Mat& src, vector<Point>& cornerPts)
     for (size_t i = 0; i < contours.size(); i++)
     {
         approxPolyDP(Mat(contours[i]), approx, arcLength(Mat(contours[i]), true) * 0.07, true);
-        if (fabs(contourArea(Mat(approx))) > 10000)  //면적이 일정크기 이상이어야 한다. 
+        if (fabs(contourArea(Mat(approx))) > 10000)
         {
             int size = approx.size();
 
@@ -146,6 +141,7 @@ void ContourDetection(Mat& src, vector<Point>& vCirCenters, vector<Point>& hCirC
     fillPoly(mask, vpts, Scalar(255, 255, 255), 8, 0);
     Mat ROI;
     bitwise_and(src, mask, ROI);
+
 
     //findContours전용 Mat
     Mat imgThreshold = ROI.clone();
@@ -274,7 +270,7 @@ void Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vector<Point>& hCir
         cvtColor(src, dst, COLOR_GRAY2BGR);
     Vec2f vEquation, hEquation;
     Point target, temp1, temp2;
-    vEquation = LSM_Horizontal(vCirCenters);
+    vEquation = LSM_Vertical(vCirCenters);
     hEquation = LSM_Horizontal(hCirCenters);
 
     target.x = cvRound((hEquation[1] - vEquation[1]) / (vEquation[0] - hEquation[0]));
@@ -361,4 +357,3 @@ Vec2f LSM_Horizontal(vector<Point>& pts)
 
     return result;
 }
-
