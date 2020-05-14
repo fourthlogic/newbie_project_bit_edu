@@ -2,7 +2,8 @@
 // ChildView.h: CChildView 클래스의 인터페이스
 //
 
-
+#include <opencv2/opencv.hpp>
+using namespace cv;
 #pragma once
 
 
@@ -34,6 +35,8 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	CImage image;
+	Mat src;
+	Rect rect;
 
 	CPoint m_sPt, m_ePt, m_aPt;
 
@@ -62,10 +65,15 @@ public:
 	double rectWidth;
 	double rectHeight;
 
+	
+
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+
+	void DisplayImage(Mat& src, HDC hdc);
+	void OnEraseBkgnd(HDC hdc);
 };
 
