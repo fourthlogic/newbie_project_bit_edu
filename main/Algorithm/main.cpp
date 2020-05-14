@@ -6,24 +6,25 @@ void main()
 {
     time_t start;
     time_t end;
+
     Mat src = imread("image/a (7).png", IMREAD_GRAYSCALE);
+
+
     start = clock();
     Mat dst;
 
-    vector<Point> cornerpts; // ¿Ü°û 3Á¡ ÁÂÇ¥ °ª
+    vector<Point> cornerpts; // ï¿½Ü°ï¿½ 3ï¿½ï¿½ ï¿½ï¿½Ç¥ ï¿½ï¿½
 
-    vector<Point> vCirCenters; // VerticalÀÇ Áß½É ÁÂÇ¥µéÀÇ °ª 
-    vector<Point> hCirCenters; // HorizontalÀÇ Áß½É ÁÂÇ¥µéÀÇ °ª 
+    vector<Point> vCirCenters; // Verticalï¿½ï¿½ ï¿½ß½ï¿½ ï¿½ï¿½Ç¥ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ 
+    vector<Point> hCirCenters; // Horizontalï¿½ï¿½ ï¿½ß½ï¿½ ï¿½ï¿½Ç¥ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ 
 
-    vector<Point> vertexPts;   //
+    vector<Point> vertexPts;
 
-
-    GetCornerPoints(src, cornerpts); // 3Á¡ ÁÂÇ¥ ÃßÃâ
+    GetCornerPoints(src, cornerpts); // 3ï¿½ï¿½ ï¿½ï¿½Ç¥ ï¿½ï¿½ï¿½ï¿½
     GetVertexPoints(src, cornerpts, vertexPts, 20);
     ContourDetection(src, vCirCenters, hCirCenters, vertexPts, 2, 4, 100);
 
     Drawing(src, dst, vCirCenters, hCirCenters);
-
 
     end = clock();
     imshow("result", dst);
@@ -32,19 +33,16 @@ void main()
     waitKey();
 }
 
-
-
-
-// 3Á¡ ÁÂÇ¥ ÃßÃâ ¼öÁ¤ÆÇ
+// 3ï¿½ï¿½ ï¿½ï¿½Ç¥ ï¿½ï¿½ï¿½ï¿½
 void GetCornerPoints(Mat& src, vector<Point>& cornerPts)
 {
     Mat grayImage = src.clone();
-
-    threshold(grayImage, grayImage, 110, 255, THRESH_TOZERO); // min_grayscaleÀÌ ¾ÈµÇ¸é 0
-    threshold(grayImage, grayImage, 158, 255, THRESH_TOZERO_INV); // min_grayscaleÀÌ ³Ñ¾îµµ 0
-
+    // 110~158 ï¿½ï¿½ï¿½Ì°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (È¸ï¿½ï¿½)
+    threshold(grayImage, grayImage, 110, 255, THRESH_TOZERO);
+    threshold(grayImage, grayImage, 158, 255, THRESH_TOZERO_INV);
+    // ï¿½Ü°ï¿½ ï¿½Ùµï¿½ï¿½
     Matx <uchar, 3, 3> mask(0, 1, 0, 1, 1, 1, 0, 1, 0);
-    morphologyEx(grayImage, grayImage, MORPH_OPEN, mask); // ¿Ü°ûÀÇ ¼ÖÆ®¸¦ Á¦°ÅÇÏ±â À§ÇØ
+    morphologyEx(grayImage, grayImage, MORPH_OPEN, mask);
 
     vector<vector<Point>> contours;
     findContours(grayImage, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
@@ -55,7 +53,7 @@ void GetCornerPoints(Mat& src, vector<Point>& cornerPts)
     for (size_t i = 0; i < contours.size(); i++)
     {
         approxPolyDP(Mat(contours[i]), approx, arcLength(Mat(contours[i]), true) * 0.07, true);
-        if (fabs(contourArea(Mat(approx))) > 10000)  //¸éÀûÀÌ ÀÏÁ¤Å©±â ÀÌ»óÀÌ¾î¾ß ÇÑ´Ù. 
+        if (fabs(contourArea(Mat(approx))) > 10000)
         {
             int size = approx.size();
 
@@ -65,7 +63,7 @@ void GetCornerPoints(Mat& src, vector<Point>& cornerPts)
             }
         }
     }
-    //0(top) ºÎÅÍ ¹Ý½Ã°è ¹æÇâ(²ÀÁþÁ¡) 
+    //0(top) ï¿½ï¿½ï¿½ï¿½ ï¿½Ý½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½) 
     double distance0to1 = sqrt(pow(corners[0].x - corners[1].x, 2) + pow(corners[0].y - corners[1].y, 2));
     double distance0to3 = sqrt(pow(corners[0].x - corners[3].x, 2) + pow(corners[0].y - corners[3].y, 2));
     if (distance0to1 < distance0to3)
@@ -79,7 +77,7 @@ void GetCornerPoints(Mat& src, vector<Point>& cornerPts)
             cornerPts.push_back(corners[i]);
     }
 }
-// ÃÖ¿Ü°û ROI Vertex ÃßÃâ
+// ï¿½Ö¿Ü°ï¿½ ROI Vertex ï¿½ï¿½ï¿½ï¿½
 void GetVertexPoints(Mat& src, vector<Point>& cornerPts, vector<Point>& vertexPts, int distance)
 {
     int rotateX, rotateY;
@@ -136,25 +134,26 @@ void GetVertexPoints(Mat& src, vector<Point>& cornerPts, vector<Point>& vertexPt
         vertexPts[3] = Point(rotateX, rotateY);
     }
 }
-// ¿ø°ËÃâÀ» À§ÇÑ ROI Area ÃßÃâ
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ROI Area ï¿½ï¿½ï¿½ï¿½
 void ContourDetection(Mat& src, vector<Point>& vCirCenters, vector<Point>& hCirCenters, vector<Point>& vertexPts, int radMin, int radMax, int value) {
-    //ROI ²ÀÁþÁ¡ 
+    //ROI ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 
     vector<vector<Point>> vpts;
     vpts.push_back(vertexPts);
-    //ROI Ã³¸®
+    //ROI Ã³ï¿½ï¿½
     Mat mask = Mat::zeros(src.size(), CV_8UC1);
     fillPoly(mask, vpts, Scalar(255, 255, 255), 8, 0);
     Mat ROI;
     bitwise_and(src, mask, ROI);
 
-    //findContoursÀü¿ë Mat
+
+    //findContoursï¿½ï¿½ï¿½ï¿½ Mat
     Mat imgThreshold = ROI.clone();
     threshold(imgThreshold, imgThreshold, value, 250, THRESH_BINARY_INV);
 
     vector<vector<Point>> contours;
     findContours(imgThreshold, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
 
-    //Vertical°ú Horizontal ±¸ºÐ
+    //Verticalï¿½ï¿½ Horizontal ï¿½ï¿½ï¿½ï¿½
     double a = (vertexPts[1].y - vertexPts[4].y) * 1.0 / (vertexPts[1].x - vertexPts[4].x) * 1.0;
     double b = vertexPts[1].y - a * vertexPts[1].x;
 
@@ -180,7 +179,7 @@ void ContourDetection(Mat& src, vector<Point>& vCirCenters, vector<Point>& hCirC
     
 
     CirDetectionParam2 cir2 = { src,vContours,vCirCenters,radMax,radMin };
-    //Thread ¸Å°³º¯¼ö¸¦ ³Ñ±â±â À§ÇÑ ±¸Á¶Ã¼ ÃÊ±âÈ­
+    //Thread ï¿½Å°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ±ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼ ï¿½Ê±ï¿½È­
     cir = new CirDetectionParam();
     cir->cirCenters = &vCirCenters;
     cir->contours = &vContours;
@@ -193,7 +192,7 @@ void ContourDetection(Mat& src, vector<Point>& vCirCenters, vector<Point>& hCirC
     CircleDetection(src, hContours, hCirCenters, radMin, radMax);
     cir->mut->lock();
 }
-// ¿ø °ËÃâ Thread
+// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Thread
 unsigned WINAPI CirDetectionThread(void* para) {
     CirDetectionParam* cir = (CirDetectionParam*)para;
     cir->mut->lock();
@@ -201,14 +200,14 @@ unsigned WINAPI CirDetectionThread(void* para) {
     cir->mut->unlock();
     return 0;
 }
-// ¿ø °ËÃâ
+// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 void CircleDetection(Mat src, vector<vector<Point>> contours, vector<Point>& cirCenters, int radMin, int radMax) {
     for (vector<Point> pts : contours) {
-        double areaValue = contourArea(pts); // ¸éÀû°ª °è»ê
+        double areaValue = contourArea(pts); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
         
         if (areaValue < 50 && areaValue >= 1) {
             Rect rc = boundingRect(pts);
-#pragma region ¼öÁ¤ ¿äÇÔ
+#pragma region ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             /*if (rc.tl().x - 3 < 0 || rc.tl().y - 3 < 0){}
                 continue;
             rc -= Point(3, 3);
@@ -243,7 +242,7 @@ void CircleDetection(Mat src, vector<vector<Point>> contours, vector<Point>& cir
         }
     }
 }
-// ¹ÌºÐ ÇÔ¼ö(prewitt Edge)
+// ï¿½Ìºï¿½ ï¿½Ô¼ï¿½(prewitt Edge)
 void Differential(Mat& src, Mat& dst) {
     Mat dstX, dstY;
 
@@ -267,7 +266,7 @@ void Differential(Mat& src, Mat& dst) {
 
     dst.convertTo(dst, CV_8U);
 }
-// »ç°¢Çü ³»ºÎÀÇ Á¡ Æ÷ÇÔ ¿©ºÎ
+// ï¿½ç°¢ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 bool IsContain(Rect rc, vector<Point>& cirCenters) {
     for (Point pt : cirCenters) {
         int rcX = rc.tl().x;
@@ -280,7 +279,7 @@ bool IsContain(Rect rc, vector<Point>& cirCenters) {
     }
     return false;
 }
-// ÃÖ¼ÒÁ¦°ö¹ýÀ» ÅëÇØ ±³Á¡ Ç¥½Ã, Á÷¼± ¹× ¿ø ±×¸®±â
+// ï¿½Ö¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Ç¥ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½×¸ï¿½ï¿½ï¿½
 void Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vector<Point>& hCirCenters)
 {
     if (!src.data)
@@ -295,16 +294,16 @@ void Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vector<Point>& hCir
     target.x = cvRound((hEquation[1] - vEquation[1]) / (vEquation[0] - hEquation[0]));
     target.y = cvRound((vEquation[0] * (hEquation[1] - vEquation[1])) / (vEquation[0] - hEquation[0]) + vEquation[1]);
 
-    // ÁÖÈ²»ö Á÷¼±ÀÇ ¹æÁ¤½Ä ±×¸®±â
-    temp1 = { cvRound(-vEquation[1] / vEquation[0]), 0 }; // y=0 ÀÌ°í, ÃÖ¼ÒÁ¦°ö¹ý Á÷¼±ÀÇ ¹æÁ¤½ÄÀ» Áö³ª´Â Á¡
-    //temp1 = { 0, cvRound(vEquation[1]) }; // y=0 ÀÌ°í, ÃÖ¼ÒÁ¦°ö¹ý Á÷¼±ÀÇ ¹æÁ¤½ÄÀ» Áö³ª´Â Á¡
-    temp2 = { cvRound((target.y + 20 - vEquation[1]) / vEquation[0]), target.y + 20 }; // target¿¡¼­ Á» ´õ ¾Æ·¡ÂÊÀÇ Á¡
+    // ï¿½ï¿½È²ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½×¸ï¿½ï¿½ï¿½
+    temp1 = { cvRound(-vEquation[1] / vEquation[0]), 0 }; // y=0 ï¿½Ì°ï¿½, ï¿½Ö¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
+    //temp1 = { 0, cvRound(vEquation[1]) }; // y=0 ï¿½Ì°ï¿½, ï¿½Ö¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
+    temp2 = { cvRound((target.y + 20 - vEquation[1]) / vEquation[0]), target.y + 20 }; // targetï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½Æ·ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
     line(dst, temp1, temp2, Scalar(0, 127, 255));
-    temp1 = { dst.cols, cvRound(hEquation[0] * dst.cols + hEquation[1]) }; // x = src.cols ÀÌ°í, ÃÖ¼ÒÁ¦°ö¹ý Á÷¼±ÀÇ ¹æÁ¤½ÄÀ» Áö³ª´Â Á¡
-    temp2 = { target.x - 20, cvRound(hEquation[0] * (target.x - 20) + hEquation[1]) }; // target¿¡¼­ Á» ´õ ¿ÞÂÊÀÇ Á¡
+    temp1 = { dst.cols, cvRound(hEquation[0] * dst.cols + hEquation[1]) }; // x = src.cols ï¿½Ì°ï¿½, ï¿½Ö¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
+    temp2 = { target.x - 20, cvRound(hEquation[0] * (target.x - 20) + hEquation[1]) }; // targetï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
     line(dst, temp1, temp2, Scalar(0, 127, 255));
 
-    // ¶óÀÓ»ö X ±×¸®±â
+    // ï¿½ï¿½ï¿½Ó»ï¿½ X ï¿½×¸ï¿½ï¿½ï¿½
     temp1 = { target.x - 7, target.y - 7 };
     temp2 = { target.x + 7,target.y + 7 };
     line(dst, temp1, temp2, Scalar(0, 255, 191));
@@ -312,7 +311,7 @@ void Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vector<Point>& hCir
     temp2 = { target.x + 7,target.y - 7 };
     line(dst, temp1, temp2, Scalar(0, 255, 191));
 
-    //cout << "±³Á¡ÀÇ ÁÂÇ¥ = " << target << endl;
+    //cout << "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ç¥ = " << target << endl;
 
     for (int i = 0; i < vCirCenters.size(); i++)
     {
@@ -326,7 +325,7 @@ void Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vector<Point>& hCir
         circle(dst, center, 5, Scalar(0, 0, 255), 1, -1);
     }
 }
-// ÃÖ¼ÒÁ¦°ö¹ý x, yÁÂÇ¥ ½ºÀ§Äª ÈÄ °è»êÇÑ µÚ ³ª¿Â ½ÄÀ» ´Ù½Ã y=x ´ëÄªÀÌµ¿
+// ï¿½Ö¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ x, yï¿½ï¿½Ç¥ ï¿½ï¿½ï¿½ï¿½Äª ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ù½ï¿½ y=x ï¿½ï¿½Äªï¿½Ìµï¿½
 Vec2f LSM_Vertical(vector<Point>& pts)
 {
     //x=ay+b
@@ -350,7 +349,7 @@ Vec2f LSM_Vertical(vector<Point>& pts)
 
     return result;
 }
-// ÃÖ¼ÒÁ¦°ö¹ý ÇÔ¼ö
+// ï¿½Ö¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ô¼ï¿½
 Vec2f LSM_Horizontal(vector<Point>& pts)
 {
     //y=ax+b
@@ -375,4 +374,3 @@ Vec2f LSM_Horizontal(vector<Point>& pts)
 
     return result;
 }
-

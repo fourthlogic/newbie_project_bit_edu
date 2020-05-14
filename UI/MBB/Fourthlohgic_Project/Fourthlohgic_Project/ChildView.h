@@ -4,7 +4,8 @@
 
 
 #pragma once
-
+#include <opencv2/opencv.hpp>
+using namespace cv;
 
 // CChildView 창
 
@@ -52,10 +53,15 @@ public:
 	float zoomWidth;
 	float zoomHeight;
 public:
+	String sPathName;
+	Mat srcImage, matOffScreen, *oldmat;
+public:
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+	void DisplayImage(Mat src, HDC dc);
+	void OnEraseBkgnd();
 };
 
