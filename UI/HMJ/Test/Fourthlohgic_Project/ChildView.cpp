@@ -89,7 +89,7 @@ void CChildView::OnPaint()
 	mdcOffScreen.CreateCompatibleDC(pDC);
 
 	// 화면 크기로 빈공간의 버퍼를 생성 한다.
-	bmpOffScreen.CreateCompatibleBitmap(pDC, m_Bitmap.bmWidth, m_Bitmap.bmHeight);
+	bmpOffScreen.CreateCompatibleBitmap(pDC , m_Bitmap.bmWidth, m_Bitmap.bmHeight);
 	// 아직 dmemDC의 메모리에는 아무런 그림이 없다.
 	// 만약 어떤 색깔로 채우고자 한다면 FillRect() 함수등으로 특정색으로 칠할 수 있다.
 	// 그러나 다음에 배경 그림을 로드하므로 필요없는 일이다.
@@ -120,7 +120,7 @@ void CChildView::OnPaint()
 	//pDC->StretchBlt(0, 0, tmpRect.right, tmpRect.bottom, &mdcOffScreen, tmpRect.left, tmpRect.top, tmpRect.right, tmpRect.bottom, SRCCOPY);
 
 	pDC->SetStretchBltMode(COLORONCOLOR);
-	pDC->StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom, &mdcOffScreen, m_ePt.x, m_ePt.y, rectWidth, rectHeight, SRCCOPY);
+	pDC->StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom, &mdcOffScreen, m_ePt.x, m_ePt.y,rectWidth, rectHeight, SRCCOPY);
 	//pDC->BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &mdcOffScreen, 0, 0, SRCCOPY);
 	//pDC->StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &mdcOffScreen, m_ePt.x, m_ePt.y, m_Bitmap.bmWidth, m_Bitmap.bmHeight, SRCCOPY);
 
@@ -175,9 +175,12 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 			m_ePt.x -= m_pos.x - m_sPt.x;
 			if (m_ePt.x < 0)
 			{
-				m_ePt.x = 0;
+				//m_ePt.x = 0;
 				if (z_pos.x > 0)
-					z_pos.x -= 1;
+				{
+					//z_pos.x -= 0.05;
+					//m_ePt.x += 100;
+				}
 			}
 		}
 		else // 왼쪽으로 끌었을때
@@ -198,10 +201,10 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 			m_ePt.y -= m_pos.y - m_sPt.y;
 			if (m_ePt.y < 0)
 			{
-				m_ePt.y = 0;
+				//m_ePt.y = 0;
 				if (z_pos.y > 0)
 				{
-					z_pos.y -= 1;
+					//z_pos.y -= 1;
 				}
 			}
 		}
