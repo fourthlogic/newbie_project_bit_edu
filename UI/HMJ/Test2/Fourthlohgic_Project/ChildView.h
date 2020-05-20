@@ -2,8 +2,7 @@
 // ChildView.h: CChildView 클래스의 인터페이스
 //
 
-#include <opencv2/opencv.hpp>
-using namespace cv;
+
 #pragma once
 
 
@@ -35,15 +34,12 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	CImage image;
-	Mat src;
-	Rect rect;
 
-	CPoint m_sPt, m_ePt, m_aPt;
+	CPoint m_sPt, m_ePt, m_aPt, z_pos;
 
 	CDC memDC;  // 처리 CDC을 지정 한다.
 	// 빈공간을 새롭게 만든다.
 	CDC mdcOffScreen;      // 더블버퍼링을 위한 메모리 그림버퍼
-	CDC mdcOffScreen2;
 	CBitmap bmpOffScreen; // 더블버퍼링을 위한 비트맵 객체를 만든다.
 	CBitmap* oldbitmap;
 
@@ -57,7 +53,6 @@ public:
 
 	//테스트
 	CPoint m_pos;
-	CPoint z_pos;
 	double newWidth;
 	double newHeight;
 
@@ -67,15 +62,13 @@ public:
 	double rectWidth;
 	double rectHeight;
 
-	
+	double viewWidth;
+	double viewHeight;
 
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
-
-	HBITMAP Convert2Bitmap(Mat& src);
-	void OnEraseBkgnd(HDC hdc);
 };
 
