@@ -41,8 +41,11 @@ public:
 	CDC memDC;  // 처리 CDC을 지정 한다.
 	// 빈공간을 새롭게 만든다.
 	CDC mdcOffScreen;      // 더블버퍼링을 위한 메모리 그림버퍼
+	CDC cdcOffScreen;
 	CBitmap bmpOffScreen; // 더블버퍼링을 위한 비트맵 객체를 만든다.
+	CBitmap cbitmapOffScreen;
 	CBitmap* oldbitmap;
+	CBitmap* oldcbitmap;
 
 	CBitmap m_background;
 	BITMAP m_Bitmap;
@@ -52,12 +55,6 @@ public:
 	float m_Zoom;
 	float zoomWidth;
 	float zoomHeight;
-
-	CPoint m_aPt;
-	float scalex, scaley;
-	int zoom;
-	int width;
-	int height;
 
 public:
 	String sPathName;
@@ -69,5 +66,6 @@ public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	HBITMAP mat2bmp(Mat* image);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 };
 

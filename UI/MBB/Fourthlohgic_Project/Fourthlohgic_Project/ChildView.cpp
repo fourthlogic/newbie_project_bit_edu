@@ -27,18 +27,12 @@ using namespace std;
 
 //Find the position "factor"
 
+CPoint m_aPt;
+double m_bPtx, m_bPty;
+double orw, orh;
 
 CChildView::CChildView()
 {
-	m_Zoom = 1.f;
-	m_ePt = CPoint(0, 0);
-	//width = GetSystemMetrics(SM_CXSCREEN);
-	//height = GetSystemMetrics(SM_CYSCREEN);
-
-	m_bkgBrush.CreateSolidBrush(0x00000000);
-
-
-
 	char szFilter[] = "이미지 파일(*.BMP, *.GIF, *.JPG, *PNG) | *.BMP;*.GIF;*.JPG;*.bmp;*.jpg;*.gif;*.png; |모든파일(*.*)|*.*||";
 	CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, CA2CT(szFilter), AfxGetMainWnd());
 	if (dlg.DoModal() == IDOK)
@@ -54,9 +48,14 @@ CChildView::CChildView()
 		m_background.Attach(hbitmap);
 		m_background.GetObject(sizeof(BITMAP), (LPVOID)&m_Bitmap);
 	}
-	scalex = m_Bitmap.bmWidth;
-	scaley = m_Bitmap.bmHeight;
+	zoomWidth = srcImage.rows;
+	zoomHeight = srcImage.cols;
 
+	m_bkgBrush.CreateSolidBrush(0x00000000);
+
+	m_Zoom = 1.0f;
+	m_aPt = CPoint(0, 0);
+	m_ePt = m_aPt;
 }
 
 CChildView::~CChildView()
@@ -71,6 +70,7 @@ BEGIN_MESSAGE_MAP(CChildView, CWnd)
 	ON_WM_MOUSEMOVE()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_MOUSEWHEEL()
+	ON_WM_LBUTTONUP()
 END_MESSAGE_MAP()
 
 
@@ -97,13 +97,19 @@ void CChildView::OnPaint()
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	//---------------------------------------------------
 	CDC* pDC = GetDC();
+	//CString str;
+	//str.Format(_T("X = %d, Y = %d"), m_pos.x, m_pos.y);
+	//dc.TextOut(m_pos.x, m_pos.y, str);
+	//HDC hdc = ::GetDC(this->m_hWnd);
+	//HDC hDC = CreateCompatibleDC(dc.GetSafeHdc());
 
 	// 이미 배경은 OnInitDialog() 혹은 OnInitialUpdate()에서 로드되어 있으므로 다시 할 필요는 없다.
 	memDC.CreateCompatibleDC(pDC);
 	mdcOffScreen.CreateCompatibleDC(pDC);
 
 	// 화면 크기로 빈공간의 버퍼를 생성 한다.
-	bmpOffScreen.CreateCompatibleBitmap(pDC, scalex, scaley);
+
+	bmpOffScreen.CreateCompatibleBitmap(pDC, m_Bitmap.bmWidth, m_Bitmap.bmHeight);
 
 	// 아직 dmemDC의 메모리에는 아무런 그림이 없다.
 	// 만약 어떤 색깔로 채우고자 한다면 FillRect() 함수등으로 특정색으로 칠할 수 있다.
@@ -115,29 +121,20 @@ void CChildView::OnPaint()
 
 	memDC.SelectObject(&m_background);   // 배경 그림을 선택하고
 	
-	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);	
+	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
 
-	mdcOffScreen.StretchBlt(0, 0, scalex, scaley,
-		&memDC, 0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, SRCCOPY);
+	mdcOffScreen.StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom,
+		&memDC, m_aPt.x - 1, m_aPt.y - 1, zoomWidth , zoomHeight , SRCCOPY);
 
-	cout << "scalex: " << scalex << " scaley: " << scaley << endl;
-	cout <<"m_Bitmap.bmWidth: "<< m_Bitmap.bmWidth << " m_Bitmap.bmHeight: " << m_Bitmap.bmHeight << endl;
+	pDC->SetStretchBltMode(HALFTONE);
 
-	pDC->SetStretchBltMode(COLORONCOLOR);
-	pDC->StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom, 
-		&mdcOffScreen, m_ePt.x, m_ePt.y, m_bgRect.right, m_bgRect.bottom, SRCCOPY);
+	pDC->StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom,
+		&mdcOffScreen, m_ePt.x, m_ePt.y, zoomWidth, zoomHeight, SRCCOPY);
 
-	cout << "m_ePt.x: " << m_ePt.x << " m_ePt.y: " << m_ePt.y << endl;
-
-	//cout << "[" << m_ePt.x << ", " << m_ePt.y << "]" << endl;
-
-	//oldcbitmap = mdcOffScreen.SelectObject(&bmpOffScreen);
-
-
-	//cdcOffScreen.SetStretchBltMode(COLORONCOLOR);
-
-	//cdcOffScreen.StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom,
-	//	&mdcOffScreen, m_aPt.x, m_aPt.y, m_bgRect.right, m_bgRect.bottom, SRCCOPY);
+	//cout << "m_aPt.x " << m_aPt.x << " ";
+	//cout << "m_aPt.y " << m_aPt.y << endl;
+	//cout << "m_ePt.x " << m_ePt.x << " ";
+	//cout << "m_ePt.y " << m_ePt.y << endl;
 
 	// ==> 배경을 메모리버퍼에 복사 한다. 아직 화면에는 나타나지 않는다.
 	//따라서 그림은 화면에 나타나지 않고, 디버깅이 힘들다.
@@ -155,7 +152,7 @@ void CChildView::OnPaint()
 
 
 
-	//pDC->BitBlt(0, 0, m_Bitmap.bmWidth , m_Bitmap.bmHeight, &mdcOffScreen, 0, 0, SRCCOPY);
+	//pDC->BitBlt(0, 0, m_Bitmap.bmWidth , m_Bitmap.bmHeight, &cdcOffScreen, 0, 0, SRCCOPY);
 
 	// 이때서야 화면에 그림이 나타난다.
 	memDC.DeleteDC();
@@ -167,24 +164,24 @@ void CChildView::OnPaint()
 BOOL CChildView::OnEraseBkgnd(CDC* pDC)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	//if (m_Bitmap.bmWidth < m_bgRect.right) {
-	//	RECT rect2;
-	//	rect2.left = m_Bitmap.bmWidth;
-	//	rect2.right = m_bgRect.right;
-	//	rect2.top = 0;
-	//	rect2.bottom = m_Bitmap.bmHeight;
-	//	//m_ePt.x = 0;
-	//	pDC->FillRect(&rect2, &m_bkgBrush);  // B영역 칠하기
-	//}
-	//if (m_Bitmap.bmHeight < m_bgRect.bottom) {
-	//	RECT rect2;
-	//	rect2.left = 0;
-	//	rect2.right = m_bgRect.right;
-	//	rect2.top = m_Bitmap.bmHeight;
-	//	rect2.bottom = m_bgRect.bottom;
-	//	//m_ePt.y = 0;
-	//	pDC->FillRect(&rect2, &m_bkgBrush); // C영역 칠하기
-	//}
+	if (m_Bitmap.bmWidth < m_bgRect.right) {
+		RECT rect2;
+		rect2.left = m_Bitmap.bmWidth;
+		rect2.right = m_bgRect.right;
+		rect2.top = 0;
+		rect2.bottom = m_Bitmap.bmHeight;
+		//m_ePt.x = 0;
+		pDC->FillRect(&rect2, &m_bkgBrush);  // B영역 칠하기
+	}
+	if (m_Bitmap.bmHeight < m_bgRect.bottom) {
+		RECT rect2;
+		rect2.left = 0;
+		rect2.right = m_bgRect.right;
+		rect2.top = m_Bitmap.bmHeight;
+		rect2.bottom = m_bgRect.bottom;
+		//m_ePt.y = 0;
+		pDC->FillRect(&rect2, &m_bkgBrush); // C영역 칠하기
+	}
 
 	//return CWnd::OnEraseBkgnd(pDC);
 	return false;
@@ -197,32 +194,41 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 
 	CWnd::OnMouseMove(nFlags, point);
 	m_pos = point;
-
 	
 	if (nFlags & MK_LBUTTON)
 	{
 		// A영역의 사각형 그리기 //m_sPt는 기존 포인트, point는 이동
 		if (m_sPt.x < point.x) // 오른쪽으로 끌었을때
 		{
-			m_ePt.x -= point.x - m_sPt.x;
+			m_ePt.x -= point.x  - m_sPt.x;
 			if (m_ePt.x < 0)
 			{
-				m_ePt.x = 0;
-
-				//if (m_aPt.x > 0)
-				//	m_aPt.x -= point.x - m_sPt.x;
+				m_aPt.x -= 1;
+				m_ePt.x += m_bgRect.right / zoomWidth;
 			}
+				
+			/*if (m_ePt.x < 0)
+				m_ePt.x = 0;*/
+
+			/*if (m_aPt.x == 0)
+				m_aPt.x = 0;*/
 		}
 		else // 왼쪽으로 끌었을때
 		{
-
-			if (m_ePt.x + zoomWidth < m_Bitmap.bmWidth)
-				m_ePt.x += m_sPt.x - point.x;
-			if (m_Bitmap.bmWidth > m_bgRect.right)
+			m_ePt.x += m_sPt.x - point.x;
+			if (m_ePt.x + zoomWidth >= m_bgRect.right)
 			{
-				if (m_ePt.x > m_Bitmap.bmWidth - zoomWidth)
-					m_ePt.x = m_Bitmap.bmWidth - zoomWidth;
+				m_aPt.x += 1;
+				m_ePt.x -= m_bgRect.right / zoomWidth;
 			}
+			/*if (m_Bitmap.bmWidth > m_bgRect.right)
+			{
+				if (m_ePt.x > m_bgRect.right - zoomWidth)
+					m_ePt.x = m_bgRect.right - zoomWidth;
+			}*/
+			//m_aPt.x += 1;
+			/*if (m_aPt.x - m_bgRect.right == zoomWidth)
+				m_aPt.x = m_aPt.x;*/
 		}
 
 		// B영역의 사각형 그리기
@@ -231,28 +237,32 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 			m_ePt.y -= point.y - m_sPt.y;
 			if (m_ePt.y < 0)
 			{
-				m_ePt.y = 0;
-				/*if (m_aPt.y > 0)
-				{
-					m_aPt.y -= 1;
-				}*/
+				m_aPt.y -= 1;
+				m_ePt.y += m_bgRect.bottom / zoomHeight;
 			}
+			//m_aPt.y -= point.y - m_sPt.y;
 		}
 		else // 아래로 내렸을때
 		{
 			m_ePt.y += m_sPt.y - point.y;
-			if (m_Bitmap.bmHeight > m_bgRect.bottom)
+			if (m_ePt.y + zoomHeight >= m_bgRect.bottom)
 			{
-				if (m_ePt.y > m_Bitmap.bmHeight - zoomHeight)
-					m_ePt.y = m_Bitmap.bmHeight - zoomHeight;
+				m_aPt.y += 1;
+				m_ePt.y -= m_bgRect.bottom / zoomHeight;
 			}
-		}
 
+			/*if (m_Bitmap.bmHeight > m_bgRect.bottom)
+			{
+				if (m_ePt.y > m_bgRect.bottom - zoomHeight)
+					m_ePt.y = m_bgRect.bottom - zoomHeight;
+			}*/
+			//m_aPt.y += m_sPt.y - point.y;
+		}
 		m_sPt = point;
-		Invalidate(FALSE);
+		Invalidate();
+		//::GetCursorPos(&point);
 	}
 }
-
 
 
 void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
@@ -260,6 +270,7 @@ void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
 	CWnd::OnLButtonDown(nFlags, point);
+	SetCapture();
 	m_sPt = point;
 
 	//좌표의 픽셀값
@@ -301,13 +312,8 @@ void CChildView::OnSize(UINT nType, int cx, int cy)
 	m_bgRect.right = cx;
 	m_bgRect.bottom = cy;
 
-	//scalex = cx;
-	//scaley = cy;
-
 	zoomWidth = cx;
 	zoomHeight = cy;
-
-	Invalidate(FALSE);
 }
 
 
@@ -318,32 +324,29 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	//휠 다운
 	if (zDelta <= 0)
 	{
-		m_Zoom = 0.8f;
-		zoom = 1;
-		//scalex = scalex / zoom;
-		//scaley = scaley / zoom;
+		m_Zoom = 1.25f;
 	}
 	//휠 업
 	else
 	{
-		m_Zoom = 1.25f;
-		zoom = 2;
-		//scalex = scalex * zoom;
-		//scaley = scaley * zoom;
+		m_Zoom = 0.75f;
 	}
 
 	//시작 좌표
-	//m_ePt.x += round((((float)m_pos.x / (float)m_bgRect.right) * scalex)
-	//	- (((float)m_pos.x / (float)m_bgRect.right) * (scalex * m_Zoom)));
-	//m_ePt.y += round((((float)m_pos.y / (float)m_bgRect.bottom) * scaley )
-	//	- (((float)m_pos.y / (float)m_bgRect.bottom) * (scaley * m_Zoom)));
+	m_aPt.x += round((((float)m_pos.x / (float)m_bgRect.right) * zoomWidth)
+		- (((float)m_pos.x / (float)m_bgRect.right) * (zoomWidth * m_Zoom)));
+	m_aPt.y += round((((float)m_pos.y / (float)m_bgRect.bottom) * zoomHeight)
+		- (((float)m_pos.y / (float)m_bgRect.bottom) * (zoomHeight * m_Zoom)));
 
 	//사각형 넓이
+
 	zoomWidth *= m_Zoom;
 	zoomHeight *= m_Zoom;
+	//orw = zoomWidth;
+	//orh = zoomHeight;
 
-	scalex *= m_Zoom;
-	scaley *= m_Zoom;
+	m_ePt = m_aPt;
+
 	//cout << zoomWidth << "  " << zoomHeight << endl;
 	//int pixel;
 	//CString pixels;
@@ -368,6 +371,7 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	//		}
 	//	}
 	//}
+
 	
 	Invalidate();
 	return CWnd::OnMouseWheel(nFlags, zDelta, pt);
@@ -418,4 +422,13 @@ HBITMAP CChildView::mat2bmp(Mat* image)
 	::DeleteDC(hDC);
 
 	return hBmp;
+}
+
+void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	CWnd::OnLButtonUp(nFlags, point);
+	ReleaseCapture();
+	m_sPt = point;
 }
