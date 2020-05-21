@@ -24,6 +24,9 @@ CChildView::CChildView()
 	m_background.Attach(image.Detach());
 	m_background.GetObject(sizeof(BITMAP), (LPVOID)&m_Bitmap);
 
+	rectWidth = m_Bitmap.bmWidth;
+	rectHeight = m_Bitmap.bmHeight;
+
 	m_ePt.x = 0;
 	m_ePt.y = 0;
 
@@ -52,6 +55,9 @@ BEGIN_MESSAGE_MAP(CChildView, CWnd)
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_WM_MOUSEWHEEL()
+	ON_WM_LBUTTONUP()
+	ON_WM_MBUTTONDOWN()
+	ON_WM_MBUTTONUP()
 END_MESSAGE_MAP()
 
 
@@ -97,10 +103,10 @@ void CChildView::OnPaint()
 	//우선 배경 그림이 맨 밑이므로 배경을 메모리에 복사 한다.
 
 	memDC.SelectObject(&m_background);   // 배경 그림을 선택하고
-	mdcOffScreen.SetStretchBltMode(HALFTONE);
+	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
 	//mdcOffScreen.BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, 0, 0, SRCCOPY);
 	//mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, m_ePt.x, m_ePt.y, newWidth, newHeight, SRCCOPY);
-	mdcOffScreen.StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom, &memDC, z_pos.x-1, z_pos.y-1, rectWidth+2, rectHeight+2, SRCCOPY);
+	mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, z_pos.x, z_pos.y, rectWidth, rectHeight, SRCCOPY);
 	// ==> 배경을 메모리버퍼에 복사 한다. 아직 화면에는 나타나지 않는다.
 	//따라서 그림은 화면에 나타나지 않고, 디버깅이 힘들다.
 	//디버깅을 싶게 한다면
@@ -115,8 +121,8 @@ void CChildView::OnPaint()
 	// 여기까지 모든 그림이 완성되어 지만, 아직 표시 버퍼에 출력된 상태가 아니다. 디버깅을 해보면 아직 그림이 표시되지 않는다.
 	// 최종적으로 표시 화면 메모리에 복사 한다.
 	//pDC->StretchBlt(0, 0, tmpRect.right, tmpRect.bottom, &mdcOffScreen, tmpRect.left, tmpRect.top, tmpRect.right, tmpRect.bottom, SRCCOPY);
-	pDC->SetStretchBltMode(HALFTONE);
-	pDC->StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom, &mdcOffScreen, m_ePt.x, m_ePt.y, m_bgRect.right - (2*viewWidth), m_bgRect.bottom - (2*viewHeight), SRCCOPY);
+	pDC->SetStretchBltMode(COLORONCOLOR);
+	pDC->StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom, &mdcOffScreen, m_ePt.x, m_ePt.y, m_bgRect.right, m_bgRect.bottom, SRCCOPY);
 	//pDC->StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &mdcOffScreen, m_ePt.x, m_ePt.y, m_Bitmap.bmWidth, m_Bitmap.bmHeight, SRCCOPY);
 
 	// 이때서야 화면에 그림이 나타난다.
@@ -131,24 +137,24 @@ BOOL CChildView::OnEraseBkgnd(CDC* pDC)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
 	// 클라 크기가 이미지보다 클때 검은화면으로 채워주기
-	if (m_Bitmap.bmWidth < m_bgRect.right) { //오른쪽
-		RECT rect2;
-		rect2.left = m_Bitmap.bmWidth;
-		rect2.right = m_bgRect.right;
-		rect2.top = 0;
-		rect2.bottom = m_Bitmap.bmHeight;
-		//m_ePt.x = 0;
-		pDC->FillRect(&rect2, &m_bkgBrush);  // B영역 칠하기
-	}
-	if (m_Bitmap.bmHeight < m_bgRect.bottom) { //아래
-		RECT rect2;
-		rect2.left = 0;
-		rect2.right = m_bgRect.right;
-		rect2.top = m_Bitmap.bmHeight;
-		rect2.bottom = m_bgRect.bottom;
-		//m_ePt.y = 0;
-		pDC->FillRect(&rect2, &m_bkgBrush); // C영역 칠하기
-	}
+	//if (m_Bitmap.bmWidth < m_bgRect.right) { //오른쪽
+	//	RECT rect2;
+	//	rect2.left = m_Bitmap.bmWidth;
+	//	rect2.right = m_bgRect.right;
+	//	rect2.top = 0;
+	//	rect2.bottom = m_Bitmap.bmHeight;
+	//	//m_ePt.x = 0;
+	//	pDC->FillRect(&rect2, &m_bkgBrush);  // B영역 칠하기
+	//}
+	//if (m_Bitmap.bmHeight < m_bgRect.bottom) { //아래
+	//	RECT rect2;
+	//	rect2.left = 0;
+	//	rect2.right = m_bgRect.right;
+	//	rect2.top = m_Bitmap.bmHeight;
+	//	rect2.bottom = m_bgRect.bottom;
+	//	//m_ePt.y = 0;
+	//	pDC->FillRect(&rect2, &m_bkgBrush); // C영역 칠하기
+	//}
 
 	//return CWnd::OnEraseBkgnd(pDC);
 	return false;
@@ -161,57 +167,89 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 
 	CWnd::OnMouseMove(nFlags, point);
 	m_pos = point;
+	int i = 0;
 
-	if (nFlags & MK_LBUTTON)
+	if (nFlags & MK_MBUTTON)
 	{
-		int width = m_bgRect.right - m_bgRect.left;
-		int height = m_bgRect.bottom - m_bgRect.top;
+		//int width = m_bgRect.right - m_bgRect.left;
+		//int height = m_bgRect.bottom - m_bgRect.top;
 
 		// A영역의 사각형 그리기 //m_sPt는 기존 포인트, point는 이동
 		if (m_sPt.x < point.x) // 오른쪽으로 끌었을때
 		{
-			//pDC->Rectangle(0, 0, (point.x - m_sPt.x), tmpRect.bottom);
 			m_ePt.x -= point.x - m_sPt.x;
-			if (m_ePt.x < 0)
+
+			if (m_ePt.x <= 0)
 			{
-				//m_ePt.x = 0;
-				z_pos.x -= 1;
-				m_ePt.x += viewWidth;
+				if (z_pos.x > 0)
+				{
+					i = 1 + ((0 - m_ePt.x) / (int)viewWidth); //원본에서 움직여야되는 픽셀 수
+					z_pos.x -= i;
+					m_ePt.x += i * viewWidth;
+				}
 			}
 		}
 		else // 왼쪽으로 끌었을때
 		{
 			m_ePt.x += m_sPt.x - point.x;
-			if (m_ePt.x >= 2 * viewWidth)
+
+			if (m_ePt.x + m_bgRect.right >= m_Bitmap.bmWidth)
 			{
-				z_pos.x += 1;
-				m_ePt.x -= viewWidth;
+				i = 1 + (m_ePt.x + m_bgRect.right - m_Bitmap.bmWidth) / (int)viewWidth;
+				z_pos.x += i;
+				m_ePt.x -= i * viewWidth;
 			}
 		}
+
+		//printf("i : %d ", i);
+		printf("z_pos.x : %d ", z_pos.x);
+		printf("m_ePt.x : %d ", m_ePt.x);
+		printf("\n");
+		printf("rectWidth : %f ", rectWidth);
+		printf("m_bgRect.right : %d ", m_bgRect.right);
+		printf("m_Bitmap.bmWidth : %d ", m_Bitmap.bmWidth);
+		printf("viewWidth : %f ", viewWidth);
+		printf("\n");
 			
 		// B영역의 사각형 그리기
-		if (m_sPt.y < point.y) // 위로 올렸을때
+		if (m_sPt.y > point.y) // 위로 올렸을때
+		{
+			m_ePt.y += m_sPt.y - point.y;
+			
+			if (m_ePt.y + m_bgRect.bottom >= m_Bitmap.bmHeight)
+			{
+				//m_ePt.y = 0;
+				//z_pos.y += 1;
+				//m_ePt.y -= viewHeight;
+
+				i = 1 + (m_ePt.y + m_bgRect.bottom - m_Bitmap.bmHeight) / (int)viewHeight;
+				z_pos.y += i;
+				m_ePt.y -= i * viewHeight;
+			}
+			
+		}
+		else // 아래로 내렸을때
 		{
 			m_ePt.y -= point.y - m_sPt.y;
 			if (m_ePt.y < 0)
 			{
-				//m_ePt.y = 0;
-				z_pos.y -= 1;
-				m_ePt.y += viewHeight;
-			}
-		}
-		else // 아래로 내렸을때
-		{
-			m_ePt.y += m_sPt.y - point.y;
-			if (m_ePt.y >= 2 * viewHeight)
-			{
-				z_pos.y += 1;
-				m_ePt.y -= viewHeight;
+				//z_pos.y -= 1;
+				//m_ePt.y += viewHeight;
+
+				i = 1 + ((0 - m_ePt.y) / (int)viewHeight);
+				z_pos.y -= i;
+				m_ePt.y += i * viewHeight;
 			}
 		}
 
+		if (m_ePt.x < 0)
+			m_ePt.x = 0;
+		if (m_ePt.y < 0)
+			m_ePt.y = 0;
+
 		m_sPt = point;
 		Invalidate();
+		UpdateWindow();
 	}
 }
 
@@ -221,7 +259,18 @@ void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
 	CWnd::OnLButtonDown(nFlags, point);
+
+	SetCapture();
 	m_sPt = point;
+}
+
+void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	CWnd::OnLButtonUp(nFlags, point);
+
+	ReleaseCapture();
 }
 
 
@@ -237,8 +286,8 @@ void CChildView::OnSize(UINT nType, int cx, int cy)
 
 	
 
-	rectWidth = cx;
-	rectHeight = cy;
+	//rectWidth = cx;
+	//rectHeight = cy;
 
 	Invalidate();
 }
@@ -264,8 +313,11 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	//m_ePt.x = m_pos.x - ((m_pos.x - m_ePt.x) * ViewScale);
 	//m_ePt.y = m_pos.y - ((m_pos.y - m_ePt.y) * ViewScale);
 
-	z_pos.x += round((((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth)) - (((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth * ViewScale)));
-	z_pos.y += round((((float)m_pos.y/ (float)m_bgRect.bottom)* (float)rectHeight) - (((float)m_pos.y / (float)m_bgRect.bottom) * ((float)rectHeight * ViewScale)));
+	z_pos.x += round(((((float)m_ePt.x + (float)m_pos.x) / (float)m_Bitmap.bmWidth) * rectWidth) - ((((float)m_ePt.x + (float)m_pos.x) / (float)m_Bitmap.bmWidth) * (rectWidth * ViewScale)));
+	z_pos.y += round(((((float)m_ePt.y + (float)m_pos.y) / (float)m_Bitmap.bmHeight) * rectHeight) - ((((float)m_ePt.y + (float)m_pos.y) / (float)m_Bitmap.bmHeight) * (rectHeight * ViewScale)));
+
+	//m_ePt.x += round((((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth)) - (((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth * ViewScale)));
+	//m_ePt.y += round((((float)m_pos.y / (float)m_bgRect.bottom) * (float)rectHeight) - (((float)m_pos.y / (float)m_bgRect.bottom) * ((float)rectHeight * ViewScale)));
 
 	// 오른쪽 아래 꼭짓점
 	/*newWidth = m_pos.x + (((rectWidth - m_pos.x) / rectWidth) * (rectWidth * ViewScale)) - m_ePt.x;
@@ -273,25 +325,22 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	//m_aPt.x = (m_pos.x + ((width - m_pos.x) * ViewScale)) - m_ePt.x;
 	//m_aPt.y = (m_pos.y + ((height - m_pos.y) * ViewScale)) - m_ePt.y;
 	//int a = (((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth)) - (((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth * ViewScale));
-	rectWidth *= ViewScale;
-	rectHeight *= ViewScale;
+	rectWidth = round(rectWidth * ViewScale);
+	rectHeight = round(rectHeight * ViewScale);
 	//rectWidth *= ViewScale;
 	//rectHeight *=  ViewScale;
-	m_ePt.x = m_bgRect.right / rectWidth;
-	m_ePt.y = m_bgRect.bottom / rectHeight;
+	//m_ePt.x = m_bgRect.right / rectWidth;
+	//m_ePt.y = m_bgRect.bottom / rectHeight;
 
-	viewWidth = m_ePt.x;
-	viewHeight = m_ePt.y;
+	viewWidth = m_Bitmap.bmWidth / rectWidth;
+	viewHeight = m_Bitmap.bmHeight / rectHeight;
 
 	printf("m_ePt.x : %d ", m_ePt.x);
 	printf("m_ePt.y : %d ", m_ePt.y);
-	
-	printf("m_pos.x : %d ", m_pos.x);
-	printf("m_pos.y : %d ", m_pos.y);
 	printf("rectWidth : %f ", rectWidth);
 	printf("rectHeight : %f ", rectHeight);
-	printf("width : %d ", m_bgRect.right);
-	printf("height : %d ", m_bgRect.bottom);
+	printf("viewWidth : %f ", viewWidth);
+	printf("viewHeight : %f ", viewHeight);
 	printf("\n");
 
 
@@ -321,4 +370,27 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 
 	Invalidate();
 	return CWnd::OnMouseWheel(nFlags, zDelta, pt);
+}
+
+
+
+
+void CChildView::OnMButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	CWnd::OnMButtonDown(nFlags, point);
+
+	SetCapture();
+	m_sPt = point;
+}
+
+
+void CChildView::OnMButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	CWnd::OnMButtonUp(nFlags, point);
+
+	ReleaseCapture();
 }
