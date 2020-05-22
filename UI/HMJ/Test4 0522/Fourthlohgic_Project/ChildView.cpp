@@ -93,7 +93,7 @@ void CChildView::OnPaint()
 	mdcOffScreen.CreateCompatibleDC(pDC);
 
 	// 화면 크기로 빈공간의 버퍼를 생성 한다.
-	bmpOffScreen.CreateCompatibleBitmap(pDC, m_Bitmap.bmWidth, m_Bitmap.bmHeight);
+	bmpOffScreen.CreateCompatibleBitmap(pDC, GetSystemMetrics(SM_CXFULLSCREEN), GetSystemMetrics(SM_CXFULLSCREEN));
 	// 아직 dmemDC의 메모리에는 아무런 그림이 없다.
 	// 만약 어떤 색깔로 채우고자 한다면 FillRect() 함수등으로 특정색으로 칠할 수 있다.
 	// 그러나 다음에 배경 그림을 로드하므로 필요없는 일이다.
@@ -106,7 +106,18 @@ void CChildView::OnPaint()
 	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
 	//mdcOffScreen.BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, 0, 0, SRCCOPY);
 	//mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, m_ePt.x, m_ePt.y, newWidth, newHeight, SRCCOPY);
-	mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, z_pos.x, z_pos.y, rectWidth, rectHeight, SRCCOPY);
+	mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth + viewWidth, m_Bitmap.bmHeight + viewHeight, &memDC, z_pos.x, z_pos.y, rectWidth + 1, rectHeight + 1, SRCCOPY);
+
+	PrintText(&mdcOffScreen);
+
+	printf("z_pos.x : %d ", z_pos.x);
+	printf("rectWidth : %f ", rectWidth);
+	printf("m_Bitmap.bmWidth + view Width : %f ", m_Bitmap.bmWidth + viewWidth);
+	printf("\n");
+	printf("m_ePt.x : %d ", m_ePt.x);
+	printf("viewWidth : %f ", viewWidth);
+	printf("m_bgRect.right : %d ", m_bgRect.right);
+	printf("\n");
 	// ==> 배경을 메모리버퍼에 복사 한다. 아직 화면에는 나타나지 않는다.
 	//따라서 그림은 화면에 나타나지 않고, 디버깅이 힘들다.
 	//디버깅을 싶게 한다면
@@ -193,36 +204,28 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 		{
 			m_ePt.x += m_sPt.x - point.x;
 
-			if (m_ePt.x + m_bgRect.right >= m_Bitmap.bmWidth)
+			if (m_ePt.x + m_bgRect.right - (m_Bitmap.bmWidth + viewWidth) >= 0)
 			{
-				i = 1 + (m_ePt.x + m_bgRect.right - m_Bitmap.bmWidth) / (int)viewWidth;
+				i = 1 + (m_ePt.x + m_bgRect.right - (m_Bitmap.bmWidth + viewWidth)) / (int)viewWidth;
 				z_pos.x += i;
 				m_ePt.x -= i * viewWidth;
 			}
 		}
 
-		//printf("i : %d ", i);
-		printf("z_pos.x : %d ", z_pos.x);
-		printf("m_ePt.x : %d ", m_ePt.x);
-		printf("\n");
-		printf("rectWidth : %f ", rectWidth);
-		printf("m_bgRect.right : %d ", m_bgRect.right);
-		printf("m_Bitmap.bmWidth : %d ", m_Bitmap.bmWidth);
-		printf("viewWidth : %f ", viewWidth);
-		printf("\n");
+		
 			
 		// B영역의 사각형 그리기
 		if (m_sPt.y > point.y) // 위로 올렸을때
 		{
 			m_ePt.y += m_sPt.y - point.y;
 			
-			if (m_ePt.y + m_bgRect.bottom >= m_Bitmap.bmHeight)
+			if (m_ePt.y + m_bgRect.bottom - (m_Bitmap.bmHeight + viewHeight) >= 0)
 			{
 				//m_ePt.y = 0;
 				//z_pos.y += 1;
 				//m_ePt.y -= viewHeight;
 
-				i = 1 + (m_ePt.y + m_bgRect.bottom - m_Bitmap.bmHeight) / (int)viewHeight;
+				i = 1 + (m_ePt.y + m_bgRect.bottom - m_Bitmap.bmHeight + viewHeight) / (int)viewHeight;
 				z_pos.y += i;
 				m_ePt.y -= i * viewHeight;
 			}
@@ -241,6 +244,17 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 				m_ePt.y += i * viewHeight;
 			}
 		}
+		
+		/*printf("z_pos.x : %d ", z_pos.x);
+		printf("rectWidth : %f ", rectWidth);
+		
+		printf("\n");
+		printf("m_ePt.x : %d ", m_ePt.x);
+		printf("i : %d ", i);
+		printf("m_bgRect.right : %d ", m_bgRect.right);
+		printf("m_Bitmap.bmWidth : %d ", m_Bitmap.bmWidth);
+		printf("viewWidth : %f ", viewWidth);
+		printf("\n");*/
 
 		if (m_ePt.x < 0)
 			m_ePt.x = 0;
@@ -313,9 +327,21 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	//m_ePt.x = m_pos.x - ((m_pos.x - m_ePt.x) * ViewScale);
 	//m_ePt.y = m_pos.y - ((m_pos.y - m_ePt.y) * ViewScale);
 
-	z_pos.x += round(((((float)m_ePt.x + (float)m_pos.x) / (float)m_Bitmap.bmWidth) * rectWidth) - ((((float)m_ePt.x + (float)m_pos.x) / (float)m_Bitmap.bmWidth) * (rectWidth * ViewScale)));
-	z_pos.y += round(((((float)m_ePt.y + (float)m_pos.y) / (float)m_Bitmap.bmHeight) * rectHeight) - ((((float)m_ePt.y + (float)m_pos.y) / (float)m_Bitmap.bmHeight) * (rectHeight * ViewScale)));
+	z_pos.x += round(((((float)m_ePt.x + (float)m_pos.x) / (float)(m_Bitmap.bmWidth )) * rectWidth) - ((((float)m_ePt.x + (float)m_pos.x) / (float)(m_Bitmap.bmWidth )) * (rectWidth * ViewScale)));
+	z_pos.y += round(((((float)m_ePt.y + (float)m_pos.y) / (float)(m_Bitmap.bmHeight )) * rectHeight) - ((((float)m_ePt.y + (float)m_pos.y) / (float)(m_Bitmap.bmHeight )) * (rectHeight * ViewScale)));
 
+
+	if (m_ePt.x + m_bgRect.right > m_Bitmap.bmWidth + viewWidth)
+	{
+		z_pos.x += 1;
+		m_ePt.x -= viewWidth;
+	}
+
+	if (m_ePt.y + m_bgRect.bottom > m_Bitmap.bmHeight + viewHeight)
+	{
+		z_pos.y += 1;
+		m_ePt.y -= viewHeight;
+	}
 	//m_ePt.x += round((((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth)) - (((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth * ViewScale)));
 	//m_ePt.y += round((((float)m_pos.y / (float)m_bgRect.bottom) * (float)rectHeight) - (((float)m_pos.y / (float)m_bgRect.bottom) * ((float)rectHeight * ViewScale)));
 
@@ -325,8 +351,8 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	//m_aPt.x = (m_pos.x + ((width - m_pos.x) * ViewScale)) - m_ePt.x;
 	//m_aPt.y = (m_pos.y + ((height - m_pos.y) * ViewScale)) - m_ePt.y;
 	//int a = (((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth)) - (((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth * ViewScale));
-	rectWidth = round(rectWidth * ViewScale);
-	rectHeight = round(rectHeight * ViewScale);
+	rectWidth = rectWidth * ViewScale ;
+	rectHeight = rectHeight  * ViewScale;
 	//rectWidth *= ViewScale;
 	//rectHeight *=  ViewScale;
 	//m_ePt.x = m_bgRect.right / rectWidth;
@@ -335,13 +361,15 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	viewWidth = m_Bitmap.bmWidth / rectWidth;
 	viewHeight = m_Bitmap.bmHeight / rectHeight;
 
+	/*printf("z_pos.x : %d ", z_pos.x);
+	printf("rectWidth : %f ", rectWidth);
+	printf("\n");
 	printf("m_ePt.x : %d ", m_ePt.x);
 	printf("m_ePt.y : %d ", m_ePt.y);
-	printf("rectWidth : %f ", rectWidth);
 	printf("rectHeight : %f ", rectHeight);
 	printf("viewWidth : %f ", viewWidth);
 	printf("viewHeight : %f ", viewHeight);
-	printf("\n");
+	printf("\n");*/
 
 
 
@@ -393,4 +421,43 @@ void CChildView::OnMButtonUp(UINT nFlags, CPoint point)
 	CWnd::OnMButtonUp(nFlags, point);
 
 	ReleaseCapture();
+}
+
+void CChildView::PrintText(CDC* pDC)
+{
+	COLORREF rgb;
+
+	if (viewWidth >= 80)
+	{
+		for (int i = 0; i < m_bgRect.right; i += viewWidth)
+		{
+			for (int j = 0; j < m_bgRect.bottom; j += viewHeight)
+			{
+				rgb = pDC->GetPixel(i, j);
+				int R = 0, G = 0, B = 0;
+
+				R = GetRValue(rgb);
+				G = GetGValue(rgb);
+				B = GetBValue(rgb);
+
+				int pixelvale = (R + G + B) / 3.0;
+				CString strNum;
+				strNum.Format(_T("%d"), pixelvale);
+
+				pDC->SetBkMode(TRANSPARENT);
+
+				if (pixelvale >= 125)
+					pDC->SetTextColor(0x00000000);
+				else
+					pDC->SetTextColor(RGB(255, 255, 255));
+
+
+				pDC->DrawText(strNum, CRect(i, j, i + viewWidth, j + viewHeight), DT_SINGLELINE | DT_VCENTER);
+
+
+				//pDC->TextOutW(i, j, strNum);
+
+			}
+		}
+	}
 }
