@@ -35,6 +35,7 @@ public:
 	afx_msg void OnFileNew();
 	DECLARE_MESSAGE_MAP()
 public:
+	CString sFilename;
 };
 
 extern CFourthlohgicProjectApp theApp;

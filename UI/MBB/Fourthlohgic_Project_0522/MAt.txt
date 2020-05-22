@@ -1,0 +1,15 @@
+char szFilter[] = "이미지 파일(*.BMP, *.GIF, *.JPG, *PNG) | *.BMP;*.GIF;*.JPG;*.bmp;*.jpg;*.gif;*.png; |모든파일(*.*)|*.*||";
+	CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, CA2CT(szFilter), AfxGetMainWnd());
+	if (dlg.DoModal() == IDOK)
+	{
+		CString cstrImgPath = dlg.GetPathName();
+		CT2CA pszConvertedAnsiString(cstrImgPath);
+		std::string strStd(pszConvertedAnsiString);
+
+		srcImage = cv::imread(strStd, IMREAD_COLOR);	//Mat으로 로드
+
+		HBITMAP hbitmap = mat2bmp(&srcImage);	//Mat을 Bitmap으로 변환
+
+		m_background.Attach(hbitmap);
+		m_background.GetObject(sizeof(BITMAP), (LPVOID)&m_Bitmap);
+	}
