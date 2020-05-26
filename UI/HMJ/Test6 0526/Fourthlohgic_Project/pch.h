@@ -10,5 +10,7 @@
 // 여기에 미리 컴파일하려는 헤더 추가
 #include "framework.h"
 #include "atlimage.h"
-
+#include "main.h"
+#include "MainFrm.h"
+#include "ChildView.h"
 #endif //PCH_H
