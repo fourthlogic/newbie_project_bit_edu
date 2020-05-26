@@ -1,11 +1,7 @@
 ﻿
 // ChildView.h: CChildView 클래스의 인터페이스
 //
-
-
 #pragma once
-
-
 // CChildView 창
 
 class CChildView : public CWnd
@@ -51,11 +47,19 @@ public:
 	float ViewScale;
 	float ViewValue;
 
+	//newZoom Test
+	float zoomScale;
+	float zoomView;
+	float printWidth;
+	float printHeight;
+
 	//테스트
 	CPoint m_pos;
 	double newWidth;
 	double newHeight;
+	int idx = 0;
 
+	CMainFrame* pFrame;
 	double width;
 	double height;
 
@@ -75,5 +79,9 @@ public:
 	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 
 	void CChildView::PrintText(CDC* pDC);
+	void CChildView::DrawTextEx(CDC* pDC, const CString& str, CRect rect, UINT nFormat);
+
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 };
 

@@ -17,7 +17,7 @@ extern CFourthlohgicProjectApp theApp;
 
 CChildView::CChildView()
 {
-	if (!image.IsNull())
+	/*if (!image.IsNull())
 		image.Destroy();
 	image.Load(theApp.sFilename);
 
@@ -39,7 +39,7 @@ CChildView::CChildView()
 	viewWidth = 0;
 	viewHeight = 0;
 
-	m_bkgBrush.CreateSolidBrush(0x00000000);
+	m_bkgBrush.CreateSolidBrush(0x00000000);*/
 }
 
 CChildView::~CChildView()
@@ -58,6 +58,8 @@ BEGIN_MESSAGE_MAP(CChildView, CWnd)
 	ON_WM_LBUTTONUP()
 	ON_WM_MBUTTONDOWN()
 	ON_WM_MBUTTONUP()
+	ON_WM_CREATE()
+	ON_WM_KEYDOWN()
 END_MESSAGE_MAP()
 
 
@@ -88,7 +90,7 @@ void CChildView::OnPaint()
 	str.Format(_T("X = %d, Y = %d"), m_pos.x, m_pos.y);
 	dc.TextOut(m_pos.x, m_pos.y, str);
 
-   // 이미 배경은 OnInitDialog() 혹은 OnInitialUpdate()에서 로드되어 있으므로 다시 할 필요는 없다.
+	// 이미 배경은 OnInitDialog() 혹은 OnInitialUpdate()에서 로드되어 있으므로 다시 할 필요는 없다.
 	memDC.CreateCompatibleDC(pDC);
 	mdcOffScreen.CreateCompatibleDC(pDC);
 
@@ -106,16 +108,22 @@ void CChildView::OnPaint()
 	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
 	//mdcOffScreen.BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, 0, 0, SRCCOPY);
 	//mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, m_ePt.x, m_ePt.y, newWidth, newHeight, SRCCOPY);
-	mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth + viewWidth, m_Bitmap.bmHeight + viewHeight, &memDC, z_pos.x, z_pos.y, rectWidth + 1, rectHeight + 1, SRCCOPY);
+	mdcOffScreen.StretchBlt(0, 0, viewWidth * (int)(rectWidth + 2), viewHeight * (int)(rectHeight +2), &memDC, z_pos.x, z_pos.y, rectWidth + 2, rectHeight + 2, SRCCOPY);
 
 	PrintText(&mdcOffScreen);
 
+	printf("printWidth : %f", printWidth);
+	printf("printHeight : %f", printHeight);
+	printf("viewWidth * rectWidth : %f", viewWidth * (int)(rectWidth + 2));
+	printf("viewHeight * rectHeight : %f", viewHeight * (int)(rectHeight + 2));
+	printf("\n");
 	printf("z_pos.x : %d ", z_pos.x);
 	printf("rectWidth : %f ", rectWidth);
 	printf("m_Bitmap.bmWidth + view Width : %f ", m_Bitmap.bmWidth + viewWidth);
 	printf("\n");
 	printf("m_ePt.x : %d ", m_ePt.x);
 	printf("viewWidth : %f ", viewWidth);
+	printf("viewHeight : %f ", viewHeight);
 	printf("m_bgRect.right : %d ", m_bgRect.right);
 	printf("\n");
 	// ==> 배경을 메모리버퍼에 복사 한다. 아직 화면에는 나타나지 않는다.
@@ -143,7 +151,7 @@ void CChildView::OnPaint()
 	bmpOffScreen.DeleteObject();
 }
 
-BOOL CChildView::OnEraseBkgnd(CDC* pDC) 
+BOOL CChildView::OnEraseBkgnd(CDC* pDC)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
@@ -194,7 +202,7 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 			{
 				if (z_pos.x > 0)
 				{
-					i = 1 + ((0 - m_ePt.x) / (int)viewWidth); //원본에서 움직여야되는 픽셀 수
+					i = 1 + ((0 - m_ePt.x) / (int)viewWidth);
 					z_pos.x -= i;
 					m_ePt.x += i * viewWidth;
 				}
@@ -204,32 +212,32 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 		{
 			m_ePt.x += m_sPt.x - point.x;
 
-			if (m_ePt.x + m_bgRect.right - (m_Bitmap.bmWidth + viewWidth) >= 0)
+			if (m_ePt.x + m_bgRect.right - (viewWidth * (int)(rectWidth + 2)) >= 0)
 			{
-				i = 1 + (m_ePt.x + m_bgRect.right - (m_Bitmap.bmWidth + viewWidth)) / (int)viewWidth;
+				i = 1 + (m_ePt.x + m_bgRect.right - (viewWidth * (int)(rectWidth + 2))) / (int)viewWidth;
 				z_pos.x += i;
 				m_ePt.x -= i * viewWidth;
 			}
 		}
 
-		
-			
+
+
 		// B영역의 사각형 그리기
 		if (m_sPt.y > point.y) // 위로 올렸을때
 		{
 			m_ePt.y += m_sPt.y - point.y;
-			
-			if (m_ePt.y + m_bgRect.bottom - (m_Bitmap.bmHeight + viewHeight) >= 0)
+
+			if (m_ePt.y + m_bgRect.bottom - (viewHeight * (int)(rectHeight + 2)) >= 0)
 			{
 				//m_ePt.y = 0;
 				//z_pos.y += 1;
 				//m_ePt.y -= viewHeight;
 
-				i = 1 + (m_ePt.y + m_bgRect.bottom - m_Bitmap.bmHeight + viewHeight) / (int)viewHeight;
+				i = 1 + (m_ePt.y + m_bgRect.bottom - (viewHeight * (int)(rectHeight + 2))) / (int)viewHeight;
 				z_pos.y += i;
 				m_ePt.y -= i * viewHeight;
 			}
-			
+
 		}
 		else // 아래로 내렸을때
 		{
@@ -244,10 +252,23 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 				m_ePt.y += i * viewHeight;
 			}
 		}
-		
+
+		//---------------------------
+		if (m_ePt.x + m_bgRect.right > viewWidth * (int)(rectWidth + 2))
+		{
+			z_pos.x += 1;
+			m_ePt.x -= viewWidth;
+		}
+
+		if (m_ePt.y + m_bgRect.bottom > viewHeight * (int)(rectHeight + 2))
+		{
+			z_pos.y += 1;
+			m_ePt.y -= viewHeight;
+		}
+		//----------------------------
 		/*printf("z_pos.x : %d ", z_pos.x);
 		printf("rectWidth : %f ", rectWidth);
-		
+
 		printf("\n");
 		printf("m_ePt.x : %d ", m_ePt.x);
 		printf("i : %d ", i);
@@ -280,7 +301,7 @@ void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 
 void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
 {
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.d
 
 	CWnd::OnLButtonUp(nFlags, point);
 
@@ -298,7 +319,7 @@ void CChildView::OnSize(UINT nType, int cx, int cy)
 	m_bgRect.right = cx;
 	m_bgRect.bottom = cy;
 
-	
+
 
 	//rectWidth = cx;
 	//rectHeight = cy;
@@ -314,52 +335,48 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	{
 		ViewScale = 1.2f;
 		ViewValue *= 1.2f;
+
+		zoomScale = 1.25f;
+		zoomView *= 0.8f;
 	}
 	else// 휠 올릴때
 	{
 		ViewScale = 0.75f;
 		ViewValue *= 0.75f;
+
+		zoomScale = 0.8f;
+		zoomView *= 1.25f;
 	}
-	
+
 	//왼쪽위 꼭짓점
-	//m_ePt.x = (m_pos.x - (((m_pos.x - m_ePt.x) / rectWidth) * (rectWidth * ViewScale)));
-	//m_ePt.y = (m_pos.y - (((m_pos.y - m_ePt.y) / rectHeight) * (rectHeight * ViewScale)));
-	//m_ePt.x = m_pos.x - ((m_pos.x - m_ePt.x) * ViewScale);
-	//m_ePt.y = m_pos.y - ((m_pos.y - m_ePt.y) * ViewScale);
+	z_pos.x += round(((((float)m_ePt.x + (float)m_pos.x) / (viewWidth * (int)(rectWidth + 2))) * rectWidth) - ((((float)m_ePt.x + (float)m_pos.x) / (viewWidth * (int)(rectWidth + 2))) * (rectWidth * zoomScale)));
+	z_pos.y += round(((((float)m_ePt.y + (float)m_pos.y) / (viewHeight * (int)(rectHeight + 2))) * rectHeight) - ((((float)m_ePt.y + (float)m_pos.y) / (viewHeight * (int)(rectHeight + 2))) * (rectHeight * zoomScale)));
 
-	z_pos.x += round(((((float)m_ePt.x + (float)m_pos.x) / (float)(m_Bitmap.bmWidth )) * rectWidth) - ((((float)m_ePt.x + (float)m_pos.x) / (float)(m_Bitmap.bmWidth )) * (rectWidth * ViewScale)));
-	z_pos.y += round(((((float)m_ePt.y + (float)m_pos.y) / (float)(m_Bitmap.bmHeight )) * rectHeight) - ((((float)m_ePt.y + (float)m_pos.y) / (float)(m_Bitmap.bmHeight )) * (rectHeight * ViewScale)));
+	//z_pos.x += (((m_ePt.x + m_pos.x) / (viewWidth * (int)(rectWidth + 2))) * (int)rectWidth) - (((m_ePt.x + m_pos.x) / (viewWidth * (int)(rectWidth + 2))) * (int)(rectWidth * zoomScale));
+	//z_pos.y += (((m_ePt.y + m_pos.y) / (viewHeight * (int)(rectHeight + 2))) * (int)rectHeight) - (((m_ePt.y + m_pos.y) / (viewHeight * (int)(rectHeight + 2))) * (int)(rectHeight * zoomScale));
 
-
-	if (m_ePt.x + m_bgRect.right > m_Bitmap.bmWidth + viewWidth)
-	{
-		z_pos.x += 1;
-		m_ePt.x -= viewWidth;
-	}
-
-	if (m_ePt.y + m_bgRect.bottom > m_Bitmap.bmHeight + viewHeight)
-	{
-		z_pos.y += 1;
-		m_ePt.y -= viewHeight;
-	}
 	//m_ePt.x += round((((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth)) - (((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth * ViewScale)));
 	//m_ePt.y += round((((float)m_pos.y / (float)m_bgRect.bottom) * (float)rectHeight) - (((float)m_pos.y / (float)m_bgRect.bottom) * ((float)rectHeight * ViewScale)));
 
-	// 오른쪽 아래 꼭짓점
-	/*newWidth = m_pos.x + (((rectWidth - m_pos.x) / rectWidth) * (rectWidth * ViewScale)) - m_ePt.x;
-	newHeight = m_pos.y + (((rectHeight - m_pos.y) / rectHeight) * (rectHeight * ViewScale)) - m_ePt.y;*/
-	//m_aPt.x = (m_pos.x + ((width - m_pos.x) * ViewScale)) - m_ePt.x;
-	//m_aPt.y = (m_pos.y + ((height - m_pos.y) * ViewScale)) - m_ePt.y;
-	//int a = (((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth)) - (((float)m_pos.x / (float)m_bgRect.right) * ((float)rectWidth * ViewScale));
-	rectWidth = rectWidth * ViewScale ;
-	rectHeight = rectHeight  * ViewScale;
-	//rectWidth *= ViewScale;
-	//rectHeight *=  ViewScale;
-	//m_ePt.x = m_bgRect.right / rectWidth;
-	//m_ePt.y = m_bgRect.bottom / rectHeight;
 
-	viewWidth = m_Bitmap.bmWidth / rectWidth;
-	viewHeight = m_Bitmap.bmHeight / rectHeight;
+	// 오른쪽 아래 꼭짓점
+	//rectWidth = rectWidth * ViewScale;
+	//rectHeight = rectHeight * ViewScale;
+
+	rectWidth = rectWidth * zoomScale;
+	rectHeight = rectHeight * zoomScale;
+
+	printWidth = rectWidth * zoomView;
+	printHeight = rectHeight * zoomView;
+
+
+	viewWidth = (printWidth ) / (rectWidth );
+	viewHeight = (printHeight ) / (rectHeight);
+
+	for (int i = 0; i < rectWidth; i++)
+	{
+
+	}
 
 	/*printf("z_pos.x : %d ", z_pos.x);
 	printf("rectWidth : %f ", rectWidth);
@@ -371,30 +388,6 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	printf("viewHeight : %f ", viewHeight);
 	printf("\n");*/
 
-
-
-	/*if (m_ePt.x <= 0)
-	{
-		m_ePt.x = 0;
-	}
-	if (m_ePt.y <= 0)
-	{
-		m_ePt.y = 0;
-	}*/
-
-	//rectWidth = newWidth - m_ePt.x;
-	//rectHeight = newHeight - m_ePt.y;
-
-
-	/*CDC* pDC = GetDC();
-	CBrush brush;
-	CPen hpen(PS_SOLID, 1, RGB(255, 0, 0));
-	CPen* p = pDC->SelectObject(&hpen);
-	brush.CreateStockObject(NULL_BRUSH);
-	CBrush* pOldBrush = pDC->SelectObject(&brush);
-	CRect rect((int)m_ePt.x, (int)m_ePt.y, newWidth, newHeight);
-	pDC->Rectangle(rect);
-	pDC->SelectObject(pOldBrush);*/
 
 	Invalidate();
 	return CWnd::OnMouseWheel(nFlags, zDelta, pt);
@@ -426,14 +419,17 @@ void CChildView::OnMButtonUp(UINT nFlags, CPoint point)
 void CChildView::PrintText(CDC* pDC)
 {
 	COLORREF rgb;
+	int cntWidth = 0, cntHeight = 0;
+
 
 	if (viewWidth >= 80)
 	{
-		for (int i = 0; i < m_bgRect.right; i += viewWidth)
+		for (int i = z_pos.x; i < z_pos.x + rectWidth + 2; i++)
 		{
-			for (int j = 0; j < m_bgRect.bottom; j += viewHeight)
+			for (int j = z_pos.y; j < z_pos.y + rectHeight + 2; j++)
 			{
-				rgb = pDC->GetPixel(i, j);
+				rgb = memDC.GetPixel(i, j);
+
 				int R = 0, G = 0, B = 0;
 
 				R = GetRValue(rgb);
@@ -444,20 +440,179 @@ void CChildView::PrintText(CDC* pDC)
 				CString strNum;
 				strNum.Format(_T("%d"), pixelvale);
 
-				pDC->SetBkMode(TRANSPARENT);
+				//pDC->SetBkMode(TRANSPARENT);
+				mdcOffScreen.SetBkMode(TRANSPARENT);
 
 				if (pixelvale >= 125)
-					pDC->SetTextColor(0x00000000);
+				{
+					//pDC->SetTextColor(0x00000000);
+					mdcOffScreen.SetTextColor(0x00000000);
+				}
 				else
-					pDC->SetTextColor(RGB(255, 255, 255));
+				{
+					//pDC->SetTextColor(RGB(255, 255, 255));
+					mdcOffScreen.SetTextColor(RGB(255, 255, 255));
+				}
 
 
-				pDC->DrawText(strNum, CRect(i, j, i + viewWidth, j + viewHeight), DT_SINGLELINE | DT_VCENTER);
+				//pDC->DrawText(strNum, CRect(i, j, i + viewWidth, j + viewHeight), DT_SINGLELINE | DT_VCENTER);
 
 
-				//pDC->TextOutW(i, j, strNum);
+				CBrush brush;
+				brush.CreateStockObject(NULL_BRUSH);
+				CBrush* pOldBrush = mdcOffScreen.SelectObject(&brush);
 
+				CRect m_rect = CRect(cntWidth * viewWidth, cntHeight * viewHeight, cntWidth * viewWidth + viewWidth, cntHeight * viewHeight + viewHeight);
+				mdcOffScreen.Rectangle(m_rect);
+				mdcOffScreen.SelectObject(pOldBrush);
+
+				mdcOffScreen.DrawText(strNum, m_rect, DT_SINGLELINE | DT_VCENTER | DT_CENTER);
+
+				cntHeight++;
 			}
+			cntWidth++;
+			printf("cntHeight : %d ", cntHeight);
+			cntHeight = 0;
 		}
 	}
+
+	printf("viewWidth : %f", viewWidth);
+	printf("viewHeight : %f", viewHeight);
+
+	printf("cntWidth : %d ", cntWidth);
+	printf("\n");
+
+}
+
+
+int CChildView::OnCreate(LPCREATESTRUCT lpCreateStruct)
+{
+	if (CWnd::OnCreate(lpCreateStruct) == -1)
+		return -1;
+
+	// TODO:  여기에 특수화된 작성 코드를 추가합니다.
+
+	pFrame = (CMainFrame*)AfxGetMainWnd();
+	if (pFrame->imageList.empty()) {
+		static TCHAR BASED_CODE szFilter[] = _T("이미지 파일(*.BMP, *.GIF, *.JPG, *PNG) | *.BMP;*.GIF;*.JPG;*.bmp;*.jpg;*.png;*.gif; |모든파일(*.*)|*.*||");
+		CString strFileList;
+		CString File;
+		//CFileDialog dlg(TRUE, _T("*.jpg"), _T("image"), OFN_HIDEREADONLY, szFilter);
+		CFileDialog dlg(TRUE, NULL, NULL, OFN_ALLOWMULTISELECT, szFilter);
+
+		const int c_cMaxFiles = 400 /*선택할 파일 숫자*/;	// 메모리 부족현상으로 확장 안해주면 몇개 못씀
+
+		const int c_cbBuffSize = (c_cMaxFiles * (MAX_PATH + 1)) + 1;
+
+		dlg.GetOFN().lpstrFile = strFileList.GetBuffer(c_cbBuffSize);
+
+		dlg.GetOFN().nMaxFile = c_cbBuffSize;
+
+
+
+		if (dlg.DoModal() == IDOK)
+
+		{
+
+			for (POSITION pos = dlg.GetStartPosition(); pos != NULL;)
+
+			{
+
+				// 전체삭제는 ResetContent
+
+				CString sFilename = dlg.GetNextPathName(pos);
+#ifdef _UNICODE
+				CT2CA pszConvertedAnsiString(sFilename);
+				std::string fileName(pszConvertedAnsiString);
+				imageData temp;
+				temp.setFileName(fileName);
+				pFrame->imageList.push_back(temp);
+
+#else
+				std::string fileName((LPCTSTR)sFilename);
+				imageData temp;
+				temp.setFileName(fileName);
+				pFrame->imageList.push_back(temp);
+#endif
+
+			}
+
+		}
+		else  return -1;
+	
+	}
+
+	m_background.Detach();
+	pFrame->imageList[idx].setImage();
+	m_background.Attach(pFrame->imageList[idx].getImage());
+	m_background.GetBitmap(&m_Bitmap);
+	//for (int i = 0; i < pFrame->imageList.size(); i++) {
+	//	pFrame->imageList[i].setImage();
+	//}
+
+	///*if (!image.IsNull())
+	//	image.Destroy();
+	//image.Load(theApp.sFilename);*/
+
+	//m_background.Detach();
+	//m_background.Attach(pFrame->imageList[idx].getImage());
+	m_background.GetObject(sizeof(BITMAP), (LPVOID)&m_Bitmap);
+
+	rectWidth = m_Bitmap.bmWidth;
+	rectHeight = m_Bitmap.bmHeight;
+
+	m_ePt.x = 0;
+	m_ePt.y = 0;
+
+	z_pos.x = 1;
+	z_pos.y = 1;
+
+	ViewScale = 1;
+	ViewValue = 1;
+
+	viewWidth = 1;
+	viewHeight = 1;
+
+	zoomView = 1;
+	zoomScale = 1;
+	printWidth = rectWidth;
+	printHeight = rectHeight;
+
+	m_bkgBrush.CreateSolidBrush(0x00000000);
+	m_ePt.x = 0;
+	m_ePt.y = 0;
+	z_pos = m_ePt;
+	ViewScale = 1;
+	ViewValue = 1;
+
+	return 0;
+}
+
+
+void CChildView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	switch (nChar) {
+	case VK_LEFT:
+		if (idx != 0)
+			idx--;
+		else
+			return;
+		break;
+	case VK_RIGHT:
+		if (idx != pFrame->imageList.size() - 1)
+			idx++;
+		else return;
+		break;
+	default:
+		return;
+	}
+	cout << idx << endl;
+	pFrame->imageList[idx].setImage();
+	m_background.Detach();
+	m_background.Attach(pFrame->imageList[idx].getImage());
+	m_background.GetBitmap(&m_Bitmap);
+	Invalidate();
+
+	CWnd::OnKeyDown(nChar, nRepCnt, nFlags);
 }
