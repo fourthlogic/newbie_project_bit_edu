@@ -7,7 +7,7 @@ void main()
     time_t start;
     time_t end;
 
-    Mat src = imread("image/a (7).png", IMREAD_GRAYSCALE);
+    Mat src = imread("image/a2.png", IMREAD_GRAYSCALE);
 
 
     start = clock();
@@ -32,6 +32,8 @@ void main()
     cout << end - start << endl;
     waitKey();
 }
+
+
 
 // 3�� ��ǥ ����
 void GetCornerPoints(Mat& src, vector<Point>& cornerPts)
@@ -374,3 +376,5 @@ Vec2f LSM_Horizontal(vector<Point>& pts)
 
     return result;
 }
+
+
