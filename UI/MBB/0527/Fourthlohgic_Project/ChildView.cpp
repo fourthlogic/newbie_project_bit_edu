@@ -103,6 +103,14 @@ void CChildView::OnPaint()
 	memDC.SelectObject(&m_background);
 
 	
+	for (int i = 0; i < data.GetSize(); i++)
+	{
+		drawShape(data[i].shapeType, data[i].penWidth, 
+			data[i].rect.left, data[i].rect.top, 
+			data[i].rect.right, data[i].rect.bottom);
+	}
+
+	
 
 	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
 	mdcOffScreen.StretchBlt(0, 0, PWidth * ((int)zoomWidth+2), PHeight * ((int)zoomHeight+2), &memDC,
@@ -114,6 +122,7 @@ void CChildView::OnPaint()
 	pDC->StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom, &mdcOffScreen,
 		m_ePt.x, m_ePt.y, m_bgRect.right, m_bgRect.bottom, SRCCOPY);
 
+	//draw(pDC, m_pos);
 	memDC.DeleteDC();
 	mdcOffScreen.SelectObject(oldbitmap);
 	mdcOffScreen.DeleteDC();
@@ -219,11 +228,18 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 		UpdateWindow();
 	}
 
-	if (drawID == TRUE) // 마우스를 클릭하여 드래그일 동안만 
+	if (MK_LBUTTON && drawID == TRUE) // 마우스를 클릭하여 드래그일 동안만 
 	{
-		draw(point); // 뷰에서 도형 그리기(draw) 함수 호출		
+		pts.x = (z_pos.x + (m_ePt.x + point.x) / PWidth)+1;
+		pts.y = (z_pos.y + (m_ePt.y + point.y) / PHeight)+1;
+		draw(pts); // 뷰에서 도형 그리기(draw) 함수 호출		
 		// 마우스 드래그시의 좌표 값을 도형 끝 값에 다시 저장	
-		mov_x = point.x; mov_y = point.y;
+		//Invalidate();
+		
+		mov_x = (z_pos.x + (m_ePt.x + point.x) / PWidth) + 1;
+		mov_y = (z_pos.y + (m_ePt.y + point.y) / PHeight) + 1;
+
+		Invalidate();
 	}
 }
 
@@ -258,7 +274,7 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	z_pos.x += round(((((float)m_ePt.x + (float)m_pos.x) / (float)(PWidth * ((int)zoomWidth + 2))) * zoomWidth) - ((((float)m_ePt.x + (float)m_pos.x) / (float)(PWidth * ((int)zoomWidth + 2))) * (zoomWidth * m_Zoom)));
 	z_pos.y += round(((((float)m_ePt.y + (float)m_pos.y) / (float)(PHeight * ((int)zoomHeight + 2))) * zoomHeight) - ((((float)m_ePt.y + (float)m_pos.y) / (float)(PHeight * ((int)zoomHeight + 2))) * (zoomHeight * m_Zoom)));
 
-	printf("%d, %d\n", z_pos.x, z_pos.y);
+	
 
 	if (m_ePt.x + m_bgRect.right > m_Bitmap.bmWidth + PWidth)
 	{
@@ -600,8 +616,11 @@ void CChildView::OnRectangle()
 void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	x = point.x; y = point.y;
+	SetCapture();
+	x = z_pos.x + (m_ePt.x + point.x) / PWidth;
+	y = z_pos.y + (m_ePt.y + point.y) / PHeight;
 	// mov_x, mov_y는 도형 그리기 끝(이전)값
+	printf("sibal == %d %d\n", x, y);
 	mov_x = x; mov_y = y;
 	drawID = TRUE; // 그리기 시작을 알리는 변수		
 
@@ -615,10 +634,12 @@ void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	if (drawID)  // 도형 그리기 상태일 동안만
 	{
-		mov_x = point.x; mov_y = point.y;
+		mov_x = (z_pos.x + (m_ePt.x + point.x) / PWidth) + 1;
+		mov_y = (z_pos.y + (m_ePt.y + point.y) / PHeight) + 1;
+		//printf("sex == %d %d\n", mov_x, mov_y);
 		// 마우스 버트을 놓으면 각종 값을 shape 구조체 맴버변수에 저장
 		shape.shapeType = drawStyle;  // 도형 콤보 상자에서 선택된 도형 스타일을 저장		
-
+		shape.penWidth = PWidth;
 		shape.rect.left = x; // 도형 시작좌표 저장
 		shape.rect.top = y;
 		shape.rect.right = mov_x; // 도형 끝 좌표 저장
@@ -630,44 +651,121 @@ void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
 	drawID = FALSE;
 
 	CWnd::OnLButtonUp(nFlags, point);
+	ReleaseCapture();
+	Invalidate();
 }
 
 int CChildView::draw(CPoint point)
 {
 	//CClientDC dc(this);
 	CDC* dc = GetDC();
-	CMainFrame* cmr = (CMainFrame*)AfxGetMainWnd();
-	CPen myPen, * oldPen;
-	CBrush myBrush, * oldBrush;
+	//CMainFrame* cmr = (CMainFrame*)AfxGetMainWnd();
+	//CPen myPen, * oldPen;
+
+
+	CPen myPen(PS_SOLID, PWidth, RGB(255, 255, 255));
+	CPen* oldPen;
+
+	HBRUSH myBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+	HBRUSH oldBrush = (HBRUSH)dc->SelectObject(myBrush);
 
 	oldPen = dc->SelectObject(&myPen);
+
 	if (drawStyle == DrawMode::DLine) // 콤보상자에서 직선 선택시
 	{
-		dc->SetROP2(R2_NOTXORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+		dc->SetROP2(R2_BLACK); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+		
 		dc->MoveTo(x, y); dc->LineTo(mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬
-		mov_x = point.x;
-		mov_y = point.y;
+		mov_x = (z_pos.x + (m_ePt.x + point.x) / PWidth);
+		mov_y = (z_pos.y + (m_ePt.y + point.y) / PHeight);
+		printf("joj %d %d\n", mov_x, mov_y);
+		printf("joj %d %d\n", x, y);
 		dc->MoveTo(x, y); dc->LineTo(mov_x, mov_y);
-	}
-	else if (drawStyle == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
-	{
-		dc->SetROP2(R2_NOTXORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
-		dc->Rectangle(x, y, mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬, 지워지는 효과
-		mov_x = point.x;
-		mov_y = point.y;
-		dc->Rectangle(x, y, mov_x, mov_y);
 	}
 	else if (drawStyle == DrawMode::DEllipse) // 콤보상자에서 원 선택시
 	{
-		dc->SetROP2(R2_NOTXORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+		//dc->SetROP2(R2_XORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
 		dc->Ellipse(x, y, mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬
-		mov_x = point.x;
-		mov_y = point.y;
+		mov_x = (z_pos.x + (m_ePt.x + point.x) / PWidth) + 1;
+		mov_y = (z_pos.y + (m_ePt.y + point.y) / PHeight) + 1;
+		printf("joj %d %d\n", mov_x, mov_y);
+		printf("joj %d %d\n", x, y);
 		dc->Ellipse(x, y, mov_x, mov_y);
+	}
+	else if (drawStyle == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
+	{
+		//dc->SetROP2(R2_XORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+		dc->Rectangle(x, y, mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬, 지워지는 효과
+		mov_x = (z_pos.x + (m_ePt.x + point.x) / PWidth) + 1;
+		mov_y = (z_pos.y + (m_ePt.y + point.y) / PHeight) + 1;
+		printf("joj %d %d\n", mov_x, mov_y);
+		printf("joj %d %d\n", x, y);
+		dc->Rectangle(x, y, mov_x, mov_y);
 	}
 
 	dc->SelectObject(oldPen); // 이전 팬 선택		
 	myPen.DeleteObject();  // 생성한 펜 메모리에서 제거		
-	myBrush.DeleteObject();  // 생성한 브러쉬 메모리에서 제거			
+	dc->SelectObject(oldBrush);
+	DeleteObject(myBrush);
+
+	//memDC.DeleteDC();
+	//memDC.SelectObject(oldPen); // 이전 팬 선택		
+	//myPen.DeleteObject();  // 생성한 펜 메모리에서 제거		
+	//myBrush.DeleteObject();  // 생성한 브러쉬 메모리에서 제거		
+
+	Invalidate();
 	return x, y, mov_x, mov_y;
+}
+
+void CChildView::drawShape(int shapeNum, int penWd, int sx, int sy, int ex, int ey)
+{
+	//CClientDC dc(this);
+	//CBrush brush;
+	//brush.CreateSolidBrush(RGB(255, 255, 255));
+	//CMainFrame* cmr = (CMainFrame*)AfxGetMainWnd();
+	//CPen myPen, * oldPen;
+	//CBrush myBrush, * oldBrush;
+
+	HBRUSH myBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+	HBRUSH oldBrush = (HBRUSH)memDC.SelectObject(myBrush);
+
+	//oldPen = dc.SelectObject(&myPen);
+
+	if (shapeNum == 1)	// 직선 선택시
+	{
+		memDC.MoveTo(sx, sy); memDC.LineTo(ex, ey);
+	}
+	else if (shapeNum == 2) // 원 선택시
+	{
+		memDC.Ellipse(sx, sy, ex, ey);
+	}
+	else if (shapeNum == 3) // 사각형 선택시
+	{
+		// 화면에 사각형을 그린다.
+		memDC.Rectangle(sx, sy, ex, ey);
+	}
+
+	memDC.SelectObject(oldBrush);
+	DeleteObject(myBrush);
+	
+	//else if (shapeNum == 3) // 콤보상자에서 부채꼴 선택시
+	//{
+	//	oldBrush = dc.SelectObject(&myBrush);
+	//	CRect PieRect(sx, sy, ex, ey);
+	//	dc.Pie(PieRect, CPoint(PieRect.CenterPoint().x, PieRect.top), CPoint(PieRect.right, PieRect.CenterPoint().y));
+	//	dc.SelectObject(oldBrush); // 이전 브러시 선택
+	//}
+	//else if (shapeNum == 4) // 그리기텍스트 아이콘 선택시
+	//{
+	//	dc.SetTextColor(fgcolor); // 텍스트 색상 설정
+	//	dc.SetBkColor(bgcolor); // 텍스트 배경색 설정
+	//							// 폰트 생성
+	//			
+	//	dc.DrawText(str, CRect(sx, sy, ex, ey), DT_SINGLELINE | DT_CENTER | DT_VCENTER);  // 화면에 문자열 출력
+
+	//}
+	//memDC.SelectObject(oldPen); // 이전 팬 선택	
+	//myPen.DeleteObject();  // 생성한 펜 메모리에서 제거		
+	//myBrush.DeleteObject(); // 생성한 브러쉬 메모리에서 제거		
+
 }

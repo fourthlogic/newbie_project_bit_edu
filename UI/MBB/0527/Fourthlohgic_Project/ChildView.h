@@ -67,6 +67,7 @@ public:
 	bool drawID;
 	int x, y;	//그리기 시작값
 	int mov_x, mov_y;	//그리기 끝값
+	CPoint pts;
 		// 그린 도형을 배열에 저장하기 위한 구조체 정의
 	struct MyShape
 	{
@@ -81,6 +82,7 @@ public:
 	// 그린 도형을 저장할 동적 배열 선언
 	CArray<MyShape, MyShape&> data;
 	int draw(CPoint point);
+	void drawShape(int shapeNum, int penWd, int sx, int sy, int ex, int ey);
 
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
