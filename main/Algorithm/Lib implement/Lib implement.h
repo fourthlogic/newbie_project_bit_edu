@@ -1,4 +1,6 @@
 #pragma once
+#pragma once
+#pragma once
 #include "opencv2/opencv.hpp" 
 #include <thread>
 #include <Windows.h>
@@ -6,8 +8,11 @@
 #include <time.h>  
 #include <map>
 
+
 using namespace cv;
 using namespace std;
+
+
 
 typedef struct CirDetectionParam
 {
@@ -21,40 +26,41 @@ typedef struct CirDetectionParam
 
 static CirDetectionParam* threadParam;
 
-// 3ì  ì¢Œí‘œ ì¶”ì¶œ ìˆ˜ì •
+// 3Á¡ ÁÂÇ¥ ÃßÃâ ¼öÁ¤
 void GetCornerPoints(Mat& src, vector<Point>& cornerPts);
-// ë²”ìœ„ìš© Threshold
-void RangeThreshold(Mat& src, Mat& dst, int MinValue = 0, int MaxValue = 255, int inValue = 0, int outValue = 255);
-// ROI ì¢Œí‘œ ê²€ì¶œ
+// ¹üÀ§¿ë Threshold
+void ToZeroThreshold(Mat& src, Mat& dst, int MinValue, int MaxValue);
+// ROI ÁÂÇ¥ °ËÃâ
 void GetVertexPoints(Mat& src, vector<Point>& cornerPts, vector<Point>& vertexPts, int distance);
-// ì™€ê³½ì˜ ì¢Œí‘œë¥¼ ëª¨ë‘ ê²€ì¶œ
+// ¿Í°ûÀÇ ÁÂÇ¥¸¦ ¸ğµÎ °ËÃâ
 void MyContours(Mat& src, vector<vector<Point>>& Points);
-// ë¼ë²¨ë§
+// ¶óº§¸µ
 void Labeling(Mat& src, int* Map, vector<Vec3i>& startPoint);
-// í•´ë‹¹ ì¢Œí‘œì˜ ì™¸ê³½ ê²€ì¶œ
+// ÇØ´ç ÁÂÇ¥ÀÇ ¿Ü°û °ËÃâ
 void Contour(Mat& src, int sx, int sy, vector<Point>& outPoints, int* map, int labelNum);
-// ê²½ê³„ ê²€ì¶œ
+// °æ°è °ËÃâ
 void ContourDetection(Mat& src, vector<Point>& hCirCenters, vector<Point>& vCirCenters, vector<Point>& vertexPts, int radMin, int radMax, int value);
-// ì› ê²€ì¶œ Thread
+// ¿ø °ËÃâ Thread
 unsigned WINAPI CirDetectionThread(void* para);
-// ì› ê²€ì¶œ
+// ¿ø °ËÃâ
 void CircleDetection(Mat& src, vector<vector<Point>>& contours, vector<Point>& cirCenters, int radMin, int radMax);
-// ë¯¸ë¶„ì—°ì‚° í•¨ìˆ˜
+// ¹ÌºĞ¿¬»ê ÇÔ¼ö
 void Differential(Mat& src, Mat& dst);
-// ì‚¬ê°í˜• ë‚´ë¶€ì˜ ì  í¬í•¨ ì—¬ë¶€
+// »ç°¢Çü ³»ºÎÀÇ Á¡ Æ÷ÇÔ ¿©ºÎ
 bool IsContain(Rect rc, vector<Point>& cirCenters);
-// ìµœì†Œì œê³±ë²•ì„ í†µí•´ êµì  í‘œì‹œ
+// ÃÖ¼ÒÁ¦°ö¹ıÀ» ÅëÇØ ±³Á¡ Ç¥½Ã
 void Drawing(Mat& src, Mat& dst, vector<Point>& hCirCenters, vector<Point>& vCirCenters);
-// ìµœì†Œì œê³±ë²• í•¨ìˆ˜ (x, y ì¢Œí‘œ ìŠ¤ìœ„ì¹­ í›„ ê³„ì‚°)
+// ÃÖ¼ÒÁ¦°ö¹ı ÇÔ¼ö (x, y ÁÂÇ¥ ½ºÀ§Äª ÈÄ °è»ê)
 Vec2f LSM_Vertical(vector<Point>& pts);
-// ìµœì†Œì œê³±ë²• í•¨ìˆ˜
+// ÃÖ¼ÒÁ¦°ö¹ı ÇÔ¼ö
 Vec2f LSM_Horizontal(vector<Point>& pts);
-// ê±°ë¦¬ ì¶”ì¶œ  ì˜µì…˜ : true == ì ê³¼ ì ì˜ ê±°ë¦¬ ,  false == ì„ ê³¼ ì ì˜ ê±°ë¦¬
+
+// °Å¸® ÃßÃâ  ¿É¼Ç : true == Á¡°ú Á¡ÀÇ °Å¸® ,  false == ¼±°ú Á¡ÀÇ °Å¸®
 double PerpendicularDistance(const Point& pt, const Point& lineStart, const Point& lineEnd, bool flag);
-// ê³¡ì„ ì„ ì†Œìˆ˜ì˜ ì ìœ¼ë¡œ êµ¬ì„±í•œ ìœ ì‚¬í•œ ì§ì„ ìœ¼ë¡œ êµ¬ë¶„
-void DouglasPeucker(const vector<Point>& polyLine, vector<Point>& simplifiedPolyLine, double epsilon, Point lastPt, bool flag = true);
-// ëª¨ë“  Pointë¥¼ í¬í•¨í•˜ëŠ” rect ì¶”ì¶œ
+// °î¼±À» ¼Ò¼öÀÇ Á¡À¸·Î ±¸¼ºÇÑ À¯»çÇÑ Á÷¼±À¸·Î ±¸ºĞ
+void DouglasPeucker(const vector<Point>& polyLine, vector<Point>& simplifiedPolyLine, double epsilon, bool flag = true, bool endFlag = false);
+// ¸ğµç Point¸¦ Æ÷ÇÔÇÏ´Â rect ÃßÃâ
 Rect boundRect(vector<Point> pts);
-// Pointsë¥¼ í†µí•´ í•´ë‹¹ ë¶€ë¶„ì˜ ì´ë¯¸ì§€ ì¶”ì¶œ
+// Points¸¦ ÅëÇØ ÇØ´ç ºÎºĞÀÇ ÀÌ¹ÌÁö ÃßÃâ
 void fillPoly_(Size matSize, Mat& dst, vector<Point> pts);
 
