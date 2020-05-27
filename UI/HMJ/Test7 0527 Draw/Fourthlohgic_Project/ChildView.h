@@ -4,6 +4,11 @@
 #pragma once
 // CChildView 창
 
+enum DrawMode
+{
+	DPoint, DLine, DEllipse, DRectangle
+};
+
 class CChildView : public CWnd
 {
 // 생성입니다.
@@ -79,9 +84,35 @@ public:
 	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 
 	void CChildView::PrintText(CDC* pDC);
-	void CChildView::DrawTextEx(CDC* pDC, const CString& str, CRect rect, UINT nFormat);
 
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	
+
+
+	// 그리기 ----------------------------------
+	//그리기
+	int drawStyle;
+	bool drawID;
+	int x, y;	//그리기 시작값
+	int mov_x, mov_y;	//그리기 끝값
+		// 그린 도형을 배열에 저장하기 위한 구조체 정의
+	struct MyShape
+	{
+		int shapeType; // 도형 모양		
+		int penWidth; // 펜의 두깨
+		CString shapeText; // 도형 문자열
+		int textSize; // 도형 문자열 크기		
+		CRect rect; // 도형 그리기 좌표
+		COLORREF fgColor, bgColor; // 전경색과 배경색 저장		
+	};
+	MyShape shape; // 도형 값을 저장하기 위한 구조체 변수 선언	
+	// 그린 도형을 저장할 동적 배열 선언
+	CArray<MyShape, MyShape&> data;
+	int draw(CDC* pDC, CPoint point);
+	void drawShape(int shapeNum, int penWd, int sx, int sy, int ex, int ey);
+
+	afx_msg void OnDrawline();
+	afx_msg void OnDrawrect();
 };
 

@@ -60,6 +60,8 @@ BEGIN_MESSAGE_MAP(CChildView, CWnd)
 	ON_WM_MBUTTONUP()
 	ON_WM_CREATE()
 	ON_WM_KEYDOWN()
+	ON_COMMAND(DrawLine, &CChildView::OnDrawline)
+	ON_COMMAND(DrawRect, &CChildView::OnDrawrect)
 END_MESSAGE_MAP()
 
 
@@ -105,6 +107,14 @@ void CChildView::OnPaint()
 	//우선 배경 그림이 맨 밑이므로 배경을 메모리에 복사 한다.
 
 	memDC.SelectObject(&m_background);   // 배경 그림을 선택하고
+
+	for (int i = 0; i < data.GetSize(); i++)
+	{
+		drawShape(data[i].shapeType, data[i].penWidth,
+			data[i].rect.left, data[i].rect.top,
+			data[i].rect.right, data[i].rect.bottom);
+	}
+
 	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
 	//mdcOffScreen.BitBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, 0, 0, SRCCOPY);
 	//mdcOffScreen.StretchBlt(0, 0, m_Bitmap.bmWidth, m_Bitmap.bmHeight, &memDC, m_ePt.x, m_ePt.y, newWidth, newHeight, SRCCOPY);
@@ -179,7 +189,7 @@ BOOL CChildView::OnEraseBkgnd(CDC* pDC)
 	return false;
 }
 
-
+// Zoom + Panning ------------------------------------------------------------------------------
 void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
@@ -286,28 +296,18 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 		Invalidate();
 		UpdateWindow();
 	}
+
+	if (MK_LBUTTON && drawID == TRUE) // 마우스를 클릭하여 드래그일 동안만 
+	{
+		draw(&memDC, point); // 뷰에서 도형 그리기(draw) 함수 호출		
+		// 마우스 드래그시의 좌표 값을 도형 끝 값에 다시 저장	
+		//Invalidate();
+
+		mov_x = z_pos.x + (m_ePt.x + point.x) / viewWidth;
+		mov_y = z_pos.y + (m_ePt.y + point.y) / viewHeight;
+		//Invalidate();
+	}
 }
-
-
-void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
-{
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-
-	CWnd::OnLButtonDown(nFlags, point);
-
-	SetCapture();
-	m_sPt = point;
-}
-
-void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
-{
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.d
-
-	CWnd::OnLButtonUp(nFlags, point);
-
-	ReleaseCapture();
-}
-
 
 void CChildView::OnSize(UINT nType, int cx, int cy)
 {
@@ -416,6 +416,7 @@ void CChildView::OnMButtonUp(UINT nFlags, CPoint point)
 	ReleaseCapture();
 }
 
+// RGB Value -----------------------------------------------------------------------
 void CChildView::PrintText(CDC* pDC)
 {
 	COLORREF rgb;
@@ -484,7 +485,7 @@ void CChildView::PrintText(CDC* pDC)
 
 }
 
-
+// += 알고리즘 파트---------------------------------------------------------------------------------------------------------
 int CChildView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	if (CWnd::OnCreate(lpCreateStruct) == -1)
@@ -585,6 +586,8 @@ int CChildView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	ViewScale = 1;
 	ViewValue = 1;
 
+	drawID = false;
+
 	return 0;
 }
 
@@ -615,4 +618,173 @@ void CChildView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	Invalidate();
 
 	CWnd::OnKeyDown(nChar, nRepCnt, nFlags);
+}
+
+
+// 그리기-------------------------------------------------------------------------------
+
+void CChildView::OnDrawline()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	drawStyle = DrawMode::DLine;
+}
+
+
+void CChildView::OnDrawrect()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	drawStyle = DrawMode::DRectangle;
+}
+
+
+void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	SetCapture();
+	x = z_pos.x + (m_ePt.x + point.x) / viewWidth;
+	y = z_pos.y + (m_ePt.y + point.y) / viewHeight;
+	// mov_x, mov_y는 도형 그리기 끝(이전)값
+	mov_x = x;
+	mov_y = y;
+	drawID = TRUE; // 그리기 시작을 알리는 변수	
+
+	CWnd::OnLButtonDown(nFlags, point);
+}
+
+void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.d
+
+	if (drawID)  // 도형 그리기 상태일 동안만
+	{
+		mov_x = z_pos.x + (m_ePt.x + point.x) / viewWidth;
+		mov_y = z_pos.y + (m_ePt.y + point.y) / viewHeight;
+		// 마우스 버트을 놓으면 각종 값을 shape 구조체 맴버변수에 저장
+		shape.shapeType = drawStyle;  // 도형 콤보 상자에서 선택된 도형 스타일을 저장		
+		shape.penWidth = viewWidth;
+		shape.rect.left = x; // 도형 시작좌표 저장
+		shape.rect.top = y;
+		shape.rect.right = mov_x; // 도형 끝 좌표 저장
+		shape.rect.bottom = mov_y;
+
+		//저장된 shape를 배열에 저장
+		data.Add(shape);
+	}
+	drawID = FALSE;
+
+	CWnd::OnLButtonUp(nFlags, point);
+	ReleaseCapture();
+	Invalidate();
+}
+
+
+int CChildView::draw(CDC* pDC, CPoint point)
+{
+	//CClientDC dc(this);
+	CDC* dc = GetDC();
+	CMainFrame* cmr = (CMainFrame*)AfxGetMainWnd();
+	//CPen myPen, * oldPen;
+	//CBrush myBrush, * oldBrush;
+
+	CPen myPen(PS_SOLID, viewWidth, RGB(255, 255, 255));
+	CPen* oldPen;
+	//oldPen = memDC.SelectObject(&myPen);
+	//CDC* pDd = GetDC();
+
+	//memDC.CreateCompatibleDC(pDd);
+
+
+	//memDC.SelectObject(&m_background);
+	oldPen = dc->SelectObject(&myPen);
+
+	if (drawStyle == DrawMode::DLine) // 콤보상자에서 직선 선택시
+	{
+		printf("%d, %d\n", x, y);
+		dc->SetROP2(R2_XORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+
+		dc->MoveTo(x, y); dc->LineTo(mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬
+		mov_x = m_pos.x;
+		mov_y = m_pos.y;
+		dc->MoveTo(x, y); dc->LineTo(mov_x, mov_y);
+	}
+	//if (drawStyle == DrawMode::DLine) // 콤보상자에서 직선 선택시
+	//{
+	//	memDC.SetROP2(R2_NOTXORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+	//	memDC.MoveTo(x, y); memDC.LineTo(mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬
+	//	mov_x = point.x;
+	//	mov_y = point.y;
+	//	memDC.MoveTo(x, y); memDC.LineTo(mov_x, mov_y);
+	//}
+	//else if (drawStyle == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
+	//{
+	//	pDC->SetROP2(R2_NOTXORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+	//	pDC->Rectangle(x, y, mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬, 지워지는 효과
+	//	mov_x = point.x;
+	//	mov_y = point.y;
+	//	pDC->Rectangle(x, y, mov_x, mov_y);
+	//}
+	//else if (drawStyle == DrawMode::DEllipse) // 콤보상자에서 원 선택시
+	//{
+	//	pDC->SetROP2(R2_NOTXORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+	//	pDC->Ellipse(x, y, mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬
+	//	mov_x = point.x;
+	//	mov_y = point.y;
+	//	pDC->Ellipse(x, y, mov_x, mov_y);
+	//}
+
+	dc->SelectObject(oldPen); // 이전 팬 선택		
+	myPen.DeleteObject();  // 생성한 펜 메모리에서 제거		
+
+	//memDC.DeleteDC();
+	//memDC.SelectObject(oldPen); // 이전 팬 선택		
+	//myPen.DeleteObject();  // 생성한 펜 메모리에서 제거		
+	//myBrush.DeleteObject();  // 생성한 브러쉬 메모리에서 제거			
+	return x, y, mov_x, mov_y;
+}
+
+void CChildView::drawShape(int shapeNum, int penWd, int sx, int sy, int ex, int ey)
+{
+	//CClientDC dc(this);
+	//CBrush brush;
+	//brush.CreateSolidBrush(RGB(255, 255, 255));
+	//CMainFrame* cmr = (CMainFrame*)AfxGetMainWnd();
+	//CPen myPen, * oldPen;
+	//CBrush myBrush, * oldBrush;
+
+	//oldPen = dc.SelectObject(&myPen);
+	memDC.MoveTo(sx, sy); memDC.LineTo(ex, ey);
+	//if (shapeNum == DrawMode::DLine) // 콤보상자에서 직선 선택시
+	//{
+	//	memDC.MoveTo(sx, sy); memDC.LineTo(ex, ey);
+	//}
+	//else if (shapeNum == 1) // 콤보상자에서 사각형 선택시
+	//{
+	//	// 화면에 사각형을 그린다.
+	//	dc.Rectangle(sx, sy, ex, ey);
+	//}
+	//else if (shapeNum == 2) // 콤보상자에서 원 선택시
+	//{
+	//	dc.Ellipse(sx, sy, ex, ey);
+	//}
+	//else if (shapeNum == 3) // 콤보상자에서 부채꼴 선택시
+	//{
+	//	oldBrush = dc.SelectObject(&myBrush);
+	//	CRect PieRect(sx, sy, ex, ey);
+	//	dc.Pie(PieRect, CPoint(PieRect.CenterPoint().x, PieRect.top), CPoint(PieRect.right, PieRect.CenterPoint().y));
+	//	dc.SelectObject(oldBrush); // 이전 브러시 선택
+	//}
+	//else if (shapeNum == 4) // 그리기텍스트 아이콘 선택시
+	//{
+	//	dc.SetTextColor(fgcolor); // 텍스트 색상 설정
+	//	dc.SetBkColor(bgcolor); // 텍스트 배경색 설정
+	//							// 폰트 생성
+	//			
+	//	dc.DrawText(str, CRect(sx, sy, ex, ey), DT_SINGLELINE | DT_CENTER | DT_VCENTER);  // 화면에 문자열 출력
+
+	//}
+	//memDC.SelectObject(oldPen); // 이전 팬 선택	
+	//myPen.DeleteObject();  // 생성한 펜 메모리에서 제거		
+	//myBrush.DeleteObject(); // 생성한 브러쉬 메모리에서 제거		
+
 }
