@@ -1,186 +1,158 @@
-#include "pch.h"
 #include "CircleDection.h"
 
+
+void main()
+{
+    time_t st,ed;
+    CircleDection cir;
+    st = clock();
+    cir.Run();
+    ed = clock();
+    cout << ed - st;
+    cir.ShowSrcImage();
+    cir.ShowResultImage();
+    waitKey();
+}
+
+
+
+// 초기화
+void CircleDection::Init()
+{
+    //distance = 20;
+    //radMin = 2;
+    //radMax = 4;
+    //cirThresh = 100;
+    //thresh1 = 100;
+    //thresh2 = 158;
+
+    //if (!src.data)
+    //    SelectImage();
+    // 이미지 로드
+    src = imread("image/a1.png", IMREAD_GRAYSCALE);
+    this->height = this->src.rows;
+    this->width = this->src.cols;
+    this->size = height * width;
+
+    // 파라미터 값 초기화
+    SetThreshValue(100, 158);
+    SetDistance(20);
+    SetCircleValue(2, 4, 80);
+    // threadParam 초기화
+    threadParam = new CirDetectionParam();
+    threadParam->This = this;
+    threadParam->cirCenters = &vCirCenters;
+    threadParam->mut = new Mutex;
+}
+
+// 전체 실행
+void CircleDection::Run()
+{
+    Init();
+    GetCornerPoints(); // 3점 좌표 추출
+    GetVertexPoints(); // 최외곽 ROI
+    ContourDetection(); // 원 검출
+    Drawing(); // Drawing
+}
+
+// 이미지 set
 void CircleDection::SetImage(Mat& src)
 {
-	this->src = src;
+    this->src = src;;
+    this->height = src.rows;
+    this->width = src.cols;
+    this->size = src.rows * src.cols;
 }
 
-void CircleDection::SelectImage(CFileDialog& dlg)
+// Thresh value set
+void CircleDection::SetThreshValue(int thresh1 = 100, int thresh2 = 158)
 {
-	CString cstrImgPath = dlg.GetPathName();
-	CT2CA pszConvertedAnsiString(cstrImgPath);
-	std::string strStd(pszConvertedAnsiString);
-	src = imread(strStd);
-	if (!src.data) {
-		cout << "Image not Open" << endl;
-		return;
-	}
+    this->thresh1 = thresh1;
+    this->thresh2 = thresh2;
 }
 
-bool CircleDection::RunCircleDection()
+// ROI 추출 범위 set
+void CircleDection::SetDistance(int distance = 20)
 {
-    if (IsImage()) {
-        cout << "First, select the image." << endl;
-        AfxMessageBox(_T("First, select the image."),MB_OK);
+    this->distance = distance;
+}
+
+// 원검출 set
+void CircleDection::SetCircleValue(int radMin = 2, int radMax = 4, int cirThresh = 80)
+{
+    this->radMin = radMin;
+    this->radMax = radMax;
+    this->cirThresh = cirThresh;
+}
+
+// 소스 이미지 출력
+bool CircleDection::ShowSrcImage()
+{
+    if (!this->src.data) {
+        // error
         return false;
     }
-    GetCornerPoints(src, cornerpts); // 3점 좌표 추출
-    GetVertexPoints(src, cornerpts, vertexPts, 20); // 최외곽 ROI
-    ContourDetection(src, vCirCenters, hCirCenters, vertexPts, 2, 4, 100); // 원 검출
-    Drawing(src, result, vCirCenters, hCirCenters); // Drawing
-    cout << "Processing completed." << endl;
-    AfxMessageBox(_T("Processing completed."), MB_OK);
+    imshow("src", src);
     return true;
 }
 
-HBITMAP CircleDection::MatToBitmap()
+// 결과 이미지 출력
+bool CircleDection::ShowResultImage()
 {
-    Mat& src = result;
-    if (IsImage()) {
-        cout << "First, select the image." << endl;
-        AfxMessageBox(_T("First, select the image."), MB_OK);
+    if (!this->result.data) {
+        // error
         return false;
     }
-    if (!result.data) {
-        cout << "Please run RunCircleDection function after completing it.." << endl;
-        AfxMessageBox(_T("Please run RunCircleDection function after completing it."), MB_OK);
-        return false;
-    }
-    Mat mat_temp;
-    HDC hDC = ::CreateCompatibleDC(0);
-    HBITMAP hBmp;
-
-    int bpp = 8 * src.elemSize(); // elemSize() 는 한화소에 데이터 개수 Color = 3개 Gray = 1개, 한 화소에 비트수 구하는거
-    assert((bpp == 8 || bpp == 24 || bpp == 32)); // 이 3개가 아니면 종료
-
-    int padding = 0;
-    //32 bit image is always DWORD aligned because each pixel requires 4 bytes
-    if (bpp < 32)
-        padding = 4 - (src.cols % 4);
-
-    if (padding == 4)
-        padding = 0;
-
-    int border = 0;
-    // 32 bit image is always DWORD aligned because each pixel requires 4 bytes
-    if (bpp < 32)
-    {
-        border = 4 - (src.cols % 4);
-    }
-
-    if (border > 0 || src.isContinuous() == false)
-    {
-        // Adding needed columns on the right(max 3 px)
-        cv::copyMakeBorder(src, mat_temp, 0, 0, 0, border, cv::BORDER_CONSTANT, 0);
-    }
-    else
-    {
-        mat_temp = src;
-    }
- 
-    BITMAPINFO* pBitmapInfo;
-    if (bpp == 8) //그레이스케일인경우 팔레트가 필요
-    {
-        pBitmapInfo = (BITMAPINFO*)malloc(sizeof(BITMAPINFO) + 4 * 256);
-    }
-    else
-    {
-        pBitmapInfo = (BITMAPINFO*)malloc(sizeof(BITMAPINFO));
-    }
-
-    pBitmapInfo->bmiHeader.biYPelsPerMeter = 0;
-    pBitmapInfo->bmiHeader.biBitCount = bpp;
-    pBitmapInfo->bmiHeader.biWidth = mat_temp.cols;
-    pBitmapInfo->bmiHeader.biHeight = -mat_temp.rows;
-    pBitmapInfo->bmiHeader.biPlanes = 1;
-    pBitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    pBitmapInfo->bmiHeader.biCompression = BI_RGB;
-    pBitmapInfo->bmiHeader.biClrImportant = 0;
-    if (bpp == 8) { //그레이스케일인경우 팔레트가 필요
-        pBitmapInfo->bmiHeader.biClrUsed = 4 * 256;
-        for (int i = 0; i < 256; i++)
-        {
-            pBitmapInfo->bmiColors[i].rgbBlue = (BYTE)i;
-            pBitmapInfo->bmiColors[i].rgbGreen = (BYTE)i;
-            pBitmapInfo->bmiColors[i].rgbRed = (BYTE)i;
-            pBitmapInfo->bmiColors[i].rgbReserved = (BYTE)0;
-        }
-    }
-    else {
-        pBitmapInfo->bmiHeader.biClrUsed = 0;
-    }
-    pBitmapInfo->bmiHeader.biSizeImage = 0;
-    pBitmapInfo->bmiHeader.biXPelsPerMeter = 0;
-
-    //Image is bigger or smaller than into desination rectangle
-    // we use stretch in full rect
-
-    hBmp = ::CreateDIBSection(hDC, pBitmapInfo, DIB_RGB_COLORS, NULL, 0, 0);
-    ::SetBitmapBits(hBmp, mat_temp.total() * mat_temp.channels(), mat_temp.data);
-    ::DeleteDC(hDC);
-
-    return hBmp;
-}
-
-bool CircleDection::IsImage()
-{
-    if (!src.data) {
-        //cout << "First, select the image." << endl;
-        //AfxMessageBox(_T("First, select the image."), MB_OK);
-        return false;
-    }
+    imshow("result", result);
     return true;
 }
 
 // 3점 좌표 추출 수정판
-void CircleDection::GetCornerPoints(Mat& src, vector<Point>& cornerPts)
+void CircleDection::GetCornerPoints()
 {
-    Mat grayImage = src.clone();
+    Mat grayImage = this->src.clone();
     Matx <uchar, 3, 3> mask(0, 1, 0, 1, 1, 1, 0, 1, 0);
-    threshold(grayImage, grayImage, 100, 255, THRESH_TOZERO); // min_grayscale이 안되면 0
-    threshold(grayImage, grayImage, 158, 255, THRESH_TOZERO_INV); // min_grayscale이 넘어도 0
+    //threshold(grayImage, grayImage, this->thresh1, 255, THRESH_TOZERO); // min_grayscale이 안되면 0
+    //threshold(grayImage, grayImage, this->thresh2, 255, THRESH_TOZERO_INV); // min_grayscale이 넘어도 0
+    ToZeroThreshold(grayImage, grayImage, this->thresh1, this->thresh2);
     morphologyEx(grayImage, grayImage, MORPH_OPEN, mask); // 외곽의 솔트를 제거하기 위해
     //RangeThreshold(grayImage, grayImage, 100, 170, 255, 0);
-
     vector<vector<Point>> contours;
     MyContours(grayImage, contours);
     //findContours(grayImage, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
     vector<Point> approx;
-    vector<Point> approx2;
-    Point pt(0, 0);
     for (size_t i = 0; i < contours.size(); i++)
     {
         if (contourArea(Mat(contours[i])) > 5000)
         {
-            DouglasPeucker(contours[i], approx, 0, pt);
+            DouglasPeucker(contours[i], approx, 0);
             //approxPolyDP(Mat(contours[i]), approx, arcLength(Mat(contours[i]), true) * 0.1, true);
             break;
         }
     }
-    for (int i = 0; i < approx.size(); i++)
-        circle(src, approx[i], 3, Scalar(255));
+    //for (int i = 0; i < approx.size(); i++)
+    //    circle(this->src, approx[i], 3, Scalar(255));
 
     double distance0to1 = sqrt(pow(approx[0].x - approx[1].x, 2) + pow(approx[0].y - approx[1].y, 2));
     double distance0to3 = sqrt(pow(approx[0].x - approx[3].x, 2) + pow(approx[0].y - approx[3].y, 2));
 
     if (distance0to1 < distance0to3)
     {
-        cornerPts.push_back(approx[0]);
-        cornerPts.push_back(approx[3]);
-        cornerPts.push_back(approx[2]);
+        this->cornerPts.push_back(approx[0]);
+        this->cornerPts.push_back(approx[3]);
+        this->cornerPts.push_back(approx[2]);
     }
     else
     {
-        cornerPts.push_back(approx[3]);
-        cornerPts.push_back(approx[2]);
-        cornerPts.push_back(approx[1]);
+        this->cornerPts.push_back(approx[3]);
+        this->cornerPts.push_back(approx[2]);
+        this->cornerPts.push_back(approx[1]);
     }
 }
 
 // 범위용 Threshold
-void CircleDection::RangeThreshold(Mat& src, Mat& dst, int MinValue, int MaxValue, int inValue, int outValue)
+void CircleDection::ToZeroThreshold(Mat& src, Mat& dst, int MinValue, int MaxValue)
 {
     if (!dst.data)
         dst = Mat(src.size(), CV_8UC1, Scalar(0));
@@ -192,10 +164,9 @@ void CircleDection::RangeThreshold(Mat& src, Mat& dst, int MinValue, int MaxValu
         for (int j = 0; j < src.cols; j++)
         {
             if (srcPtr[j] > MaxValue || srcPtr[j] < MinValue)
-                dstptr[j] = outValue;
+                dstptr[j] = 0;
             else
-                dstptr[j] = inValue;
-            //dstptr[j] = srcPtr[j];
+                dstptr[j] = srcPtr[j];
         }
     }
 }
@@ -203,7 +174,6 @@ void CircleDection::RangeThreshold(Mat& src, Mat& dst, int MinValue, int MaxValu
 // 외곽점 추출
 void CircleDection::MyContours(Mat& src, vector<vector<Point>>& Points)
 {
-    map<int, int> table;
     vector<Vec3i> startPoint;
     int height = src.rows;
     int width = src.cols;
@@ -227,8 +197,9 @@ void CircleDection::Labeling(Mat& src, int* Map, vector<Vec3i>& startPoint)
     map<int, int> table;
     int height = src.rows;
     int width = src.cols;
-    int mult_y, sub_y;
+    //uchar* ptr = src.data;
     uchar* ptr;
+    int mult_y, sub_y;
     int Up, Left, Data;
     table[1] = 1;
     int Count = 1;
@@ -241,6 +212,7 @@ void CircleDection::Labeling(Mat& src, int* Map, vector<Vec3i>& startPoint)
         for (int x = 0; x < width; x++)
         {
             if (ptr[x] != 0)
+            //if (ptr[y * width  + x] != '\0')
             {
                 if (x - 1 < 0)
                     Left = 0;
@@ -275,7 +247,6 @@ void CircleDection::Labeling(Mat& src, int* Map, vector<Vec3i>& startPoint)
             }
         }
     }
-
     map<int, int> cnt;
     startPoint.resize(1);
     int i = 0;
@@ -307,9 +278,6 @@ void CircleDection::Labeling(Mat& src, int* Map, vector<Vec3i>& startPoint)
 // 외곽선 검출
 void CircleDection::Contour(Mat& src, int sx, int sy, vector<Point>& outPoints, int* Map, int value)
 {
-    int height = src.rows;
-    int width = src.cols;
-
     int x, y, nx, ny;
     int d, cnt;
 
@@ -334,7 +302,7 @@ void CircleDection::Contour(Mat& src, int sx, int sy, vector<Point>& outPoints, 
         nx = x + dir[d][0];
         ny = y + dir[d][1];
 
-        if (nx < 0 || nx >= width || ny < 0 || ny >= height || Map[ny * width + nx] != value)
+        if (nx < 0 || nx >= this->width || ny < 0 || ny >= this->height || Map[ny * this->width + nx] != value)
         {
             if (++d > 7) d = 0;
             cnt++;
@@ -361,7 +329,7 @@ void CircleDection::Contour(Mat& src, int sx, int sy, vector<Point>& outPoints, 
 }
 
 // 곡선을 소수의 점으로 구성한 유사한 직선으로 구분
-void CircleDection::DouglasPeucker(const vector<Point>& polyLine, vector<Point>& simplifiedPolyLine, double epsilon, Point lastPt, bool flag)
+void CircleDection::DouglasPeucker(const vector<Point>& polyLine, vector<Point>& simplifiedPolyLine, double epsilon, bool flag, bool endFlag)
 {
     if (polyLine.size() < 2)
     {
@@ -374,7 +342,6 @@ void CircleDection::DouglasPeucker(const vector<Point>& polyLine, vector<Point>&
     int end = polyLine.size() - 1;
     int first = 0;
     if (flag) {
-        lastPt = polyLine[end];
         for (int i = 0; i < end; i++)
         {
             double d = PerpendicularDistance(polyLine[i], polyLine[0], polyLine[end], flag);
@@ -418,29 +385,17 @@ void CircleDection::DouglasPeucker(const vector<Point>& polyLine, vector<Point>&
         vector<Point> firstLine;
         Mat temp;
         if (first < index + 1) {
-            vector<Point> firstLine_(polyLine.begin() + first, polyLine.begin() + index + 1);
-            firstLine = firstLine_;
-            for (int i = first; i <= index; i++) {
-                circle(temp, polyLine[i], 1, Scalar(255, 0, 0), 2);
-            }
+            firstLine.assign(polyLine.begin() + first, polyLine.begin() + index + 1);
+
         }
         else {
             firstLine.push_back(polyLine[first]);
             firstLine.insert(firstLine.end(), polyLine.begin(), polyLine.begin() + index + 1);
-
-
-            for (int i = index; i <= first; i++) {
-                circle(temp, polyLine[i], 1, Scalar(255, 0, 0), 2);
-            }
-        }
-
-        for (int i = index; i <= end; i++) {
-            circle(temp, polyLine[i], 1, Scalar(0, 0, 255), 2);
         }
 
         vector<Point> lastLine(polyLine.begin() + index, polyLine.end());
-        DouglasPeucker(firstLine, recResults1, epsilon, lastPt, false);
-        DouglasPeucker(lastLine, recResults2, epsilon, lastPt, false);
+        DouglasPeucker(firstLine, recResults1, epsilon, false, true);
+        DouglasPeucker(lastLine, recResults2, epsilon, false, endFlag);
 
         // Build the result list
         simplifiedPolyLine.assign(recResults1.begin(), recResults1.end() - 1);
@@ -450,10 +405,7 @@ void CircleDection::DouglasPeucker(const vector<Point>& polyLine, vector<Point>&
     else
     {
         simplifiedPolyLine.push_back(polyLine[first]);
-        if (polyLine[end].x == lastPt.x && polyLine[end].y == lastPt.y) {
-
-        }
-        else
+        if (endFlag)
             simplifiedPolyLine.push_back(polyLine[end]);
     }
 }
@@ -496,73 +448,74 @@ double CircleDection::PerpendicularDistance(const Point& pt, const Point& lineSt
 }
 
 // 최외곽 ROI Vertex 추출
-void CircleDection::GetVertexPoints(Mat& src, vector<Point>& cornerPts, vector<Point>& vertexPts, int distance)
+void CircleDection::GetVertexPoints()
 {
     int rotateX, rotateY;
     double theta;
 
-    int heightV = sqrt(pow(cornerPts[0].y - cornerPts[1].y, 2) + pow(cornerPts[0].x - cornerPts[1].x, 2));
-    int widthV = distance;
+    int heightV = sqrt(pow(this->cornerPts[0].y - this->cornerPts[1].y, 2) + pow(this->cornerPts[0].x - this->cornerPts[1].x, 2));
+    int widthV = this->distance;
 
-    int heightH = distance;
-    int widthH = sqrt(pow(cornerPts[1].y - cornerPts[2].y, 2) + pow(cornerPts[1].x - cornerPts[2].x, 2));
+    int heightH = this->distance;
+    int widthH = sqrt(pow(this->cornerPts[1].y - this->cornerPts[2].y, 2) + pow(this->cornerPts[1].x - this->cornerPts[2].x, 2));
 
-    vertexPts.resize(6);
+    this->vertexPts.resize(6);
 
-    if (cornerPts[1].x == cornerPts[0].x) {
-        vertexPts[0] = cornerPts[0];
-        vertexPts[1] = cornerPts[1];
-        vertexPts[5] = Point(cornerPts[0].x + distance, cornerPts[0].y);
-        vertexPts[4] = Point(cornerPts[1].x + distance, cornerPts[1].y);
+    if (this->cornerPts[1].x == this->cornerPts[0].x) {
+        this->vertexPts[0] = this->cornerPts[0];
+        this->vertexPts[1] = this->cornerPts[1];
+        this->vertexPts[5] = Point(this->cornerPts[0].x + this->distance, this->cornerPts[0].y);
+        this->vertexPts[4] = Point(this->cornerPts[1].x + this->distance, this->cornerPts[1].y);
     }
     else {
-        theta = atan((double)((cornerPts[0].x - cornerPts[1].x)) / (cornerPts[0].y - cornerPts[1].y));
-        vertexPts[0] = cornerPts[0];
-        vertexPts[1] = cornerPts[1];
+        theta = atan((double)((this->cornerPts[0].x - this->cornerPts[1].x)) / (this->cornerPts[0].y - this->cornerPts[1].y));
+        this->vertexPts[0] = this->cornerPts[0];
+        this->vertexPts[1] = this->cornerPts[1];
 
 
-        rotateX = (distance)*cos(theta) + cornerPts[0].x;
-        rotateY = -(distance)*sin(theta) + cornerPts[0].y;
-        vertexPts[5] = Point(rotateX, rotateY);
+        rotateX = (this->distance) * cos(theta) + this->cornerPts[0].x;
+        rotateY = -(this->distance) * sin(theta) + this->cornerPts[0].y;
+        this->vertexPts[5] = Point(rotateX, rotateY);
 
 
-        rotateX = widthV * cos(theta) + heightV * sin(theta) + cornerPts[0].x;
-        rotateY = -widthV * sin(theta) + heightV * cos(theta) + cornerPts[0].y;
-        vertexPts[4] = Point(rotateX, rotateY);
+        rotateX = widthV * cos(theta) + heightV * sin(theta) + this->cornerPts[0].x;
+        rotateY = -widthV * sin(theta) + heightV * cos(theta) + this->cornerPts[0].y;
+        this->vertexPts[4] = Point(rotateX, rotateY);
     }
 
-    if (cornerPts[2].y == cornerPts[1].y) {
-        vertexPts[2] = cornerPts[2];
-        vertexPts[3] = Point(cornerPts[2].x, cornerPts[2].y - distance);
+    if (this->cornerPts[2].y == this->cornerPts[1].y) {
+        this->vertexPts[2] = this->cornerPts[2];
+        this->vertexPts[3] = Point(this->cornerPts[2].x, this->cornerPts[2].y - this->distance);
 
-        vertexPts[4].x = cornerPts[1].x + vertexPts[4].x - vertexPts[1].x;
-        vertexPts[4].y = cornerPts[1].y - distance + vertexPts[4].y - vertexPts[1].y;
+        this->vertexPts[4].x = this->cornerPts[1].x + this->vertexPts[4].x - this->vertexPts[1].x;
+        this->vertexPts[4].y = this->cornerPts[1].y - this->distance + this->vertexPts[4].y - this->vertexPts[1].y;
     }
     else {
-        theta = -atan((cornerPts[1].y - cornerPts[2].y) / (double)((cornerPts[1].x - cornerPts[2].x)));
-        rotateX = -distance * sin(theta) + cornerPts[1].x;
-        rotateY = -distance * cos(theta) + cornerPts[1].y;
+        theta = -atan((this->cornerPts[1].y - this->cornerPts[2].y) / (double)((this->cornerPts[1].x - this->cornerPts[2].x)));
+        rotateX = -this->distance * sin(theta) + this->cornerPts[1].x;
+        rotateY = -this->distance * cos(theta) + this->cornerPts[1].y;
 
-        vertexPts[4].x = rotateX + vertexPts[4].x - vertexPts[1].x;
-        vertexPts[4].y = rotateY + vertexPts[4].y - vertexPts[1].y;
+        this->vertexPts[4].x = rotateX + this->vertexPts[4].x - this->vertexPts[1].x;
+        this->vertexPts[4].y = rotateY + this->vertexPts[4].y - this->vertexPts[1].y;
 
-        vertexPts[2] = cornerPts[2];
-        rotateX = widthH * cos(theta) - heightH * sin(theta) + cornerPts[1].x;
-        rotateY = -widthH * sin(theta) - heightH * cos(theta) + cornerPts[1].y;
-        vertexPts[3] = Point(rotateX, rotateY);
+        this->vertexPts[2] = this->cornerPts[2];
+        rotateX = widthH * cos(theta) - heightH * sin(theta) + this->cornerPts[1].x;
+        rotateY = -widthH * sin(theta) - heightH * cos(theta) + this->cornerPts[1].y;
+        this->vertexPts[3] = Point(rotateX, rotateY);
     }
 }
 
 // 원검출을 위한 ROI Area 추출
-void CircleDection::ContourDetection(Mat& src, vector<Point>& vCirCenters, vector<Point>& hCirCenters, vector<Point>& vertexPts, int radMin, int radMax, int value) {
+void CircleDection::ContourDetection() {
     Mat ROI;
     Mat mask;
     // range 범위 영역 추출
-    fillPoly_(src.size(), mask, vertexPts);
-    bitwise_and(src, mask, ROI);
+    fillPoly_(this->src.size(), mask, this->vertexPts);
+    bitwise_and(this->src, mask, ROI);
 
     Mat imgThreshold = ROI.clone();
-    threshold(imgThreshold, imgThreshold, value, 250, THRESH_BINARY_INV);
+
+    ToZeroThreshold(imgThreshold, imgThreshold, 0, this->cirThresh);
     vector<vector<Point>> contours;
     MyContours(imgThreshold, contours);
     //findContours(imgThreshold, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
@@ -590,19 +543,11 @@ void CircleDection::ContourDetection(Mat& src, vector<Point>& vCirCenters, vecto
             }
         }
     }
-
-    // Vertical과 Horizontal 분리 처리
-    threadParam = new CirDetectionParam();
-    threadParam->This = this;
-    threadParam->cirCenters = &vCirCenters;
-    threadParam->contours = &vContours;
-    threadParam->src = &src;
-    threadParam->radMax = radMax;
-    threadParam->radMin = radMin;
-    threadParam->mut = new Mutex;
     unsigned threadId;
+    threadParam->cirCenters = &this->vCirCenters;
+    threadParam->contours = &vContours;
     _beginthreadex(NULL, 0, CirDetectionThread, (void*)threadParam, 0, &threadId);
-    CircleDetection(src, hContours, hCirCenters, radMin, radMax);
+    CircleDetection(hContours, this->hCirCenters);
     threadParam->mut->lock();
 }
 
@@ -649,16 +594,16 @@ void CircleDection::fillPoly_(Size matSize, Mat& dst, vector<Point> pts) {
 }
 
 // 원 검출 Thread
-unsigned WINAPI CircleDection:: CirDetectionThread(void* para) {
+unsigned WINAPI CircleDection::CirDetectionThread(void* para) {
     CirDetectionParam* Param = (CirDetectionParam*)para;
     Param->mut->lock();
-    Param->This->CircleDetection(*Param->src, *Param->contours, *Param->cirCenters, Param->radMin, Param->radMax);
+    Param->This->CircleDetection(*Param->contours, *Param->cirCenters);
     Param->mut->unlock();
     return 0;
 }
 
 // 원 검출
-void CircleDection::CircleDetection(Mat& src, vector<vector<Point>>& contours, vector<Point>& cirCenters, int radMin, int radMax) {
+void CircleDection::CircleDetection(vector<vector<Point>>& contours, vector<Point>& cirCenters) {
 
     for (vector<Point> pts : contours) {
         double areaValue = contourArea(pts); // 면적값 계산
@@ -669,65 +614,69 @@ void CircleDection::CircleDetection(Mat& src, vector<vector<Point>>& contours, v
             if (rc.tl().x - 3 > 0 && rc.tl().y - 3 > 0) {
                 rc -= Point(3, 3);
             }
-            if (rc.tl().x + rc.width + 4 < src.cols && rc.tl().y + rc.height + 4 < src.rows) {
+            if (rc.tl().x + rc.width + 4 < this->src.cols && rc.tl().y + rc.height + 4 < this->src.rows) {
                 rc += Size(4, 4);
             }
             else {
-                rc.width = src.cols - rc.tl().x;
+                rc.width = this->src.cols - rc.tl().x;
                 rc.height += 4;
             }
 #pragma endregion
-            if (IsContain(rc, cirCenters))
-                continue;
 
-            Mat cirRect = src(rc);
+            Mat cirRect = this->src(rc);
             Differential(cirRect, cirRect);
-            int** vote = (int**)calloc(cirRect.rows, sizeof(int*));
-            for (int i = 0; i < cirRect.rows; i++) {
-                vote[i] = (int*)calloc(cirRect.cols, sizeof(int));
-            }
-            for (int i = 0; i < cirRect.cols; i++) {
-                uchar* ptr = src.ptr<uchar>(i);
-                for (int j = 0; j < cirRect.rows; j++) {
-                    if (ptr[j] >= 100)
-                        continue;
-                    for (int t = 0; t <= 360; t += 3)
+
+            int rCount = 0;
+            for (int r = this->radMin; r <= this->radMax; r++, rCount++)
+            {
+                int rotate = 360 / (8 * r);
+                int** vote = (int**)calloc(cirRect.rows, sizeof(int*));
+                for (int i = 0; i < cirRect.rows; i++) {
+                    vote[i] = (int*)calloc(cirRect.cols, sizeof(int));
+                }
+                if (IsContain(rc, cirCenters))
+                    continue;
+                for (int i = 0; i < cirRect.cols; i++) {
+                    uchar* ptr = this->src.ptr<uchar>(i);
+                    for (int j = 0; j < cirRect.rows; j++) {
+                        if (ptr[j] >= 100)
+                            continue;
+                        for (int t = 1; t <= 360; t += rotate)
+                        {
+                            int a = i - r * cvRound(cos(t * CV_PI / 180));
+                            int b = j - r * cvRound(sin(t * CV_PI / 180));
+                            if (a >= 0 && a < cirRect.cols && b >= 0 && b < cirRect.rows) {
+                                if (cirRect.at<uchar>(b, a) >= 100)
+                                    vote[j][i] += 1;
+                            }
+                        }
+
+                    }
+                }
+                int max = -1;
+                Point idx;
+
+                for (int i = 0; i < cirRect.cols; i++)
+                {
+                    for (int j = 0; j < cirRect.rows; j++)
                     {
-                        int a = i - 3 * cvRound(cos(t * CV_PI / 180));
-                        int b = j - 3 * cvRound(sin(t * CV_PI / 180));
-                        if (a >= 0 && a < cirRect.cols && b >= 0 && b < cirRect.rows) {
-                            vote[b][a] += 1;
+                        if (vote[j][i] >= max)
+                        {
+                            max = vote[j][i];
+                            idx = Point(i, j);
                         }
                     }
                 }
-            }
-
-            int max = -1;
-            vector<Point> pt;
-            int count_i;
-            int max_j = -1;
-            for (int i = 0; i < cirRect.cols; i++) {
-                int count_j = 0;
-                for (int j = 0; j < cirRect.rows; j++) {
-                    if (count_j > max_j)
-                        max_j = count_j;
-                    if (vote[j][i] >= 120) {
-                        pt.push_back(Point(i, j));
-                        count_j++;
-                    }
+                /*if (r != 0)
+                    continue;*/
+                if (max >= 360 / rotate)
+                {
+                    cirCenters.push_back(Point(idx.x + rc.tl().x, idx.y + rc.tl().y));
                 }
+                for (int i = 0; i < cirRect.rows; i++)
+                    free(vote[i]);
+                free(vote);
             }
-            int size = pt.size();
-            if (size == 0) {
-                continue;
-            }
-            int quotient = size / max_j;
-            count_i = (size % max_j == 0) ? quotient : quotient + 1;
-            int n = (count_i / 2) * max_j + max_j / 2;
-            for (int i = 0; i < cirRect.rows; i++)
-                free(vote[i]);
-            free(vote);
-            cirCenters.push_back(Point(pt[n].x + rc.tl().x, pt[n].y + rc.tl().y));
         }
     }
 }
@@ -789,16 +738,16 @@ bool CircleDection::IsContain(Rect rc, vector<Point>& cirCenters) {
 }
 
 // 최소제곱법을 통해 교점 표시, 직선 및 원 그리기
-void CircleDection::Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vector<Point>& hCirCenters)
+void CircleDection::Drawing()
 {
-    if (!src.data)
+    if (!this->src.data)
         return;
-    if (!dst.data)
-        cvtColor(src, dst, COLOR_GRAY2BGR);
+    if (!this->result.data)
+        cvtColor(this->src, this->result, COLOR_GRAY2BGR);
     Vec2f vEquation, hEquation;
     Point target, temp1, temp2;
-    vEquation = LSM_Vertical(vCirCenters);
-    hEquation = LSM_Horizontal(hCirCenters);
+    vEquation = LSM_Vertical(this->vCirCenters);
+    hEquation = LSM_Horizontal(this->hCirCenters);
 
     target.x = cvRound((hEquation[1] - vEquation[1]) / (vEquation[0] - hEquation[0]));
     target.y = cvRound((vEquation[0] * (hEquation[1] - vEquation[1])) / (vEquation[0] - hEquation[0]) + vEquation[1]);
@@ -808,31 +757,31 @@ void CircleDection::Drawing(Mat& src, Mat& dst, vector<Point>& vCirCenters, vect
     //temp1 = { 0, cvRound(vEquation[1]) }; // y=0 이고, 최소제곱법 직선의 방정식을 지나는 점
     temp2 = { cvRound((target.y + 20 - vEquation[1]) / vEquation[0]), target.y + 20 }; // target에서 좀 더 아래쪽의 점
 
-    line(dst, temp1, temp2, Scalar(0, 127, 255));
-    temp1 = { dst.cols, cvRound(hEquation[0] * dst.cols + hEquation[1]) }; // x = src.cols 이고, 최소제곱법 직선의 방정식을 지나는 점
+    line(this->result, temp1, temp2, Scalar(0, 127, 255));
+    temp1 = { this->result.cols, cvRound(hEquation[0] * this->result.cols + hEquation[1]) }; // x = src.cols 이고, 최소제곱법 직선의 방정식을 지나는 점
     temp2 = { target.x - 20, cvRound(hEquation[0] * (target.x - 20) + hEquation[1]) }; // target에서 좀 더 왼쪽의 점
-    line(dst, temp1, temp2, Scalar(0, 127, 255));
+    line(this->result, temp1, temp2, Scalar(0, 127, 255));
 
     // 라임색 X 그리기
     temp1 = { target.x - 7, target.y - 7 };
     temp2 = { target.x + 7,target.y + 7 };
-    line(dst, temp1, temp2, Scalar(0, 255, 191));
+    line(this->result, temp1, temp2, Scalar(0, 255, 191));
     temp1 = { target.x - 7, target.y + 7 };
     temp2 = { target.x + 7,target.y - 7 };
-    line(dst, temp1, temp2, Scalar(0, 255, 191));
+    line(this->result, temp1, temp2, Scalar(0, 255, 191));
 
     //cout << "교점의 좌표 = " << target << endl;
 
-    for (int i = 0; i < vCirCenters.size(); i++)
+    for (int i = 0; i < this->vCirCenters.size(); i++)
     {
-        Point center(vCirCenters[i].x, vCirCenters[i].y);
-        circle(dst, center, 5, Scalar(0, 0, 255), 1, -1);
+        Point center(this->vCirCenters[i].x, this->vCirCenters[i].y);
+        circle(this->result, center, 5, Scalar(0, 0, 255), 1, -1);
     }
 
-    for (int i = 0; i < hCirCenters.size(); i++)
+    for (int i = 0; i < this->hCirCenters.size(); i++)
     {
-        Point center(hCirCenters[i].x, hCirCenters[i].y);
-        circle(dst, center, 5, Scalar(0, 0, 255), 1, -1);
+        Point center(this->hCirCenters[i].x, this->hCirCenters[i].y);
+        circle(this->result, center, 5, Scalar(0, 0, 255), 1, -1);
     }
 }
 
@@ -886,6 +835,8 @@ Vec2f CircleDection::LSM_Horizontal(vector<Point>& pts)
 
     return result;
 }
+
+
 
 
 
