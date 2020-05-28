@@ -18,6 +18,7 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWnd)
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_WM_CREATE()
 	ON_WM_DROPFILES()
+    ON_COMMAND(ID_SELECTCOLOR, &CMainFrame::OnClickedToolBarEX)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -58,10 +59,19 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 	m_wndStatusBar.SetIndicators(indicators, sizeof(indicators)/sizeof(UINT));
 
+    //if (!m_viewToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_TOP | CBRS_GRIPPER | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC) ||
+    //    !m_viewToolBar.LoadToolBar(IDR_MAINFRAME))
+    //{
+    //    TRACE0("도구 모음을 만들지 못했습니다.\n");
+    //    return -1;      // 만들지 못했습니다.
+    //}
+
 	// TODO: 도구 모음을 도킹할 수 없게 하려면 이 세 줄을 삭제하십시오.
 	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
+    //m_viewToolBar.EnableDocking(CBRS_ALIGN_ANY);
 	EnableDocking(CBRS_ALIGN_ANY);
 	DockControlBar(&m_wndToolBar);
+    //DockControlBar(&m_viewToolBar);
 	DragAcceptFiles(TRUE);
 
 
@@ -94,6 +104,15 @@ void CMainFrame::Dump(CDumpContext& dc) const
 
 // CMainFrame 메시지 처리기
 
+void CMainFrame::OnClickedToolBarEX()
+{
+	CColorDialog colorDlg;
+
+	if (colorDlg.DoModal() == IDOK)
+	{
+		color = colorDlg.GetColor();
+	}
+}
 
 
 void CMainFrame::OnDropFiles(HDROP hDropInfo)

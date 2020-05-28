@@ -54,7 +54,9 @@ public:
 
 	double newWidth;
 	double newHeight;
+	
 	int idx = 0;
+	int index = -1;
 
 	CMainFrame* pFrame;
 
@@ -67,6 +69,7 @@ public:
 	bool drawID;
 	int x, y;	//그리기 시작값
 	int mov_x, mov_y;	//그리기 끝값
+	CPoint sPt, ePt;
 	CPoint pts;
 		// 그린 도형을 배열에 저장하기 위한 구조체 정의
 	struct MyShape
@@ -76,13 +79,18 @@ public:
 		CString shapeText; // 도형 문자열
 		int textSize; // 도형 문자열 크기		
 		CRect rect; // 도형 그리기 좌표
-		COLORREF fgColor, bgColor; // 전경색과 배경색 저장		
+		COLORREF fgColor, bgColor; // 전경색과 배경색 저장
+		bool isClicked = false;
 	};
 	MyShape shape; // 도형 값을 저장하기 위한 구조체 변수 선언	
 	// 그린 도형을 저장할 동적 배열 선언
 	CArray<MyShape, MyShape&> data;
+
+	bool panID;
+
+
 	int draw(CPoint point);
-	void drawShape(int shapeNum, int penWd, int sx, int sy, int ex, int ey);
+	void drawShape(int shapeNum, int penWd, int sx, int sy, int ex, int ey, COLORREF fgcolor);
 
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
@@ -102,5 +110,7 @@ public:
 	afx_msg void OnRectangle();
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+
+	
 };
 
