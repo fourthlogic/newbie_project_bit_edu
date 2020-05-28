@@ -22,10 +22,11 @@ BEGIN_MESSAGE_MAP(CMFCparamApp, CWinApp)
 	ON_COMMAND(ID_APP_ABOUT, &CMFCparamApp::OnAppAbout)
 	// 표준 파일을 기초로 하는 문서 명령입니다.
 	//ON_COMMAND(ID_FILE_NEW, &CWinApp::OnFileNew)
-	ON_COMMAND(ID_FILE_OPEN, &CWinApp::OnFileOpen)
+	//ON_COMMAND(ID_FILE_OPEN, &CWinApp::OnFileOpen)
 	// 표준 인쇄 설정 명령입니다.
 	ON_COMMAND(ID_FILE_PRINT_SETUP, &CWinApp::OnFilePrintSetup)
-	ON_COMMAND(ID_FILE_NEW, &CMFCparamApp::OnFileNew)
+	//ON_COMMAND(ID_FILE_NEW, &CMFCparamApp::OnFileNew)
+	ON_COMMAND(ID_FILE_OPEN, &CMFCparamApp::OnFileOpen)
 END_MESSAGE_MAP()
 
 
@@ -111,11 +112,10 @@ BOOL CMFCparamApp::InitInstance()
 	AddDocTemplate(pDocTemplate1);
 
 	// 이미지 뷰어 문서 템플릿 추가
-	CMultiDocTemplate* pDocTemplate2;
 	pDocTemplate2 = new CMultiDocTemplate(IDR_MFCparamTYPE,
-		RUNTIME_CLASS(CMFCparamDoc),
-		RUNTIME_CLASS(CChildFrame), // 사용자 지정 MDI 자식 프레임입니다.
-		RUNTIME_CLASS(CMFCparamView));
+		RUNTIME_CLASS(CImgViewerDoc),
+		RUNTIME_CLASS(CImgViewerFrame), // 사용자 지정 MDI 자식 프레임입니다.
+		RUNTIME_CLASS(CImgViewerView));
 	if (!pDocTemplate2)
 		return FALSE;
 	AddDocTemplate(pDocTemplate2);
@@ -137,27 +137,15 @@ BOOL CMFCparamApp::InitInstance()
 	// 응용 프로그램이 /RegServer, /Register, /Unregserver 또는 /Unregister로 시작된 경우 FALSE를 반환합니다.
 	//if (!ProcessShellCommand(cmdInfo))
 	//	return FALSE;
-	pDocTemplate1->OpenDocumentFile(NULL);
-	pDocTemplate2->OpenDocumentFile(NULL);
 
-	//////////////////////////////////////////////////////////////////
-	//pMainFrame->posTemplate = theApp.GetFirstDocTemplatePosition();
-	//
-	//pMainFrame->pDocTemplate = (CMultiDocTemplate*)GetNextDocTemplate(pMainFrame->posTemplate); // 첫번째 템플릿
-
-	//pMainFrame->posDocument = pMainFrame->pDocTemplate->GetFirstDocPosition(); // 도큐먼트 포지션 얻기
-	//pMainFrame->pDoc = (COptionDoc*)pMainFrame->pDocTemplate->GetNextDoc(pMainFrame->posDocument); // 첫번째 도큐먼트
-
-	//pMainFrame->posView = pMainFrame->pDoc->GetFirstViewPosition(); // 뷰 포지션 얻기
-	//pMainFrame->pView = (COptionFormView*)pMainFrame->pDoc->GetNextView(pMainFrame->posView); // 도큐먼트의 뷰
-
-	//// 프레임 포지션 얻기
-	//pMainFrame->pFrame = (COptionFrame*)pMainFrame->pView->GetParentFrame();
-	////////////////////////////////////////////////////////
+	// Child 프레임 창들을 미리 띄우기 위함
+	pDocTemplate1->OpenDocumentFile(NULL); // 파라미터 창
+	pDocTemplate2->OpenDocumentFile(NULL); // 이미지 뷰 창
 
 	// 주 창이 초기화되었으므로 이를 표시하고 업데이트합니다.
 	pMainFrame->ShowWindow(m_nCmdShow);
 	pMainFrame->UpdateWindow();
+
 
 
 	return TRUE;
@@ -215,5 +203,11 @@ void CMFCparamApp::OnAppAbout()
 
 // CMFCparamApp 메시지 처리기
 
-
-
+void CMFCparamApp::OnFileOpen()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
+	POSITION posImgViewerDoc = pDocTemplate2->GetFirstDocPosition();
+	CImgViewerDoc* pImgViewerDoc = (CImgViewerDoc*)pDocTemplate2->GetNextDoc(posImgViewerDoc);
+	pImgViewerDoc->OnFileOpen();
+}

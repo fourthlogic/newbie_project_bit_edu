@@ -8,6 +8,7 @@
 #include "COptionDoc.h"
 #include "COptionFormView.h"
 #include "COptionFrame.h"
+#include "CircleDection.h"
 
 class CMainFrame : public CMDIFrameWnd
 {
@@ -17,6 +18,7 @@ public:
 
 // 특성입니다.
 public:
+	
 
 // 작업입니다.
 public:
@@ -46,18 +48,22 @@ protected:
 	DECLARE_MESSAGE_MAP()
 
 public:
-	virtual void RecalcLayout(BOOL bNotify = TRUE);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+	
+	CircleDection Cir;
+
 	CRect m_rect;
 	POSITION posTemplate = NULL, posDocument = NULL, posView = NULL, posFrame = NULL;
 	CMultiDocTemplate* pDocTemplate = NULL;
 	COptionDoc* pDoc = NULL;
 	COptionFormView* pView = NULL;
 	COptionFrame* pFrame = NULL;
-	CMFCparamDoc* pImgViewerDoc = NULL;
-	CMFCparamView* pImgViewerView = NULL;
-	CChildFrame* pImgViewerFrame = NULL;
+	CImgViewerDoc* pImgViewerDoc = NULL;
+	CImgViewerView* pImgViewerView = NULL;
+	CImgViewerFrame* pImgViewerFrame = NULL;
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
+	int nn = 0;
+
 };
 
 

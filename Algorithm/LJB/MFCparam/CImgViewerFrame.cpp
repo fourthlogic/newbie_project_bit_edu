@@ -6,7 +6,7 @@
 #include "framework.h"
 #include "MFCparam.h"
 
-#include "ChildFrm.h"
+#include "CImgViewerFrame.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -14,28 +14,30 @@
 
 // CChildFrame
 
-IMPLEMENT_DYNCREATE(CChildFrame, CMDIChildWnd)
+IMPLEMENT_DYNCREATE(CImgViewerFrame, CMDIChildWnd)
 
-BEGIN_MESSAGE_MAP(CChildFrame, CMDIChildWnd)
+BEGIN_MESSAGE_MAP(CImgViewerFrame, CMDIChildWnd)
 END_MESSAGE_MAP()
 
 // CChildFrame 생성/소멸
 
-CChildFrame::CChildFrame() noexcept
+CImgViewerFrame::CImgViewerFrame() noexcept
 {
 	// TODO: 여기에 멤버 초기화 코드를 추가합니다.
 }
 
-CChildFrame::~CChildFrame()
+CImgViewerFrame::~CImgViewerFrame()
 {
 }
 
 
-BOOL CChildFrame::PreCreateWindow(CREATESTRUCT& cs)
+BOOL CImgViewerFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
 	// TODO: CREATESTRUCT cs를 수정하여 여기에서 Window 클래스 또는 스타일을 수정합니다.
 	if( !CMDIChildWnd::PreCreateWindow(cs) )
 		return FALSE;
+
+	cs.style &= ~(LONG)FWS_ADDTOTITLE;
 
 	return TRUE;
 }
@@ -43,12 +45,12 @@ BOOL CChildFrame::PreCreateWindow(CREATESTRUCT& cs)
 // CChildFrame 진단
 
 #ifdef _DEBUG
-void CChildFrame::AssertValid() const
+void CImgViewerFrame::AssertValid() const
 {
 	CMDIChildWnd::AssertValid();
 }
 
-void CChildFrame::Dump(CDumpContext& dc) const
+void CImgViewerFrame::Dump(CDumpContext& dc) const
 {
 	CMDIChildWnd::Dump(dc);
 }

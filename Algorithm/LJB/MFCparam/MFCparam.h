@@ -8,9 +8,9 @@
 #endif
 
 #include "resource.h"       // 주 기호입니다.
-#include "ChildFrm.h"
-#include "MFCparamDoc.h"
-#include "MFCparamView.h"
+#include "CImgViewerFrame.h"
+#include "CImgViewerDoc.h"
+#include "CImgViewerView.h"
 
 #include "MainFrm.h"
 
@@ -37,8 +37,8 @@ public:
 	afx_msg void OnAppAbout();
 	DECLARE_MESSAGE_MAP()
 public:
-
-	afx_msg void OnFileNew();
+	afx_msg void OnFileOpen();
+	CMultiDocTemplate* pDocTemplate2;
 };
 
 extern CMFCparamApp theApp;

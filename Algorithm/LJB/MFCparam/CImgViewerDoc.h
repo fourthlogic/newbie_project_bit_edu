@@ -4,13 +4,13 @@
 
 
 #pragma once
+#include "CircleDection.h"
 
-
-class CMFCparamDoc : public CDocument
+class CImgViewerDoc : public CDocument
 {
 protected: // serialization에서만 만들어집니다.
-	CMFCparamDoc() noexcept;
-	DECLARE_DYNCREATE(CMFCparamDoc)
+	CImgViewerDoc() noexcept;
+	DECLARE_DYNCREATE(CImgViewerDoc)
 
 // 특성입니다.
 public:
@@ -29,7 +29,7 @@ public:
 
 // 구현입니다.
 public:
-	virtual ~CMFCparamDoc();
+	virtual ~CImgViewerDoc();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
@@ -41,8 +41,14 @@ protected:
 protected:
 	DECLARE_MESSAGE_MAP()
 
+public:
+	CircleDection m_Algorithm;
+	Mat result_mat;
+	HBITMAP result_bmp;
+
 #ifdef SHARED_HANDLERS
 	// 검색 처리기에 대한 검색 콘텐츠를 설정하는 도우미 함수
 	void SetSearchContent(const CString& value);
 #endif // SHARED_HANDLERS
+	afx_msg void OnFileOpen();
 };

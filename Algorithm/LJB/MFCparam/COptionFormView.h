@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "MainFrm.h"
-
+#include "CircleDection.h"
 
 // COptionFormView 폼 보기
 
@@ -29,6 +29,20 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual void OnInitialUpdate();
+	afx_msg void OnBnClickedButtonTest();
+	int n = 0;
+
+	CircleDection optParams;
+	
+
+
+	afx_msg void OnBnClickedButtonOptionSave();
+	CString strDist;
+	CString strRadMax;
+	CString strRadMin;
+	CString strBGV;
+	CString strThMax;
+	CString strThMin;
 };
 
 

@@ -11,7 +11,14 @@
 #define ID_WINDOW_MANAGER               131
 #define IDD_COptionFormView             310
 #define IDC_EDIT_TEST                   1000
+#define IDC_EDIT_OPTION_DIST            1000
 #define IDC_BUTTON_TEST                 1001
+#define IDC_BUTTON_OPTION_SAVE          1001
+#define IDC_EDIT_OPTION_RMAX            1002
+#define IDC_EDIT_OPTION_RMIN            1003
+#define IDC_EDIT_OPTION_BGV             1004
+#define IDC_EDIT_OPTION_THMAX           1005
+#define IDC_EDIT_OPTION_THMIN           1006
 
 // Next default values for new objects
 // 

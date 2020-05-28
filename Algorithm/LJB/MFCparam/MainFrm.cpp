@@ -7,7 +7,6 @@
 #include "MFCparam.h"
 #include "MainFrm.h"
 
-
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -66,20 +65,6 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	EnableDocking(CBRS_ALIGN_ANY);
 	DockControlBar(&m_wndToolBar);
 
-	//// set the visual manager used to draw all user interface elements
-	//CMFCVisualManager::SetDefaultManager(RUNTIME_CLASS(CMFCVisualManagerWindows));
-
-	//// enable smart docking style window behavior
-	//CDockingManager::SetDockingMode(DT_SMART);
-
-	//// Enable docking and redocking pane to frame any sides (you can pass a combination of CBRS_ALIGN_ flags)
-	//m_wndPane.EnableDocking(CBRS_ALIGN_ANY);
-
-	//// Dock pane to the default (left) side of the frame.
-	//DockPane(&m_wndPane);
-
-
-
 	return 0;
 }
 
@@ -110,23 +95,13 @@ void CMainFrame::Dump(CDumpContext& dc) const
 
 // CMainFrame 메시지 처리기
 
-
-
-void CMainFrame::RecalcLayout(BOOL bNotify)
-{
-	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
-	//COptionFrame* pOptFrame = (COptionFrame*)GetActi
-
-	CMDIFrameWnd::RecalcLayout(bNotify);
-}
-
-
 void CMainFrame::OnSize(UINT nType, int cx, int cy)
 {
 	CMDIFrameWnd::OnSize(nType, cx, cy);
 	
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
-	int width = 300;
+
+	int width = 205;
 	GetClientRect(m_rect);
 
 	posTemplate = theApp.GetFirstDocTemplatePosition();
@@ -139,13 +114,13 @@ void CMainFrame::OnSize(UINT nType, int cx, int cy)
 
 	pDocTemplate = (CMultiDocTemplate*)theApp.GetNextDocTemplate(posTemplate); // 두번째 템플릿
 	posDocument = pDocTemplate->GetFirstDocPosition();
-	pImgViewerDoc = (CMFCparamDoc*)pDocTemplate->GetNextDoc(posDocument);
+	pImgViewerDoc = (CImgViewerDoc*)pDocTemplate->GetNextDoc(posDocument);
 	posView = pImgViewerDoc->GetFirstViewPosition();
-	pImgViewerView = (CMFCparamView*)pImgViewerDoc->GetNextView(posView);
-	pImgViewerFrame = (CChildFrame*)pImgViewerView->GetParentFrame();
+	pImgViewerView = (CImgViewerView*)pImgViewerDoc->GetNextView(posView);
+	pImgViewerFrame = (CImgViewerFrame*)pImgViewerView->GetParentFrame();
 	
-	pFrame->MoveWindow(m_rect.right - (width + 5), 0, width, m_rect.bottom - 50, 1);
-	pImgViewerFrame->MoveWindow(0, 0, m_rect.right - width, m_rect.bottom - 50, 1);
+	pFrame->MoveWindow(m_rect.right - width, 0, width, m_rect.bottom - 47, 1);
+	pImgViewerFrame->MoveWindow(0, 0, m_rect.right - width, m_rect.bottom - 47, 1);
 }
 
 

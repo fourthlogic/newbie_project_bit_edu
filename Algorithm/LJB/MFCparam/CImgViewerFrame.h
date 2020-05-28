@@ -4,11 +4,11 @@
 
 #pragma once
 
-class CChildFrame : public CMDIChildWnd
+class CImgViewerFrame : public CMDIChildWnd
 {
-	DECLARE_DYNCREATE(CChildFrame)
+	DECLARE_DYNCREATE(CImgViewerFrame)
 public:
-	CChildFrame() noexcept;
+	CImgViewerFrame() noexcept;
 
 // 특성입니다.
 protected:
@@ -23,7 +23,7 @@ public:
 
 // 구현입니다.
 public:
-	virtual ~CChildFrame();
+	virtual ~CImgViewerFrame();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;

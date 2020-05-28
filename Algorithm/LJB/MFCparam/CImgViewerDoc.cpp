@@ -10,7 +10,7 @@
 #include "MFCparam.h"
 #endif
 
-#include "MFCparamDoc.h"
+#include "CImgViewerDoc.h"
 
 #include <propkey.h>
 
@@ -20,25 +20,26 @@
 
 // CMFCparamDoc
 
-IMPLEMENT_DYNCREATE(CMFCparamDoc, CDocument)
+IMPLEMENT_DYNCREATE(CImgViewerDoc, CDocument)
 
-BEGIN_MESSAGE_MAP(CMFCparamDoc, CDocument)
+BEGIN_MESSAGE_MAP(CImgViewerDoc, CDocument)
+	ON_COMMAND(ID_FILE_OPEN, &CImgViewerDoc::OnFileOpen)
 END_MESSAGE_MAP()
 
 
 // CMFCparamDoc 생성/소멸
 
-CMFCparamDoc::CMFCparamDoc() noexcept
+CImgViewerDoc::CImgViewerDoc() noexcept
 {
 	// TODO: 여기에 일회성 생성 코드를 추가합니다.
 
 }
 
-CMFCparamDoc::~CMFCparamDoc()
+CImgViewerDoc::~CImgViewerDoc()
 {
 }
 
-BOOL CMFCparamDoc::OnNewDocument()
+BOOL CImgViewerDoc::OnNewDocument()
 {
 	if (!CDocument::OnNewDocument())
 		return FALSE;
@@ -54,7 +55,7 @@ BOOL CMFCparamDoc::OnNewDocument()
 
 // CMFCparamDoc serialization
 
-void CMFCparamDoc::Serialize(CArchive& ar)
+void CImgViewerDoc::Serialize(CArchive& ar)
 {
 	if (ar.IsStoring())
 	{
@@ -123,12 +124,12 @@ void CMFCparamDoc::SetSearchContent(const CString& value)
 // CMFCparamDoc 진단
 
 #ifdef _DEBUG
-void CMFCparamDoc::AssertValid() const
+void CImgViewerDoc::AssertValid() const
 {
 	CDocument::AssertValid();
 }
 
-void CMFCparamDoc::Dump(CDumpContext& dc) const
+void CImgViewerDoc::Dump(CDumpContext& dc) const
 {
 	CDocument::Dump(dc);
 }
@@ -136,3 +137,21 @@ void CMFCparamDoc::Dump(CDumpContext& dc) const
 
 
 // CMFCparamDoc 명령
+
+
+void CImgViewerDoc::OnFileOpen()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	m_Algorithm.SelectImage();
+	//m_Algorithm.ALLRun();
+	result_mat = m_Algorithm.GetResultImage();
+	result_bmp = m_Algorithm.MatToBitmap(result_mat);
+	
+	POSITION posImgViewerView = GetFirstViewPosition();
+	CImgViewerView* pImgViewerView = (CImgViewerView*)GetNextView(posImgViewerView);
+	pImgViewerView->m_background.Attach(result_bmp);
+	pImgViewerView->m_background.GetBitmap(&pImgViewerView->m_Bitmap);
+
+	pImgViewerView->m_hbackground = m_Algorithm.MatToBitmap(result_mat);
+
+}
