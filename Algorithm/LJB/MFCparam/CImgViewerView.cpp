@@ -34,6 +34,7 @@ BEGIN_MESSAGE_MAP(CImgViewerView, CView)
 	ON_WM_MBUTTONDOWN()
 	ON_WM_MBUTTONUP()
 	ON_WM_PAINT()
+	ON_COMMAND(ID_FILE_OPEN, &CImgViewerView::OnFileOpen)
 END_MESSAGE_MAP()
 
 // CMFCparamView 생성/소멸
@@ -99,6 +100,7 @@ void CImgViewerView::OnInitialUpdate()
 
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
 	GetParent()->SetWindowText(L"이미지 뷰");
+
 }
 
 
@@ -168,7 +170,7 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 			m_ePt.y = 0;
 
 		m_sPt = point;
-		Invalidate();
+		Invalidate(FALSE);
 		UpdateWindow();
 	}
 
@@ -206,17 +208,16 @@ BOOL CImgViewerView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	if (zDelta <= 0)// 휠 내릴때
 	{
-		m_Zoom = 1.2f;
+		m_Zoom = 1.25f;
 	}
 	else// 휠 올릴때
 	{
-		m_Zoom = 0.75f;
+		m_Zoom = 0.8f;
 	}
 
+	//if(zoomWidth *= m_Zoom)
 	z_pos.x += round(((((float)m_ePt.x + (float)m_pos.x) / (float)(PWidth * ((int)zoomWidth + 2))) * zoomWidth) - ((((float)m_ePt.x + (float)m_pos.x) / (float)(PWidth * ((int)zoomWidth + 2))) * (zoomWidth * m_Zoom)));
 	z_pos.y += round(((((float)m_ePt.y + (float)m_pos.y) / (float)(PHeight * ((int)zoomHeight + 2))) * zoomHeight) - ((((float)m_ePt.y + (float)m_pos.y) / (float)(PHeight * ((int)zoomHeight + 2))) * (zoomHeight * m_Zoom)));
-
-
 
 	if (m_ePt.x + m_bgRect.right > m_Bitmap.bmWidth + PWidth)
 	{
@@ -236,7 +237,7 @@ BOOL CImgViewerView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	PWidth = m_Bitmap.bmWidth / zoomWidth;
 	PHeight = m_Bitmap.bmHeight / zoomHeight;
 
-	Invalidate();
+	Invalidate(FALSE);
 
 	return CView::OnMouseWheel(nFlags, zDelta, pt);
 }
@@ -279,7 +280,6 @@ void CImgViewerView::OnPaint()
 	oldbitmap = mdcOffScreen.SelectObject(&bmpOffScreen);
 
 	memDC.SelectObject(&m_background);
-	//pDC->BitBlt(0, 0, 500, 500, &memDC, 500, 500, SRCCOPY);
 
 	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
 	mdcOffScreen.StretchBlt(0, 0, PWidth * ((int)zoomWidth + 2), PHeight * ((int)zoomHeight + 2), &memDC,
@@ -296,4 +296,34 @@ void CImgViewerView::OnPaint()
 	mdcOffScreen.SelectObject(oldbitmap);
 	mdcOffScreen.DeleteDC();
 	bmpOffScreen.DeleteObject();
+}
+
+
+void CImgViewerView::OnFileOpen()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CImgViewerDoc* pDoc = (CImgViewerDoc*)GetDocument();
+	pDoc->m_Algorithm.SelectImage();
+	pDoc->result_mat = pDoc->m_Algorithm.GetResultImage();
+	pDoc->result_bmp = pDoc->m_Algorithm.MatToBitmap(pDoc->result_mat);
+
+	m_background.Detach();
+	m_background.Attach(pDoc->result_bmp);
+	m_background.GetBitmap(&m_Bitmap);
+
+	zoomWidth = m_Bitmap.bmWidth;
+	zoomHeight = m_Bitmap.bmHeight;
+
+	m_ePt.x = 0;
+	m_ePt.y = 0;
+
+	z_pos.x = 1;
+	z_pos.y = 1;
+
+	m_Zoom = 1;
+
+	PWidth = m_Bitmap.bmWidth / zoomWidth;
+	PHeight = m_Bitmap.bmHeight / zoomHeight;
+
+	OnPaint();
 }

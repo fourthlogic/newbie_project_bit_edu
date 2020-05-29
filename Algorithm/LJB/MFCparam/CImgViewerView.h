@@ -77,6 +77,7 @@ public:
 	afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnPaint();
+	afx_msg void OnFileOpen();
 };
 
 #ifndef _DEBUG  // MFCparamView.cpp의 디버그 버전

@@ -27,6 +27,7 @@ COptionDoc::~COptionDoc()
 
 
 BEGIN_MESSAGE_MAP(COptionDoc, CDocument)
+	ON_COMMAND(ID_OPTION_OPEN, &COptionDoc::OnOptionOpen)
 END_MESSAGE_MAP()
 
 
@@ -64,3 +65,14 @@ void COptionDoc::Serialize(CArchive& ar)
 
 
 // COptionDoc 명령
+
+
+void COptionDoc::OnOptionOpen()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	//CDatabase db;
+
+	//CString strCon = _T("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=D://access test folder//Database1.accdb");
+
+
+}

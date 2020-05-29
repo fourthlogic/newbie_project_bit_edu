@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "MainFrm.h"
+#include "CImgViewerDoc.h"
 #include "CircleDection.h"
-
 // COptionFormView 폼 보기
 
 class COptionFormView : public CFormView
@@ -29,11 +29,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual void OnInitialUpdate();
-	afx_msg void OnBnClickedButtonTest();
-	int n = 0;
-
-	CircleDection optParams;
-	
 
 
 	afx_msg void OnBnClickedButtonOptionSave();
@@ -43,6 +38,14 @@ public:
 	CString strBGV;
 	CString strThMax;
 	CString strThMin;
+	afx_msg void OnEnChangeEditOptionDist();
+	afx_msg void OnEnChangeEditOptionRmax();
+	afx_msg void OnEnChangeEditOptionRmin();
+	afx_msg void OnEnChangeEditOptionBgv();
+	afx_msg void OnEnChangeEditOptionThmax();
+	afx_msg void OnEnChangeEditOptionThmin();
+
+	CImgViewerDoc* pImgViewerDoc1;
 };
 
 

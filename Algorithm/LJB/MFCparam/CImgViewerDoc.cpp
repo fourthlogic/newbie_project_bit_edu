@@ -142,16 +142,16 @@ void CImgViewerDoc::Dump(CDumpContext& dc) const
 void CImgViewerDoc::OnFileOpen()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	m_Algorithm.SelectImage();
-	//m_Algorithm.ALLRun();
-	result_mat = m_Algorithm.GetResultImage();
-	result_bmp = m_Algorithm.MatToBitmap(result_mat);
-	
-	POSITION posImgViewerView = GetFirstViewPosition();
-	CImgViewerView* pImgViewerView = (CImgViewerView*)GetNextView(posImgViewerView);
-	pImgViewerView->m_background.Attach(result_bmp);
-	pImgViewerView->m_background.GetBitmap(&pImgViewerView->m_Bitmap);
+	//m_Algorithm.SelectImage();
+	//result_mat = m_Algorithm.GetResultImage();
+	//result_bmp = m_Algorithm.MatToBitmap(result_mat);
+	//
+	//POSITION posImgViewerView = GetFirstViewPosition();
+	//CImgViewerView* pImgViewerView = (CImgViewerView*)GetNextView(posImgViewerView);
+	//pImgViewerView->m_background.Detach();
+	//pImgViewerView->m_background.Attach(result_bmp);
+	//pImgViewerView->m_background.GetBitmap(&pImgViewerView->m_Bitmap);
 
-	pImgViewerView->m_hbackground = m_Algorithm.MatToBitmap(result_mat);
+	//pImgViewerView->m_hbackground = m_Algorithm.MatToBitmap(result_mat);
 
 }

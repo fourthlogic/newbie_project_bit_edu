@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "COptionFormView.h"
+#include <afxdb.h>
 // COptionDoc 문서
 
 class COptionDoc : public CDocument
@@ -23,4 +24,12 @@ protected:
 	virtual BOOL OnNewDocument();
 
 	DECLARE_MESSAGE_MAP()
+public:
+	CString m_strDist;
+	CString m_strRadMax;
+	CString m_strRadMin;
+	CString m_strBGV;
+	CString m_strThMax;
+	CString m_strThMin;
+	afx_msg void OnOptionOpen();
 };

@@ -206,8 +206,8 @@ void CMFCparamApp::OnAppAbout()
 void CMFCparamApp::OnFileOpen()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
-	POSITION posImgViewerDoc = pDocTemplate2->GetFirstDocPosition();
-	CImgViewerDoc* pImgViewerDoc = (CImgViewerDoc*)pDocTemplate2->GetNextDoc(posImgViewerDoc);
-	pImgViewerDoc->OnFileOpen();
+	//CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
+	//POSITION posImgViewerDoc = pDocTemplate2->GetFirstDocPosition();
+	//CImgViewerDoc* pImgViewerDoc = (CImgViewerDoc*)pDocTemplate2->GetNextDoc(posImgViewerDoc);
+	//pImgViewerDoc->OnFileOpen();
 }
