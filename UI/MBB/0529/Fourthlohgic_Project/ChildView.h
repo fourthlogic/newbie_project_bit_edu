@@ -43,7 +43,7 @@ public:
 	// 빈공간을 새롭게 만든다.
 	CDC mdcOffScreen;      // 더블버퍼링을 위한 메모리 그림버퍼
 	CBitmap bmpOffScreen; // 더블버퍼링을 위한 비트맵 객체를 만든다.
-	CBitmap* oldbitmap;
+	CBitmap* oldbitmap, * oldbitmap2;
 
 	CBitmap m_background;
 	BITMAP m_Bitmap;
@@ -56,7 +56,7 @@ public:
 	double newHeight;
 	
 	int idx = 0;
-	int index = -1;
+	int index = 0;
 
 	CMainFrame* pFrame;
 
@@ -87,6 +87,9 @@ public:
 	CArray<MyShape, MyShape&> data;
 
 	bool panID;
+	bool m_lbtn;
+	CRect mRect[4];
+	int resize = 0;
 
 
 	int draw(CPoint point);
@@ -112,5 +115,9 @@ public:
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 
 	
+	afx_msg void OnDrawid();
+	afx_msg void OnPanid();
+
+	void FigureSelected(CPoint point);
 };
 

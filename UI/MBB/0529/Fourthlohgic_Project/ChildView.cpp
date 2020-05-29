@@ -63,7 +63,8 @@ BEGIN_MESSAGE_MAP(CChildView, CWnd)
 	ON_COMMAND(ID_RECTANGLE, &CChildView::OnRectangle)
 	ON_WM_LBUTTONUP()
 	ON_WM_LBUTTONDOWN()
-
+	ON_COMMAND(ID_DRAWID, &CChildView::OnDrawid)
+	ON_COMMAND(ID_PANID, &CChildView::OnPanid)
 END_MESSAGE_MAP()
 
 
@@ -93,7 +94,8 @@ void CChildView::OnPaint()
 	//CString str;
 	//str.Format(_T("X = %d, Y = %d"), m_pos.x, m_pos.y);
 	//dc.TextOut(m_pos.x, m_pos.y, str);
-
+	m_background.Detach();
+	m_background.Attach(::CopyImage(pFrame->imageList[idx].getImage(), IMAGE_BITMAP, 0, 0, 0));
 	memDC.CreateCompatibleDC(pDC);
 	mdcOffScreen.CreateCompatibleDC(pDC);
 
@@ -101,7 +103,9 @@ void CChildView::OnPaint()
 
 	oldbitmap = mdcOffScreen.SelectObject(&bmpOffScreen);
 
+
 	memDC.SelectObject(&m_background);
+	
 
 
 
@@ -122,7 +126,6 @@ void CChildView::OnPaint()
 	pDC->StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom, &mdcOffScreen,
 		m_ePt.x, m_ePt.y, m_bgRect.right, m_bgRect.bottom, SRCCOPY);
 		
-
 	memDC.DeleteDC();
 	mdcOffScreen.SelectObject(oldbitmap);
 	mdcOffScreen.DeleteDC();
@@ -229,30 +232,123 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 		UpdateWindow();
 	}
 	
-	if (MK_LBUTTON && index !=-1) 
+	if (m_lbtn && panID && resize==0)
 	{
 		if (data[index].isClicked)
 		{
-			int o, p;
+			CPoint pt;
 			int xx, yy;
 			//CPoint TLX;
 			xx = x, yy = y;
 			x = z_pos.x + (m_ePt.x + point.x) / PWidth;
 			y = z_pos.y + (m_ePt.y + point.y) / PHeight;
 
-			o = (x - xx);
-			p = (y - yy);
+			if (data[index].rect.left <= x&&x <= data[index].rect.right && data[index].rect.top <= y &&y<= data[index].rect.bottom)
+			{
+				if (data[index].shapeType == DrawMode::DRectangle)
+				{
+					pt.x = (x - xx);
+					pt.y = (y - yy);
 
-			data[index].rect.right += o;
-			data[index].rect.left += o;
-			data[index].rect.top += p;
-			data[index].rect.bottom += p;
+					data[index].rect.right += pt.x;
+					data[index].rect.left += pt.x;
+					data[index].rect.top += pt.y;
+					data[index].rect.bottom += pt.y;
 
-			//Invalidate();
+					draw(pt);
+				}
+			}
+			Invalidate();
 		}
 
 	}
-	else if (MK_LBUTTON && drawID == true) // 마우스를 클릭하여 드래그일 동안만 
+	else if (m_lbtn && panID && resize!=0)
+	{
+		CPoint pt;
+		int xx, yy;
+
+		xx = x, yy = y;
+		x = z_pos.x + (m_ePt.x + point.x) / PWidth;
+		y = z_pos.y + (m_ePt.y + point.y) / PHeight;
+
+		if (resize == 1)
+		{
+			if (data[index].isClicked)
+			{
+				if (data[index].shapeType == DrawMode::DRectangle)
+				{
+					pt.x = (x - xx);
+					pt.y = (y - yy);
+
+					//data[index].rect.right += pt.x;
+					data[index].rect.left += pt.x;
+					data[index].rect.top += pt.y;
+					//data[index].rect.bottom += pt.y;
+
+					draw(pt);
+				}
+			}
+		}
+		else if (resize == 2)
+		{
+			if (data[index].isClicked)
+			{
+				if (data[index].shapeType == DrawMode::DRectangle)
+				{
+					pt.x = (x - xx);
+					pt.y = (y - yy);
+
+					data[index].rect.right += pt.x;
+					//data[index].rect.left += pt.x;
+					data[index].rect.top += pt.y;
+					//data[index].rect.bottom += pt.y;
+
+					draw(pt);
+				}
+			}
+
+		}
+		else if (resize == 3)
+		{
+			if (data[index].isClicked)
+			{
+				if (data[index].shapeType == DrawMode::DRectangle)
+				{
+					pt.x = (x - xx);
+					pt.y = (y - yy);
+
+					//data[index].rect.right += pt.x;
+					data[index].rect.left += pt.x;
+					//data[index].rect.top += pt.y;
+					data[index].rect.bottom += pt.y;
+
+					draw(pt);
+				}
+			}
+
+		}
+		else if (resize == 4)
+		{
+			if (data[index].isClicked)
+			{
+				if (data[index].shapeType == DrawMode::DRectangle)
+				{
+					pt.x = (x - xx);
+					pt.y = (y - yy);
+
+					data[index].rect.right += pt.x;
+					//data[index].rect.left += pt.x;
+					//data[index].rect.top += pt.y;
+					data[index].rect.bottom += pt.y;
+
+					draw(pt);
+				}
+			}
+
+		}
+		//Invalidate();
+	}
+	else if (m_lbtn && drawID) // 마우스를 클릭하여 드래그일 동안만 
 	{
 		pts.x = (z_pos.x + (m_ePt.x + point.x) / PWidth);
 		pts.y = (z_pos.y + (m_ePt.y + point.y) / PHeight);
@@ -553,6 +649,7 @@ int CChildView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	pFrame->imageList[idx].setImage();
 	m_background.Attach(pFrame->imageList[idx].getImage());
 	m_background.GetBitmap(&m_Bitmap);
+
 	//for (int i = 0; i < pFrame->imageList.size(); i++) {
 	//	pFrame->imageList[i].setImage();
 	//}
@@ -581,6 +678,7 @@ int CChildView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	drawID = false;
 	panID = false;
+	m_lbtn = false;
 
 	m_bkgBrush.CreateSolidBrush(0x00000000);
 
@@ -651,46 +749,66 @@ void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 
 	CWnd::OnLButtonDown(nFlags, point);
 	SetCapture();
+	m_lbtn = true;
 	x = z_pos.x + (m_ePt.x + point.x) / PWidth;
 	y = z_pos.y + (m_ePt.y + point.y) / PHeight; 
 
 	sPt.x = point.x;
 	sPt.y = point.y;
-
-	drawID = true; // 그리기 시작을 알리는 변수		
-
-	CPoint cp;
+		
 	
-	for (int i = 0; i < data.GetSize(); i++)
+	if (panID)
 	{
-		cp.x = z_pos.x + (m_ePt.x + point.x) / PWidth;
-		cp.y = z_pos.y + (m_ePt.y + point.y) / PHeight;
-		if ((data[i].rect.top == cp.y && data[i].rect.left <= cp.x <= data[i].rect.right) || (data[i].rect.left == cp.x && data[i].rect.top <= cp.y <= data[i].rect.bottom)
-			|| (data[i].rect.right == cp.x && data[i].rect.top <= cp.y <= data[i].rect.bottom) || (data[i].rect.bottom == cp.y && data[i].rect.left <= cp.x <= data[i].rect.right))
+		if (mRect[0].left <= x && x <= mRect[0].right && mRect[0].top <= y && y <= mRect[0].bottom)
 		{
-			drawID = false;
-			if (data[i].shapeType == DrawMode::DRectangle)
-			{
-				panID = true;
-				//drawID = FALSE;
-				data[i].isClicked = true;
-				//MessageBox(_T("사각조건성립"));
-				index = i;
-				
-			}
-			if (data[i].shapeType == DrawMode::DEllipse)
-			{
-				panID = true;
-				//drawID = FALSE;
-				//MessageBox(_T("원조건성립"));
-			}
-				
+			//왼쪽 위
+			resize = 1;
 		}
+		else if (mRect[2].left <= x && x <= mRect[2].right && mRect[2].top <= y && y <= mRect[2].bottom)
+		{
+			//오른쪽 위
+			resize = 2;
+		}
+		else if (mRect[3].left <= x && x <= mRect[3].right && mRect[3].top <= y && y <= mRect[3].bottom)
+		{
+			//왼쪽 아래
+			resize = 3;
+		}
+		else if (mRect[1].left <= x && x <= mRect[1].right && mRect[1].top <= y && y <= mRect[1].bottom)
+		{
+			//오른쪽 아래
+			resize = 4;
+		}
+		else
+		{
+			resize = 0;
+			for (int i = 0; i < data.GetSize(); i++)
+			{
+				/*if ((data[i].rect.top == cp.y && data[i].rect.left <= cp.x <= data[i].rect.right) || (data[i].rect.left == cp.x && data[i].rect.top <= cp.y <= data[i].rect.bottom)
+					|| (data[i].rect.right == cp.x && data[i].rect.top <= cp.y <= data[i].rect.bottom) || (data[i].rect.bottom == cp.y && data[i].rect.left <= cp.x <= data[i].rect.right))*/
+				if (data[i].rect.left <= x && x <= data[i].rect.right && data[i].rect.top <= y && y <= data[i].rect.bottom)
+				{
+					if (data[i].shapeType == DrawMode::DRectangle)
+					{
+						data[i].isClicked = true;
+						//MessageBox(_T("사각조건성립"));
+						index = i;
+						break;
+
+					}
+					if (data[i].shapeType == DrawMode::DEllipse)
+					{
+						//drawID = FALSE;
+						//MessageBox(_T("원조건성립"));
+					}
+				}
+				else
+				{
+					data[i].isClicked = false;
+				}
+			}
+		}		
 	}
-
-
-
-
 }
 
 
@@ -704,7 +822,6 @@ void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
 	{
 		mov_x = (z_pos.x + (m_ePt.x + point.x) / PWidth) + 1;
 		mov_y = (z_pos.y + (m_ePt.y + point.y) / PHeight) + 1;
-		//printf("sex == %d %d\n", mov_x, mov_y);
 		// 마우스 버트을 놓으면 각종 값을 shape 구조체 맴버변수에 저장
 		shape.shapeType = drawStyle;  // 도형 콤보 상자에서 선택된 도형 스타일을 저장		
 		shape.penWidth = PWidth;
@@ -713,86 +830,92 @@ void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
 		shape.rect.right = mov_x; // 도형 끝 좌표 저장
 		shape.rect.bottom = mov_y;
 		shape.fgColor = frame->color;
+		shape.isClicked = false;
 
 		//저장된 shape를 배열에 저장
 		data.Add(shape);
-		drawID = false;
 	}
 
-	//if (panID == true)
-	//{
-	//	panID = false;
-	//	MessageBox(_T("사각형"));
-	//}
-
-	if (panID)
-	{
-		if (index != -1) {
-			if (data[index].isClicked)
-			{
-				data[index].isClicked = false;
-				data[index].fgColor = RGB(255, 0, 0);
-				index = -1;
-				panID == false;
-			}
-
-		}
-	}
+	
+	m_lbtn = false;
+	resize = 0;
 
 	ReleaseCapture();
 	Invalidate();
+	
 }
 
 int CChildView::draw(CPoint point)
 {
-	//CClientDC dc(this);
-	
-	//CMainFrame* cmr = (CMainFrame*)AfxGetMainWnd();
-	//CPen myPen, * oldPen;
+	CMainFrame* frame = (CMainFrame*)AfxGetMainWnd();
 
 	CDC* dc = GetDC();
-	CPen myPen(PS_SOLID, PWidth, RGB(255, 255, 255));
+	CPen myPen(PS_SOLID, PWidth, frame->color);
 	CPen* oldPen;
 
 	HBRUSH myBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
 	HBRUSH oldBrush = (HBRUSH)dc->SelectObject(myBrush);
 
 	oldPen = dc->SelectObject(&myPen);
-
-	if (drawStyle == DrawMode::DLine) // 콤보상자에서 직선 선택시
+	if (drawID)
 	{
-		dc->SetROP2(R2_BLACK); // 픽셀인 펜 색 조합 및 반전 화면 색상 
-		
-		//printf("Draw mov_x: %d mov_y: %d\n", x, y);
+		if (drawStyle == DrawMode::DLine) // 콤보상자에서 직선 선택시
+		{
+			//dc->SetROP2(R2_BLACK); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+
+			dc->MoveTo(sPt.x, sPt.y); dc->LineTo(ePt.x, ePt.y);
+
+			//printf("Draw x: %d y: %d\n", x, y);
+		}
+		else if (drawStyle == DrawMode::DEllipse) // 콤보상자에서 원 선택시
+		{
+			mov_x = (z_pos.x + (m_ePt.x + point.x) / PWidth) + 1;
+			mov_y = (z_pos.y + (m_ePt.y + point.y) / PHeight) + 1;
+			//printf("원 movx: %d movy: %d\n", mov_x, mov_y);
+			//printf("원 x: %d y: %d\n", x, y);
+			dc->Ellipse(sPt.x, sPt.y, ePt.x, ePt.y);
+		}
+		else if (drawStyle == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
+		{
+			mov_x = (z_pos.x + (m_ePt.x + point.x) / PWidth) + 1;
+			mov_y = (z_pos.y + (m_ePt.y + point.y) / PHeight) + 1;
+			//printf("사각형 movx: %d movy: %d\n", mov_x, mov_y);
+			//printf("사각형 x: %d y: %d\n", x, y);
+			dc->Rectangle(sPt.x, sPt.y, ePt.x, ePt.y);
+		}
+	}
+	//else if (panID)
+	//{
+	//	if (drawStyle == DrawMode::DLine) // 콤보상자에서 직선 선택시
+	//	{
+	//		dc->SetROP2(R2_BLACK); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+
+	//		//printf("Draw mov_x: %d mov_y: %d\n", x, y);
 
 
-		//dc->MoveTo(x, y); dc->LineTo(mov_x,mov_y); //전단계를 다시 그려서 흰색으로 만듬
-		/*printf("선 movx: %d movy: %d\n", mov_x, mov_y);
-		printf("선 x: %d y: %d\n", x, y);*/
-		dc->MoveTo(sPt.x, sPt.y); dc->LineTo(ePt.x, ePt.y);
+	//		//dc->MoveTo(x, y); dc->LineTo(mov_x,mov_y); //전단계를 다시 그려서 흰색으로 만듬
+	//		/*printf("선 movx: %d movy: %d\n", mov_x, mov_y);
+	//		printf("선 x: %d y: %d\n", x, y);*/
+	//		dc->MoveTo(sPt.x, sPt.y); dc->LineTo(ePt.x, ePt.y);
 
-		printf("Draw x: %d y: %d\n", x, y);
-	}
-	else if (drawStyle == DrawMode::DEllipse) // 콤보상자에서 원 선택시
-	{
-		dc->SetROP2(R2_BLACK); // 픽셀인 펜 색 조합 및 반전 화면 색상 
-		//dc->Ellipse(x, y, mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬
-		mov_x = (z_pos.x + (m_ePt.x + point.x) / PWidth) + 1;
-		mov_y = (z_pos.y + (m_ePt.y + point.y) / PHeight) + 1;
-		printf("원 movx: %d movy: %d\n", mov_x, mov_y);
-		printf("원 x: %d y: %d\n", x, y);
-		dc->Ellipse(sPt.x, sPt.y, ePt.x, ePt.y);
-	}
-	else if (drawStyle == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
-	{
-		dc->SetROP2(R2_BLACK); // 픽셀인 펜 색 조합 및 반전 화면 색상 
-		//dc->Rectangle(x, y, mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬, 지워지는 효과
-		mov_x = (z_pos.x + (m_ePt.x + point.x) / PWidth) + 1;
-		mov_y = (z_pos.y + (m_ePt.y + point.y) / PHeight) + 1;
-		printf("사각형 movx: %d movy: %d\n", mov_x, mov_y);
-		printf("사각형 x: %d y: %d\n", x, y);
-		dc->Rectangle(sPt.x, sPt.y, ePt.x, ePt.y);
-	}
+	//	}
+	//	else if (drawStyle == DrawMode::DEllipse) // 콤보상자에서 원 선택시
+	//	{
+	//		dc->SetROP2(R2_BLACK); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+	//		//dc->Ellipse(x, y, mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬
+
+	//		dc->Ellipse(sPt.x, sPt.y, ePt.x, ePt.y);
+	//	}
+	//	else if (drawStyle == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
+	//	{
+	//		dc->SetROP2(R2_BLACK); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+	//		//dc->Rectangle(x, y, mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬, 지워지는 효과
+
+	//		dc->Rectangle(sPt.x, sPt.y, ePt.x, ePt.y);
+	//	}
+	//}
+
+	
 
 	dc->SelectObject(oldPen); // 이전 팬 선택		
 	myPen.DeleteObject();  // 생성한 펜 메모리에서 제거		
@@ -810,12 +933,6 @@ int CChildView::draw(CPoint point)
 
 void CChildView::drawShape(int shapeNum, int penWd, int sx, int sy, int ex, int ey, COLORREF fgcolor)
 {
-	//CClientDC dc(this);
-	//CBrush brush;
-	//brush.CreateSolidBrush(RGB(255, 255, 255));
-	//CMainFrame* cmr = (CMainFrame*)AfxGetMainWnd();
-	
-	//CBrush myBrush, * oldBrush;
 	CPen myPen(PS_SOLID, penWd, fgcolor);
 	CPen* oldPen;
 	oldPen = memDC.SelectObject(&myPen);
@@ -825,7 +942,7 @@ void CChildView::drawShape(int shapeNum, int penWd, int sx, int sy, int ex, int 
 	if (shapeNum == 1)	// 직선 선택시
 	{
 		memDC.MoveTo(sx, sy); memDC.LineTo(ex, ey);
-		printf("Shape x: %d y: %d\n", sx, sy);
+		//printf("Shape x: %d y: %d\n", sx, sy);
 		//printf("Shape mov_x: %d mov_y: %d\n", ex, ey);
 	}
 	else if (shapeNum == 2) // 원 선택시
@@ -836,33 +953,128 @@ void CChildView::drawShape(int shapeNum, int penWd, int sx, int sy, int ex, int 
 	{
 		// 화면에 사각형을 그린다.
 		memDC.Rectangle(sx, sy, ex, ey);
+		//printf("사각형 left: %d top: %d\n", sx, sy);
+		//printf("사각형 right: %d bottom: %d\n", ex, ey);
+	}
+	
+	if (data[index].isClicked)
+	{
+		CPen pen0(PS_DOT, 1, RGB(0, 0, 0));
+		memDC.SelectObject(pen0);
+		memDC.SelectStockObject(NULL_BRUSH);
+
+		if (data[index].shapeType == DrawMode::DRectangle)
+		{
+			memDC.Rectangle(data[index].rect.left, data[index].rect.top, data[index].rect.right, data[index].rect.bottom);
+			//printf("사각형 left: %d top: %d\n", data[i].rect.left, data[i].rect.top);
+			//printf("사각형 right: %d bottom: %d\n", data[i].rect.right, data[i].rect.bottom);
+
+			mRect[0].SetRect(data[index].rect.left - 10, data[index].rect.top - 10,
+				data[index].rect.left + 10, data[index].rect.top + 10);
+			mRect[1].SetRect(data[index].rect.right - 10, data[index].rect.bottom - 10,
+				data[index].rect.right + 10, data[index].rect.bottom + 10);
+			mRect[2].SetRect(data[index].rect.right - 10, data[index].rect.top - 10,
+				data[index].rect.right + 10, data[index].rect.top + 10);
+			mRect[3].SetRect(data[index].rect.left - 10, data[index].rect.bottom - 10,
+				data[index].rect.left + 10, data[index].rect.bottom + 10);
+
+			CPen* oldPen;
+			CPen pen(PS_SOLID, 2, RGB(0, 0, 0));
+			oldPen = memDC.SelectObject(&pen);
+			memDC.SelectStockObject(WHITE_BRUSH);
+			memDC.Ellipse(mRect[0]);
+			memDC.Ellipse(mRect[1]);
+			memDC.Ellipse(mRect[2]);
+			memDC.Ellipse(mRect[3]);
+		}
 	}
 
 	memDC.SelectObject(oldBrush);
-	DeleteObject(myBrush);
-	//memDC.SelectObject(oldPen); // 이전 팬 선택		
-	//myPen.DeleteObject();  // 생성한 펜 메모리에서 제거		
-	
-	
-	//else if (shapeNum == 3) // 콤보상자에서 부채꼴 선택시
-	//{
-	//	oldBrush = dc.SelectObject(&myBrush);
-	//	CRect PieRect(sx, sy, ex, ey);
-	//	dc.Pie(PieRect, CPoint(PieRect.CenterPoint().x, PieRect.top), CPoint(PieRect.right, PieRect.CenterPoint().y));
-	//	dc.SelectObject(oldBrush); // 이전 브러시 선택
-	//}
-	//else if (shapeNum == 4) // 그리기텍스트 아이콘 선택시
-	//{
-	//	dc.SetTextColor(fgcolor); // 텍스트 색상 설정
-	//	dc.SetBkColor(bgcolor); // 텍스트 배경색 설정
-	//							// 폰트 생성
-	//			
-	//	dc.DrawText(str, CRect(sx, sy, ex, ey), DT_SINGLELINE | DT_CENTER | DT_VCENTER);  // 화면에 문자열 출력
-
-	//}
-	//memDC.SelectObject(oldPen); // 이전 팬 선택	
-	//myPen.DeleteObject();  // 생성한 펜 메모리에서 제거		
-	//myBrush.DeleteObject(); // 생성한 브러쉬 메모리에서 제거		
+	DeleteObject(myBrush);	
 
 }
 
+
+void CChildView::OnDrawid()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	drawID = true;
+	panID = false;
+}
+
+
+void CChildView::OnPanid()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	drawID = false;
+	panID = true;
+}
+
+
+void CChildView::FigureSelected(CPoint point)
+{
+	CDC* dc = GetDC();
+	//m_background.Detach();
+	//m_background.Attach(::CopyImage(pFrame->imageList[idx].getImage(), IMAGE_BITMAP, 0, 0, 0));
+	//memDC.CreateCompatibleDC(dc);
+
+	//memDC.SelectObject(&m_background);
+
+
+	CPoint cp;
+	
+
+	CPen pen0(PS_DOT, 1, RGB(0, 0, 0));
+	dc->SelectObject(pen0);
+	dc->SelectStockObject(NULL_BRUSH);
+
+	cp.x = z_pos.x + (m_ePt.x + point.x) / PWidth;
+	cp.y = z_pos.y + (m_ePt.y + point.y) / PHeight;
+
+	for (int i = 0; i < data.GetSize(); i++)
+	{
+		/*if ((data[i].rect.top == cp.y && data[i].rect.left <= cp.x <= data[i].rect.right) || (data[i].rect.left == cp.x && data[i].rect.top <= cp.y <= data[i].rect.bottom)
+			|| (data[i].rect.right == cp.x && data[i].rect.top <= cp.y <= data[i].rect.bottom) || (data[i].rect.bottom == cp.y && data[i].rect.left <= cp.x <= data[i].rect.right))*/
+		if (data[i].rect.left <= cp.x <= data[i].rect.right && data[i].rect.top <= cp.y <= data[i].rect.bottom)
+		{
+			if (data[i].shapeType == DrawMode::DRectangle)
+			{
+				//drawID = FALSE;
+				data[i].isClicked = true;
+				//MessageBox(_T("사각조건성립"));
+				index = i;
+
+				dc->Rectangle(data[i].rect.left, data[i].rect.top, data[i].rect.right, data[i].rect.bottom);
+				printf("사각형 left: %d top: %d\n", data[i].rect.left, data[i].rect.top);
+				printf("사각형 right: %d bottom: %d\n", data[i].rect.right, data[i].rect.bottom);
+				
+				mRect[0].SetRect(data[i].rect.left - 10, data[i].rect.top - 10,
+					data[i].rect.left + 10, data[i].rect.top + 10);
+				mRect[1].SetRect(data[i].rect.right - 10, data[i].rect.bottom - 10,
+					data[i].rect.right + 10, data[i].rect.bottom + 10);
+				mRect[2].SetRect(data[i].rect.right - 10, data[i].rect.top - 10,
+					data[i].rect.right + 10, data[i].rect.top + 10);
+				mRect[3].SetRect(data[i].rect.left - 10, data[i].rect.bottom - 10,
+					data[i].rect.left + 10, data[i].rect.bottom + 10);
+
+				CPen* oldPen;
+				CPen pen(PS_SOLID, 2, RGB(0, 0, 0));
+				oldPen = dc->SelectObject(&pen);
+				dc->SelectStockObject(WHITE_BRUSH);
+				dc->Ellipse(mRect[0]);
+				dc->Ellipse(mRect[1]);
+				dc->Ellipse(mRect[2]);
+				dc->Ellipse(mRect[3]);
+
+			}
+			if (data[i].shapeType == DrawMode::DEllipse)
+			{
+				//drawID = FALSE;
+				//MessageBox(_T("원조건성립"));
+			}
+
+		}
+	}
+	//memDC.DeleteDC();
+
+}
