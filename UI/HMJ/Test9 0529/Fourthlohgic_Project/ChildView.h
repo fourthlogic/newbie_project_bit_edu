@@ -91,9 +91,13 @@ public:
 
 
 	// 그리기 ----------------------------------
-	//그리기
+	CRect lRect[2], rRect[4];
+	CPoint sPoint;
+	CPoint ePoint;
 	int drawStyle;
-	bool drawID;
+	bool drawID, panID, chooseID, EdgeChosen;
+	int chosenShape;
+	int chosenEdge;
 	int x, y;	//그리기 시작값
 	int mov_x, mov_y;	//그리기 끝값
 		// 그린 도형을 배열에 저장하기 위한 구조체 정의
