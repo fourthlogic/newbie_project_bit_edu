@@ -81,15 +81,24 @@ public:
 		CRect rect; // 도형 그리기 좌표
 		COLORREF fgColor, bgColor; // 전경색과 배경색 저장
 		bool isClicked = false;
+		//int sequence;
 	};
 	MyShape shape; // 도형 값을 저장하기 위한 구조체 변수 선언	
 	// 그린 도형을 저장할 동적 배열 선언
 	CArray<MyShape, MyShape&> data;
+	//CArray<MyShape, MyShape&> ctrl;
 
 	bool panID;
 	bool m_lbtn;
 	CRect mRect[4];
 	int resize = 0;
+	//int order = 1;
+	int l_width = 1;
+	int ctrlsize = 0;
+	CPoint p_pt;
+	int pasteW, pasteH;
+	bool ctrl = false;
+	bool iscopy = false;
 
 
 	int draw(CPoint point);
@@ -119,5 +128,19 @@ public:
 	afx_msg void OnPanid();
 
 	void FigureSelected(CPoint point);
+	afx_msg void OnLwidth1();
+	afx_msg void OnLwidth2();
+	afx_msg void OnLwidth3();
+	afx_msg void OnLwidth4();
+	afx_msg void OnLwidth5();
+	afx_msg void OnLwidth10();
+	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint point);
+	afx_msg void OnCopy();
+	afx_msg void OnPaste();
+	afx_msg void OnDelete();
+	//afx_msg void OnCtrlZ();
+	//afx_msg void OnCtrlY();
+	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };
 

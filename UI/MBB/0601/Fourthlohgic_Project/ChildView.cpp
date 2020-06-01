@@ -65,6 +65,19 @@ BEGIN_MESSAGE_MAP(CChildView, CWnd)
 	ON_WM_LBUTTONDOWN()
 	ON_COMMAND(ID_DRAWID, &CChildView::OnDrawid)
 	ON_COMMAND(ID_PANID, &CChildView::OnPanid)
+	ON_COMMAND(ID_LWIDTH1, &CChildView::OnLwidth1)
+	ON_COMMAND(ID_LWIDTH2, &CChildView::OnLwidth2)
+	ON_COMMAND(ID_LWIDTH3, &CChildView::OnLwidth3)
+	ON_COMMAND(ID_LWIDTH4, &CChildView::OnLwidth4)
+	ON_COMMAND(ID_LWIDTH5, &CChildView::OnLwidth5)
+	ON_COMMAND(ID_LWIDTH10, &CChildView::OnLwidth10)
+	ON_WM_CONTEXTMENU()
+	ON_COMMAND(ID_COPY, &CChildView::OnCopy)
+	ON_COMMAND(ID_PASTE, &CChildView::OnPaste)
+	ON_COMMAND(ID_DELETE, &CChildView::OnDelete)
+	//ON_COMMAND(ID_CTRLZ, &CChildView::OnCtrlZ)
+	//ON_COMMAND(ID_CTRLY, &CChildView::OnCtrlY)
+	ON_WM_RBUTTONDOWN()
 END_MESSAGE_MAP()
 
 
@@ -116,13 +129,13 @@ void CChildView::OnPaint()
 			data[i].rect.right, data[i].rect.bottom, data[i].fgColor);
 	}
 
-	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
+	mdcOffScreen.SetStretchBltMode(HALFTONE);
 	mdcOffScreen.StretchBlt(0, 0, PWidth * ((int)zoomWidth+2), PHeight * ((int)zoomHeight+2), &memDC,
 		z_pos.x, z_pos.y, zoomWidth+2, zoomHeight+2, SRCCOPY);
 
 	PrintText(&mdcOffScreen);
 
-	pDC->SetStretchBltMode(COLORONCOLOR);
+	pDC->SetStretchBltMode(HALFTONE);
 	pDC->StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom, &mdcOffScreen,
 		m_ePt.x, m_ePt.y, m_bgRect.right, m_bgRect.bottom, SRCCOPY);
 		
@@ -169,6 +182,7 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 	CWnd::OnMouseMove(nFlags, point);
 	m_pos = point;
 	int i = 0;
+	
 
 	if (nFlags & MK_MBUTTON)
 	{
@@ -196,6 +210,9 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 				i = 1 + (m_ePt.x + m_bgRect.right - (m_Bitmap.bmWidth + PWidth)) / (int)PWidth;
 				z_pos.x += i;
 				m_ePt.x -= i * PWidth;
+				//printf("z_pos.x: %d, m_ePt.x: %d, m_bgRect.right: %d\n", z_pos.x, m_ePt.x, m_bgRect.right);
+
+
 			}
 		}
 		// B영역의 사각형 그리기
@@ -344,7 +361,6 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 					draw(pt);
 				}
 			}
-
 		}
 		//Invalidate();
 	}
@@ -381,13 +397,16 @@ void CChildView::OnSize(UINT nType, int cx, int cy)
 	m_bgRect.right = cx;
 	m_bgRect.bottom = cy;
 
-	Invalidate();
+	//Invalidate();
 }
 
 
 BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	CDC* dc = GetDC();
+	
 	if (zDelta <= 0)// 휠 내릴때
 	{
 		m_Zoom = 1.2f;
@@ -420,6 +439,11 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	PWidth = m_Bitmap.bmWidth / zoomWidth;
 	PHeight = m_Bitmap.bmHeight / zoomHeight;
 
+	CString str;
+	str.Format(_T("X = %d, Y = %d"), z_pos.x, z_pos.y);
+	dc->TextOut(z_pos.x, z_pos.y, str);
+
+	//printf("PWidth: %f PHeight: %f \n", PWidth, PHeight);
 
 	Invalidate();
 	return CWnd::OnMouseWheel(nFlags, zDelta, pt);
@@ -701,6 +725,17 @@ void CChildView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 			idx++;
 		else return;
 		break;
+	//case VK_CONTROL:
+	//	ctrl = true;
+	//	if (nChar == 'c' || nChar == 'C')
+	//	{
+	//		OnCopy();
+	//	}
+	//	else if (nChar == 'v' || nChar == 'V')
+	//	{
+	//		OnPaste();
+	//	}
+	//	break;
 	default:
 		return;
 	}
@@ -750,13 +785,22 @@ void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 	CWnd::OnLButtonDown(nFlags, point);
 	SetCapture();
 	m_lbtn = true;
+
+	iscopy = false;
 	x = z_pos.x + (m_ePt.x + point.x) / PWidth;
 	y = z_pos.y + (m_ePt.y + point.y) / PHeight; 
 
 	sPt.x = point.x;
 	sPt.y = point.y;
 		
-	
+	//if (drawID)
+	//{
+	//	if (drawStyle == DrawMode::DPoint)
+	//	{
+	//		draw(CPoint(x, y));
+	//	}
+	//}
+
 	if (panID)
 	{
 		if (mRect[0].left <= x && x <= mRect[0].right && mRect[0].top <= y && y <= mRect[0].bottom)
@@ -786,20 +830,38 @@ void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 			{
 				/*if ((data[i].rect.top == cp.y && data[i].rect.left <= cp.x <= data[i].rect.right) || (data[i].rect.left == cp.x && data[i].rect.top <= cp.y <= data[i].rect.bottom)
 					|| (data[i].rect.right == cp.x && data[i].rect.top <= cp.y <= data[i].rect.bottom) || (data[i].rect.bottom == cp.y && data[i].rect.left <= cp.x <= data[i].rect.right))*/
-				if (data[i].rect.left <= x && x <= data[i].rect.right && data[i].rect.top <= y && y <= data[i].rect.bottom)
+				/*if (data[i].rect.left <= x && x <= data[i].rect.right && data[i].rect.top <= y && y <= data[i].rect.bottom)*/
+				if((data[i].rect.left + 5 >= x && data[i].rect.left - 5 <= x) ||
+					(data[i].rect.top + 5 >= y && data[i].rect.top - 5 <= y) ||
+					(data[i].rect.right + 5 >= x && data[i].rect.right - 5 <= x) ||
+					(data[i].rect.bottom + 5 >= y && data[i].rect.bottom - 5 <= y))
 				{
 					if (data[i].shapeType == DrawMode::DRectangle)
-					{
+					{/*
+						int temp = 0;
+						temp = data[i].sequence;
+						data[i].sequence = data[0].sequence;
+						data[0].sequence = temp;*/
+						
 						data[i].isClicked = true;
 						//MessageBox(_T("사각조건성립"));
 						index = i;
 						break;
-
 					}
 					if (data[i].shapeType == DrawMode::DEllipse)
 					{
 						//drawID = FALSE;
 						//MessageBox(_T("원조건성립"));
+					}
+				}
+				if ((data[i].rect.left <= x && x <= data[i].rect.right && data[i].rect.top <= y && y <= data[i].rect.bottom))
+				{
+					if (data[i].isClicked)
+					{
+						data[i].isClicked = true;
+						//MessageBox(_T("사각조건성립"));
+						index = i;
+						break;
 					}
 				}
 				else
@@ -824,13 +886,14 @@ void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
 		mov_y = (z_pos.y + (m_ePt.y + point.y) / PHeight) + 1;
 		// 마우스 버트을 놓으면 각종 값을 shape 구조체 맴버변수에 저장
 		shape.shapeType = drawStyle;  // 도형 콤보 상자에서 선택된 도형 스타일을 저장		
-		shape.penWidth = PWidth;
+		shape.penWidth = l_width;
 		shape.rect.left = x; // 도형 시작좌표 저장
 		shape.rect.top = y;
 		shape.rect.right = mov_x; // 도형 끝 좌표 저장
 		shape.rect.bottom = mov_y;
 		shape.fgColor = frame->color;
 		shape.isClicked = false;
+		//shape.sequence = order++;
 
 		//저장된 shape를 배열에 저장
 		data.Add(shape);
@@ -850,7 +913,7 @@ int CChildView::draw(CPoint point)
 	CMainFrame* frame = (CMainFrame*)AfxGetMainWnd();
 
 	CDC* dc = GetDC();
-	CPen myPen(PS_SOLID, PWidth, frame->color);
+	CPen myPen(PS_SOLID, PWidth* l_width, frame->color);
 	CPen* oldPen;
 
 	HBRUSH myBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
@@ -859,7 +922,12 @@ int CChildView::draw(CPoint point)
 	oldPen = dc->SelectObject(&myPen);
 	if (drawID)
 	{
-		if (drawStyle == DrawMode::DLine) // 콤보상자에서 직선 선택시
+/*		if (drawStyle == DrawMode::DPoint)
+		{
+			dc->MoveTo(sPt.x, sPt.y);
+			dc->LineTo(sPt.x, sPt.y);
+		}
+		else */if (drawStyle == DrawMode::DLine) // 콤보상자에서 직선 선택시
 		{
 			//dc->SetROP2(R2_BLACK); // 픽셀인 펜 색 조합 및 반전 화면 색상 
 
@@ -1077,4 +1145,180 @@ void CChildView::FigureSelected(CPoint point)
 	}
 	//memDC.DeleteDC();
 
+}
+
+void CChildView::OnLwidth1()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	l_width = 1;
+}
+
+
+void CChildView::OnLwidth2()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	l_width = 2;
+}
+
+
+void CChildView::OnLwidth3()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	l_width = 3;
+}
+
+
+void CChildView::OnLwidth4()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	l_width = 4;
+}
+
+
+void CChildView::OnLwidth5()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	l_width = 5;
+}
+
+
+void CChildView::OnLwidth10()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	l_width = 10;
+}
+
+
+void CChildView::OnContextMenu(CWnd* /*pWnd*/, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+	CMenu popup;
+	CMenu* pMenu;
+
+	popup.LoadMenuW(IDR_MENU1);
+	pMenu = popup.GetSubMenu(0);
+
+	pMenu->TrackPopupMenu(TPM_LEFTALIGN || TPM_RIGHTBUTTON, point.x, point.y, this);
+	
+
+
+	//p_pt = point;
+}
+
+
+void CChildView::OnCopy()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	if (panID)  // 도형 그리기 상태일 동안만
+	{
+		if (data[index].isClicked)
+		{
+			// 마우스 버트을 놓으면 각종 값을 shape 구조체 맴버변수에 저장
+			shape.shapeType = data[index].shapeType;  // 도형 콤보 상자에서 선택된 도형 스타일을 저장		
+			shape.penWidth = data[index].penWidth;
+			shape.rect.left = data[index].rect.left; // 도형 시작좌표 저장
+			shape.rect.top = data[index].rect.top;
+			shape.rect.right = data[index].rect.right; // 도형 끝 좌표 저장
+			shape.rect.bottom = data[index].rect.bottom;
+			shape.fgColor = data[index].fgColor;
+			shape.isClicked = false;
+			//shape.sequence = order++;
+			pasteW = data[index].rect.right - data[index].rect.left;
+			pasteH = data[index].rect.bottom - data[index].rect.top;
+
+			//저장된 shape를 배열에 저장
+			data.Add(shape);
+
+			data[index].isClicked = false;
+			iscopy = true;
+		}		
+	}
+
+	index = data.GetSize() - 1;
+	//printf("up %d\n", index);
+
+	//Invalidate();
+
+}
+
+
+void CChildView::OnPaste()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	if (iscopy)
+	{
+		if (ctrl)
+		{
+			data[index].rect.left += 5;
+			data[index].rect.top += 5;
+			data[index].rect.right += 5;
+			data[index].rect.bottom += 5;
+		}
+		else
+		{
+			data[index].rect.left = p_pt.x;
+			data[index].rect.top = p_pt.y;
+			data[index].rect.right = p_pt.x + pasteW;
+			data[index].rect.bottom = p_pt.y + pasteH;
+		}
+		data[index].isClicked = true;
+		index = data.GetSize() - 1;
+
+		Invalidate();
+		ctrl = false;
+		iscopy = false;
+		OnCopy();
+	}
+}
+
+
+void CChildView::OnDelete()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	if (data[index].isClicked)
+	{
+		data.RemoveAt(index);
+		index = 0;
+	}
+	Invalidate();
+	
+}
+
+//void CChildView::OnCtrlZ()
+//{
+//
+//
+//	Invalidate();
+//}
+//
+//void CChildView::OnCtrlY()
+//{
+//
+//}
+
+void CChildView::OnRButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	CWnd::OnRButtonDown(nFlags, point);
+
+	p_pt.x = z_pos.x + (m_ePt.x + point.x) / PWidth;
+	p_pt.y = z_pos.y + (m_ePt.y + point.y) / PHeight;
+
+}
+
+
+BOOL CChildView::PreTranslateMessage(MSG* pMsg)
+{
+	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	if (::GetKeyState(VK_CONTROL) < 0 && (pMsg->wParam == 99 || pMsg->wParam == 67))
+		OnCopy();
+	else if (::GetKeyState(VK_CONTROL) < 0 && (pMsg->wParam == 118 || pMsg->wParam == 86))
+	{
+		ctrl = true;
+		OnPaste();
+	}
+
+
+	return CWnd::PreTranslateMessage(pMsg);
 }
