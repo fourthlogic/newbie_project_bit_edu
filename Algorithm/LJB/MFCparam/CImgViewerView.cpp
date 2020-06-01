@@ -302,13 +302,12 @@ void CImgViewerView::OnPaint()
 void CImgViewerView::OnFileOpen()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	CImgViewerDoc* pDoc = (CImgViewerDoc*)GetDocument();
-	pDoc->m_Algorithm.SelectImage();
-	pDoc->result_mat = pDoc->m_Algorithm.GetResultImage();
-	pDoc->result_bmp = pDoc->m_Algorithm.MatToBitmap(pDoc->result_mat);
+	m_Algorithm.SelectImage();
+	result_mat = m_Algorithm.GetResultImage();
+	result_bmp = m_Algorithm.MatToBitmap(result_mat);
 
 	m_background.Detach();
-	m_background.Attach(pDoc->result_bmp);
+	m_background.Attach(result_bmp);
 	m_background.GetBitmap(&m_Bitmap);
 
 	zoomWidth = m_Bitmap.bmWidth;
@@ -325,5 +324,23 @@ void CImgViewerView::OnFileOpen()
 	PWidth = m_Bitmap.bmWidth / zoomWidth;
 	PHeight = m_Bitmap.bmHeight / zoomHeight;
 
-	OnPaint();
+	Invalidate(FALSE);
+}
+
+
+void CImgViewerView::paraChanged()
+{
+	// TODO: 여기에 구현 코드 추가.
+	m_Algorithm.Run();
+	//m_Algorithm.ShowSrcImage();
+	//m_Algorithm.ShowResultImage();
+	result_mat = m_Algorithm.GetResultImage();
+	//imshow("dst", m_Algorithm.GetResultImage());
+	result_bmp = m_Algorithm.MatToBitmap(result_mat);
+
+	m_background.Detach();
+	m_background.Attach(result_bmp);
+	m_background.GetBitmap(&m_Bitmap);
+
+	Invalidate(FALSE);
 }

@@ -3,8 +3,7 @@
 //
 
 #pragma once
-//#include "CImgProcessing.h"
-
+#include "CircleDection.h"
 using namespace cv;
 using namespace std;
 
@@ -70,6 +69,10 @@ public:
 	double zoomWidth, zoomHeight;
 	double PWidth, PHeight;
 
+	CircleDection m_Algorithm;
+	Mat result_mat;
+	HBITMAP result_bmp;
+
 
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
@@ -78,10 +81,11 @@ public:
 	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnPaint();
 	afx_msg void OnFileOpen();
+	void paraChanged();
 };
 
 #ifndef _DEBUG  // MFCparamView.cpp의 디버그 버전
-inline CMFCparamDoc* CMFCparamView::GetDocument() const
-   { return reinterpret_cast<CMFCparamDoc*>(m_pDocument); }
+inline CImgViewerDoc* CImgViewerView::GetDocument() const
+   { return reinterpret_cast<CImgViewerDoc*>(m_pDocument); }
 #endif
 

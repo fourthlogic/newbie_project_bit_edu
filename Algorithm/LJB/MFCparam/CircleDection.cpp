@@ -225,6 +225,11 @@ void CircleDection::SelectImage()
 // 전체 실행
 void CircleDection::Run()
 {
+    cvtColor(this->src, this->result, COLOR_GRAY2BGR);
+    cornerPts.clear(); // 외곽 3점 좌표 값
+    vCirCenters.clear(); // Vertical의 중심 좌표들의 값 
+    hCirCenters.clear(); // Horizontal의 중심 좌표들의 값 
+    vertexPts.clear();   // 최외곽 ROI Vertex Points
     GetCornerPoints(); // 3점 좌표 추출
     GetVertexPoints(); // 최외곽 ROI
     ContourDetection(); // 원 검출
@@ -760,9 +765,10 @@ void CircleDection::ContourDetection() {
     unsigned threadId;
     threadParam->cirCenters = &this->vCirCenters;
     threadParam->contours = &vContours;
-    _beginthreadex(NULL, 0, CirDetectionThread, (void*)threadParam, 0, &threadId);
+    //_beginthreadex(NULL, 0, CirDetectionThread, (void*)threadParam, 0, &threadId);
     CircleDetection(hContours, this->hCirCenters);
-    threadParam->mut->lock();
+    //threadParam->mut->lock();
+    WaitForSingleObject((HANDLE)_beginthreadex(NULL, 0, CirDetectionThread, (void*)threadParam, 0, &threadId) , INFINITE);
 }
 
 // Points를 통해 해당 부분의 이미지 추출

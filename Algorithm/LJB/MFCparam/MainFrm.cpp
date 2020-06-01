@@ -107,10 +107,10 @@ void CMainFrame::OnSize(UINT nType, int cx, int cy)
 	posTemplate = theApp.GetFirstDocTemplatePosition();
 	pDocTemplate = (CMultiDocTemplate*)theApp.GetNextDocTemplate(posTemplate); // 첫번째 템플릿
 	posDocument = pDocTemplate->GetFirstDocPosition(); // 도큐먼트 포지션 얻기
-	pDoc = (COptionDoc*)pDocTemplate->GetNextDoc(posDocument); // 첫번째 도큐먼트
-	posView = pDoc->GetFirstViewPosition(); // 뷰 포지션 얻기
-	pView = (COptionFormView*)pDoc->GetNextView(posView); // 도큐먼트의 뷰
-	pFrame = (COptionFrame*)pView->GetParentFrame(); // 프레임 포지션 얻기
+	pOptionDoc = (COptionDoc*)pDocTemplate->GetNextDoc(posDocument); // 첫번째 도큐먼트
+	posView = pOptionDoc->GetFirstViewPosition(); // 뷰 포지션 얻기
+	pOptionView = (COptionFormView*)pOptionDoc->GetNextView(posView); // 도큐먼트의 뷰
+	pOptionFrame = (COptionFrame*)pOptionView->GetParentFrame(); // 프레임 포지션 얻기
 
 	pDocTemplate = (CMultiDocTemplate*)theApp.GetNextDocTemplate(posTemplate); // 두번째 템플릿
 	posDocument = pDocTemplate->GetFirstDocPosition();
@@ -119,7 +119,7 @@ void CMainFrame::OnSize(UINT nType, int cx, int cy)
 	pImgViewerView = (CImgViewerView*)pImgViewerDoc->GetNextView(posView);
 	pImgViewerFrame = (CImgViewerFrame*)pImgViewerView->GetParentFrame();
 	
-	pFrame->MoveWindow(m_rect.right - width, 0, width, m_rect.bottom - 47, 1);
+	pOptionFrame->MoveWindow(m_rect.right - width, 0, width, m_rect.bottom - 47, 1);
 	pImgViewerFrame->MoveWindow(0, 0, m_rect.right - width, m_rect.bottom - 47, 1);
 }
 

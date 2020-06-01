@@ -45,7 +45,7 @@ public:
 	afx_msg void OnEnChangeEditOptionThmax();
 	afx_msg void OnEnChangeEditOptionThmin();
 
-	CImgViewerDoc* pImgViewerDoc1;
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 };
 
 

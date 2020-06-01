@@ -55,9 +55,9 @@ public:
 	CRect m_rect;
 	POSITION posTemplate = NULL, posDocument = NULL, posView = NULL, posFrame = NULL;
 	CMultiDocTemplate* pDocTemplate = NULL;
-	COptionDoc* pDoc = NULL;
-	COptionFormView* pView = NULL;
-	COptionFrame* pFrame = NULL;
+	COptionDoc* pOptionDoc = NULL;
+	COptionFormView* pOptionView = NULL;
+	COptionFrame* pOptionFrame = NULL;
 	CImgViewerDoc* pImgViewerDoc = NULL;
 	CImgViewerView* pImgViewerView = NULL;
 	CImgViewerFrame* pImgViewerFrame = NULL;
