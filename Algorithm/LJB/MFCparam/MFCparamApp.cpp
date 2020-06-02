@@ -27,6 +27,7 @@ BEGIN_MESSAGE_MAP(CMFCparamApp, CWinApp)
 	ON_COMMAND(ID_FILE_PRINT_SETUP, &CWinApp::OnFilePrintSetup)
 	//ON_COMMAND(ID_FILE_NEW, &CMFCparamApp::OnFileNew)
 	ON_COMMAND(ID_FILE_OPEN, &CMFCparamApp::OnFileOpen)
+	ON_COMMAND(ID_APP_EXIT, &CMFCparamApp::OnAppExit)
 END_MESSAGE_MAP()
 
 
@@ -102,7 +103,6 @@ BOOL CMFCparamApp::InitInstance()
 	//  문서, 프레임 창 및 뷰 사이의 연결 역할을 합니다.
 
 	// Option(설정창) 문서 템플릿 추가
-	CMultiDocTemplate* pDocTemplate1;
 	pDocTemplate1 = new CMultiDocTemplate(IDR_MFCparamTYPE,
 		RUNTIME_CLASS(COptionDoc),
 		RUNTIME_CLASS(COptionFrame), // 사용자 지정 MDI 자식 프레임입니다.
@@ -210,4 +210,12 @@ void CMFCparamApp::OnFileOpen()
 	//POSITION posImgViewerDoc = pDocTemplate2->GetFirstDocPosition();
 	//CImgViewerDoc* pImgViewerDoc = (CImgViewerDoc*)pDocTemplate2->GetNextDoc(posImgViewerDoc);
 	//pImgViewerDoc->OnFileOpen();
+}
+
+void CMFCparamApp::OnAppExit()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
+	COptionFormView* pView = (COptionFormView*)pFrame->pOptionView;
+	pFrame->pOptionView->OnAppExit();
 }

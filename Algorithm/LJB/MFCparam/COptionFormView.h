@@ -38,6 +38,7 @@ public:
 	CString strBGV;
 	CString strThMax;
 	CString strThMin;
+
 	afx_msg void OnEnChangeEditOptionDist();
 	afx_msg void OnEnChangeEditOptionRmax();
 	afx_msg void OnEnChangeEditOptionRmin();
@@ -46,6 +47,10 @@ public:
 	afx_msg void OnEnChangeEditOptionThmin();
 
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+
+	void paraUpdate(CString fieldname, CString paraname);
+	afx_msg void OnAppExit();
+	afx_msg void OnOptionOpen();
 };
 
 

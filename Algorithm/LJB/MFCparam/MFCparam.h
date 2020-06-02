@@ -38,7 +38,9 @@ public:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnFileOpen();
+	CMultiDocTemplate* pDocTemplate1;
 	CMultiDocTemplate* pDocTemplate2;
+	afx_msg void OnAppExit();
 };
 
 extern CMFCparamApp theApp;

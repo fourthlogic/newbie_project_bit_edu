@@ -85,7 +85,6 @@ public:
     void SetThreshValue(int thMinValue, int thMaxValue); // Thresh value set
     void SetDistance(int distance); // ROI 추출 범위값 set
     void SetCircleValue(int radMin, int radMax, int BGV); // 원검출 Value set
-    void SetBGV(int BGV);
 
     // get 함수
     Mat GetSourceImage();
