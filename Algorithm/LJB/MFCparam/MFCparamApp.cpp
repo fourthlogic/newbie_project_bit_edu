@@ -28,6 +28,7 @@ BEGIN_MESSAGE_MAP(CMFCparamApp, CWinApp)
 	//ON_COMMAND(ID_FILE_NEW, &CMFCparamApp::OnFileNew)
 	ON_COMMAND(ID_FILE_OPEN, &CMFCparamApp::OnFileOpen)
 	ON_COMMAND(ID_APP_EXIT, &CMFCparamApp::OnAppExit)
+	ON_COMMAND(ID_OPTION_OPEN, &CMFCparamApp::OnOptionOpen)
 END_MESSAGE_MAP()
 
 
@@ -218,4 +219,12 @@ void CMFCparamApp::OnAppExit()
 	CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
 	COptionFormView* pView = (COptionFormView*)pFrame->pOptionView;
 	pFrame->pOptionView->OnAppExit();
+}
+
+void CMFCparamApp::OnOptionOpen()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
+	COptionFormView* pView = (COptionFormView*)pFrame->pOptionView;
+	pFrame->pOptionView->OnOptionOpen();
 }

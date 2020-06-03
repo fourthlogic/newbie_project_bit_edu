@@ -18,6 +18,7 @@
 #include "COptionDoc.h"
 #include "COptionFormView.h"
 
+#include "COptionDlg.h"
 // CMFCparamApp:
 // 이 클래스의 구현에 대해서는 MFCparam.cpp을(를) 참조하세요.
 //
@@ -41,6 +42,7 @@ public:
 	CMultiDocTemplate* pDocTemplate1;
 	CMultiDocTemplate* pDocTemplate2;
 	afx_msg void OnAppExit();
+	afx_msg void OnOptionOpen();
 };
 
 extern CMFCparamApp theApp;

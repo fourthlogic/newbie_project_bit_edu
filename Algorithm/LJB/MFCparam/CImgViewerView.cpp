@@ -328,9 +328,11 @@ void CImgViewerView::OnFileOpen()
 }
 
 
-void CImgViewerView::paraChanged()
+void CImgViewerView::paraChanged() // 이미지 처리 및 버퍼에 붙이기
 {
 	// TODO: 여기에 구현 코드 추가.
+	// 이미지 열기가 되어있으면 실행
+	// 이미지 열기가 안되어있으면 return;
 	m_Algorithm.Run();
 	//m_Algorithm.ShowSrcImage();
 	//m_Algorithm.ShowResultImage();

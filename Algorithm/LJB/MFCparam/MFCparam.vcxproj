@@ -188,6 +188,7 @@
   <ItemGroup>
     <ClInclude Include="CImgViewerFrame.h" />
     <ClInclude Include="CircleDection.h" />
+    <ClInclude Include="COptionDlg.h" />
     <ClInclude Include="COptionDoc.h" />
     <ClInclude Include="COptionFormView.h" />
     <ClInclude Include="COptionFrame.h" />
@@ -203,6 +204,7 @@
   <ItemGroup>
     <ClCompile Include="CImgViewerFrame.cpp" />
     <ClCompile Include="CircleDection.cpp" />
+    <ClCompile Include="COptionDlg.cpp" />
     <ClCompile Include="COptionDoc.cpp" />
     <ClCompile Include="COptionFormView.cpp" />
     <ClCompile Include="COptionFrame.cpp" />
