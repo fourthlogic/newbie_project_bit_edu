@@ -9,6 +9,27 @@ enum DrawMode
 	DPoint, DLine, DEllipse, DRectangle
 };
 
+enum RollBackMode {
+	Create,Delete,Update
+};
+struct MyShape
+{
+	int shapeType; // 도형 모양		
+	int penWidth; // 펜의 두깨
+	CString shapeText; // 도형 문자열
+	int textSize; // 도형 문자열 크기		
+	CRect rect; // 도형 그리기 좌표
+	COLORREF fgColor, bgColor; // 전경색과 배경색 저장
+	bool isClicked = false;
+};
+class RollbackInfo {
+public: 
+	int rollbackmode;
+	int idx;
+	MyShape prevShape;
+	MyShape updateShape;
+	void Rollback();
+};
 class CChildView : public CWnd
 {
 // 생성입니다.
@@ -31,7 +52,6 @@ public:
 
 	// 생성된 메시지 맵 함수
 protected:
-	afx_msg void OnPaint();
 	DECLARE_MESSAGE_MAP()
 public:
 	CImage image;
@@ -43,7 +63,7 @@ public:
 	// 빈공간을 새롭게 만든다.
 	CDC mdcOffScreen;      // 더블버퍼링을 위한 메모리 그림버퍼
 	CBitmap bmpOffScreen; // 더블버퍼링을 위한 비트맵 객체를 만든다.
-	CBitmap* oldbitmap, * oldbitmap2;
+	CBitmap* oldbitmap, *oldbitmap2;
 
 	CBitmap m_background;
 	BITMAP m_Bitmap;
@@ -56,14 +76,16 @@ public:
 	double newHeight;
 	
 	int idx = 0;
-	int index = 0;
-
+	int index = -1;
+	int choiceIdx = -1;
+	int rollbackIndex = -1;
 	CMainFrame* pFrame;
 
 	double zoomWidth, zoomHeight;
 	double PWidth, PHeight;
 
 public:
+	CDC testDC;
 	//그리기
 	int drawStyle;
 	bool drawID;
@@ -72,24 +94,15 @@ public:
 	CPoint sPt, ePt;
 	CPoint pts;
 		// 그린 도형을 배열에 저장하기 위한 구조체 정의
-	struct MyShape
-	{
-		int shapeType; // 도형 모양		
-		int penWidth; // 펜의 두깨
-		CString shapeText; // 도형 문자열
-		int textSize; // 도형 문자열 크기		
-		CRect rect; // 도형 그리기 좌표
-		COLORREF fgColor, bgColor; // 전경색과 배경색 저장
-		bool isClicked = false;
-		//int sequence;
-	};
-	MyShape shape; // 도형 값을 저장하기 위한 구조체 변수 선언	
+	MyShape temp;
+	MyShape shape; // 도형 값을 저장하기 위한 구조체 변수 선언
+	MyShape copyShape;
 	// 그린 도형을 저장할 동적 배열 선언
+	int testnum;
 	CArray<MyShape, MyShape&> data;
-	//CArray<MyShape, MyShape&> ctrl;
-
+	vector<RollbackInfo> rollback;
 	bool panID;
-	bool m_lbtn;
+	bool m_lbtn=false;
 	CRect mRect[4];
 	int resize = 0;
 	//int order = 1;
@@ -99,14 +112,17 @@ public:
 	int pasteW, pasteH;
 	bool ctrl = false;
 	bool iscopy = false;
+	vector<int> zIndex;
 
 
+	CToolBar m_viewToolBar;
+	
 	int draw(CPoint point);
 	void drawShape(int shapeNum, int penWd, int sx, int sy, int ex, int ey, COLORREF fgcolor);
 
+	afx_msg void OnPaint();
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
-//	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
@@ -123,24 +139,18 @@ public:
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 
-	
 	afx_msg void OnDrawid();
 	afx_msg void OnPanid();
-
-	void FigureSelected(CPoint point);
 	afx_msg void OnLwidth1();
 	afx_msg void OnLwidth2();
-	afx_msg void OnLwidth3();
-	afx_msg void OnLwidth4();
-	afx_msg void OnLwidth5();
-	afx_msg void OnLwidth10();
-	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint point);
+	afx_msg void On32797();
+	afx_msg void On32798();
+	afx_msg void On32799();
+	afx_msg void On32800();
 	afx_msg void OnCopy();
 	afx_msg void OnPaste();
 	afx_msg void OnDelete();
-	//afx_msg void OnCtrlZ();
-	//afx_msg void OnCtrlY();
+	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint point);
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
-	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };
 
