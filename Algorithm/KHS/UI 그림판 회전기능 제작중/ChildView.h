@@ -6,7 +6,7 @@
 
 enum DrawMode
 {
-	DPoint, DLine, DEllipse, DRectangle 
+	DPoint, DLine, DEllipse, DRectangle, DTriangle
 };
 
 class CChildView : public CWnd
@@ -91,9 +91,6 @@ public:
 	CRect lRect[2], rRect[4];
 	int RectCount = 0;
 	CPoint cPoint[2];
-
-	Point Center;
-	Point Rotate;
 	CPoint R_pos;
 
 	int drawStyle;
@@ -105,27 +102,37 @@ public:
 	int chosenEdge;
 	int x, y;	//그리기 시작값
 	int mov_x, mov_y;	//그리기 끝값
-		// 그린 도형을 배열에 저장하기 위한 구조체 정의
-
+		
+	// 그린 도형을 배열에 저장하기 위한 구조체 정의
 	struct MyShape
 	{
-		int shapeType; // 도형 모양		
-		vector<Point> pts;
-		vector<Point> RotatePts;
-		Point Center;
-		Point Rotate;
-		double theat;
+		int shapeType; // 도형 모양	
+		COLORREF shapeColor;
+		vector<CPoint> pts;
+		vector<CPoint> RotatePts;
+		CPoint Center;
+		CPoint Rotate;
+		double theta;
+		double R_theta;
+		int radin[2];
 	};
+
+	CPoint Center;
+	CPoint Rotate;
 
 	CArray<MyShape, MyShape&> data;
 
-	//MyShape2 shape; // 도형 값을 저장하기 위한 구조체 변수 선언	
-	// 그린 도형을 저장할 동적 배열 선언
 
-	int draw(CDC* pDC, CPoint point);
-	bool isInside(Point& pt, vector<Point>& pts);
+	int draw(CDC* pDC);
+	bool isInside(CPoint& pt, vector<CPoint>& pts);
 	void drawShape(MyShape& shape);
 	void SelectDrawShape(MyShape& shape);
+	void CChildView::Circle(CDC* pDC, int cx, int cy, int rad);
+	void CChildView::plot_circle_points(CDC* pDC, int cx, int cy, int x, int y);
+	void CChildView::MyEllipse(CDC* parm_dc, int parm_x, int parm_y, int parm_rx, int parm_ry, COLORREF parm_color);
+	void CChildView::MyEllipseR(CDC* parm_dc, CPoint Center, int radinX, int radinY, double theta, COLORREF parm_color);
+	void CChildView::MyEllipsePS_DOT(CDC* parm_dc, CPoint Center, int radinX, int radinY, double theta);
+
 
 	afx_msg void OnLine();
 	afx_msg void OnRectangle();
