@@ -18,7 +18,6 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWnd)
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_WM_CREATE()
 	ON_WM_DROPFILES()
-    ON_COMMAND(ID_SELECTCOLOR, &CMainFrame::OnClickedToolBarEX)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -270,14 +269,4 @@ HBITMAP imageData::getHbitmap()
 
     /*::ReleaseDC(this->m_hWnd, mPicDC);
     free(pBitmapInfo);*/
-}
-
-void CMainFrame::OnClickedToolBarEX()
-{
-    CColorDialog colorDlg;
-
-    if (colorDlg.DoModal() == IDOK)
-    {
-        color = colorDlg.GetColor();
-    }
 }
