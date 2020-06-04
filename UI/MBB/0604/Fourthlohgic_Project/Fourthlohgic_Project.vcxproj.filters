@@ -72,9 +72,6 @@
     <None Include="res\FourthlohgicProject.rc2">
       <Filter>리소스 파일</Filter>
     </None>
-    <None Include="res\ribbon1.mfcribbon-ms">
-      <Filter>리소스 파일</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\Fourthlohgic_Project.ico">

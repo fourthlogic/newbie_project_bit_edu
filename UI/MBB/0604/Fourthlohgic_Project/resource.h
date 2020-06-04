@@ -8,7 +8,6 @@
 #define IDR_FourthlohgicProjectTYPE     130
 #define ID_WINDOW_MANAGER               131
 #define IDR_MENU1                       310
-#define IDR_RIBBON1                     311
 #define ID_32771                        32771
 #define ID_32772                        32772
 #define ID_32773                        32773
@@ -47,17 +46,20 @@
 #define ID_COPY                         32808
 #define ID_PASTE                        32809
 #define ID_DELETE                       32810
-#define ID_BUTTON2                      32811
-#define ID_BUTTON8                      32820
-#define ID_CONTEXTMENU_32821            32821
-#define ID_FGCOLOR                      32822
+#define ID_CONTEXTMENU_32811            32811
+#define ID_CONTEXTMENU_32812            32812
+#define ID_32813                        32813
+#define ID_32814                        32814
+#define ID_32815                        32815
+#define ID_LINECOLOR                    32816
+#define ID_LINEWIDTH                    32817
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        312
-#define _APS_NEXT_COMMAND_VALUE         32823
+#define _APS_NEXT_RESOURCE_VALUE        311
+#define _APS_NEXT_COMMAND_VALUE         32818
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           310
 #endif
