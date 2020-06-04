@@ -205,7 +205,23 @@ void CircleDection::Init()
 }
 
 // 이미지 선택
-void CircleDection::SelectImage()
+//void CircleDection::SelectImage()
+//{
+//    char szFilter[] = "Image(*.BMP, *.GOF, *.JPG, *.PNG)|*.BMP; *.GIF; *.JPG; *.bmp; *.gif; *.jpg; *.png; | All Files(*.*) | *.* ||";
+//    CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, CA2CT(szFilter), AfxGetMainWnd());
+//    if (dlg.DoModal() == IDOK)
+//    {
+//        CString cstrImgPath = dlg.GetPathName();
+//        CT2CA pszConvertedAnsiString(cstrImgPath);
+//        std::string strStd(pszConvertedAnsiString);
+//
+//        this->SetImage(imread(strStd, IMREAD_GRAYSCALE));
+//        this->Init();
+//        //this->Run();
+//        //this->ShowResultImage();
+//    }
+//}
+bool CircleDection::SelectImage()
 {
     char szFilter[] = "Image(*.BMP, *.GOF, *.JPG, *.PNG)|*.BMP; *.GIF; *.JPG; *.bmp; *.gif; *.jpg; *.png; | All Files(*.*) | *.* ||";
     CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, CA2CT(szFilter), AfxGetMainWnd());
@@ -217,9 +233,18 @@ void CircleDection::SelectImage()
 
         this->SetImage(imread(strStd, IMREAD_GRAYSCALE));
         this->Init();
-        this->Run();
+        //this->Run();
         //this->ShowResultImage();
+        return TRUE;
     }
+    else
+        return FALSE;
+}
+
+bool CircleDection::isReady()
+{
+    if (!src.empty()) return TRUE;
+    else return FALSE;
 }
 
 // 전체 실행
@@ -249,7 +274,7 @@ void CircleDection::ALLRun()
 // 이미지 set
 void CircleDection::SetImage(Mat& src)
 {
-    this->src = src;;
+    this->src = src;
     this->height = src.rows;
     this->width = src.cols;
     this->size = src.rows * src.cols;
@@ -966,15 +991,20 @@ void CircleDection::Drawing()
         cvtColor(this->src, this->result, COLOR_GRAY2BGR);
     Vec2f vEquation, hEquation;
     Point target, temp1, temp2;
-    vEquation = LSM_Vertical(this->vCirCenters);
-    hEquation = LSM_Horizontal(this->hCirCenters);
+    vEquation = LSM_Vertical(this->vCirCenters); // 수직 원들의 최소제곱법 직선식
+    hEquation = LSM_Horizontal(this->hCirCenters); // 수평 원들의 최소제곱법 직선식
 
+    // 최소제곱법 직선식들의 교점
     target.x = cvRound((hEquation[1] - vEquation[1]) / (vEquation[0] - hEquation[0]));
     target.y = cvRound((vEquation[0] * (hEquation[1] - vEquation[1])) / (vEquation[0] - hEquation[0]) + vEquation[1]);
 
+    // 교점이 이미지 범위 밖에 있는 경우
+    if (target.x < 0 || target.x > this->width || target.y<0 || target.y > this->height)
+        return;
+
     // 주황색 직선의 방정식 그리기
     temp1 = { cvRound(-vEquation[1] / vEquation[0]), 0 }; // y=0 이고, 최소제곱법 직선의 방정식을 지나는 점
-    //temp1 = { 0, cvRound(vEquation[1]) }; // y=0 이고, 최소제곱법 직선의 방정식을 지나는 점
+    //temp1 = { 0, cvRound(vEquation[1]) }; // x=0 이고, 최소제곱법 직선의 방정식을 지나는 점
     temp2 = { cvRound((target.y + 20 - vEquation[1]) / vEquation[0]), target.y + 20 }; // target에서 좀 더 아래쪽의 점
 
     line(this->result, temp1, temp2, Scalar(0, 127, 255));

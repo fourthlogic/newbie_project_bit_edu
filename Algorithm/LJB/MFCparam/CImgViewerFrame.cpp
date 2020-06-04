@@ -17,6 +17,7 @@
 IMPLEMENT_DYNCREATE(CImgViewerFrame, CMDIChildWnd)
 
 BEGIN_MESSAGE_MAP(CImgViewerFrame, CMDIChildWnd)
+	ON_WM_CREATE()
 END_MESSAGE_MAP()
 
 // CChildFrame 생성/소멸
@@ -57,3 +58,16 @@ void CImgViewerFrame::Dump(CDumpContext& dc) const
 #endif //_DEBUG
 
 // CChildFrame 메시지 처리기
+
+
+int CImgViewerFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
+{
+	if (CMDIChildWnd::OnCreate(lpCreateStruct) == -1)
+		return -1;
+
+	// TODO:  여기에 특수화된 작성 코드를 추가합니다.
+	CMenu* p_menu = this->GetSystemMenu(FALSE);
+	p_menu->EnableMenuItem(SC_CLOSE, MF_BYCOMMAND | MF_GRAYED); // X 무효화
+
+	return 0;
+}

@@ -302,7 +302,15 @@ void CImgViewerView::OnPaint()
 void CImgViewerView::OnFileOpen()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	m_Algorithm.SelectImage();
+	CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
+	COptionFormView* pView = pMain->pOptionView; // 설정 창 View 포인터
+
+	if (!m_Algorithm.SelectImage())
+		return;
+	m_Algorithm.SetDistance(pView->m_nDist);
+	m_Algorithm.SetCircleValue(pView->m_nRadMin, pView->m_nRadMax, pView->m_nBGV);
+	m_Algorithm.Run();
+
 	result_mat = m_Algorithm.GetResultImage();
 	result_bmp = m_Algorithm.MatToBitmap(result_mat);
 
@@ -331,8 +339,8 @@ void CImgViewerView::OnFileOpen()
 void CImgViewerView::paraChanged() // 이미지 처리 및 버퍼에 붙이기
 {
 	// TODO: 여기에 구현 코드 추가.
-	// 이미지 열기가 되어있으면 실행
-	// 이미지 열기가 안되어있으면 return;
+	if (!m_Algorithm.isReady())
+		return;
 	m_Algorithm.Run();
 	//m_Algorithm.ShowSrcImage();
 	//m_Algorithm.ShowResultImage();

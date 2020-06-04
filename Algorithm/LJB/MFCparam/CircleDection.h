@@ -70,7 +70,8 @@ public:
     //void Init(Mat& src); 
 
     // 이미지 선택
-    void SelectImage();
+    //void SelectImage();
+    bool SelectImage();
 
     //실행
     void Run(); // 알고리즘 부분 실행
@@ -94,6 +95,8 @@ public:
     // show 함수
     bool ShowSrcImage(); // 소스 이미지 출력
     bool ShowResultImage(); // 결과 이미지 출력
+
+    bool isReady(); // 소스 이미지 준비 여부
 
 
     // 알고리즘 실행 부분

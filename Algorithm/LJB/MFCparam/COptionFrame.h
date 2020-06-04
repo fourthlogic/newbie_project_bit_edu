@@ -15,6 +15,7 @@ protected:
 	DECLARE_MESSAGE_MAP()
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 public:
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 };
 
 

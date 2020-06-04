@@ -11,10 +11,10 @@ IMPLEMENT_DYNCREATE(COptionFormView, CFormView)
 
 COptionFormView::COptionFormView()
 	: CFormView(IDD_COptionFormView)
-	, strDist(_T(""))
-	, strRadMax(_T(""))
-	, strRadMin(_T(""))
-	, strBGV(_T(""))
+	, m_strDist(_T(""))
+	, m_strRadMax(_T(""))
+	, m_strRadMin(_T(""))
+	, m_strBGV(_T(""))
 	//, strThMax(_T(""))
 	//, strThMin(_T(""))
 {
@@ -28,10 +28,10 @@ COptionFormView::~COptionFormView()
 void COptionFormView::DoDataExchange(CDataExchange* pDX)
 {
 	CFormView::DoDataExchange(pDX);
-	DDX_Text(pDX, IDC_EDIT_OPTION_DIST, strDist);
-	DDX_Text(pDX, IDC_EDIT_OPTION_RMAX, strRadMax);
-	DDX_Text(pDX, IDC_EDIT_OPTION_RMIN, strRadMin);
-	DDX_Text(pDX, IDC_EDIT_OPTION_BGV, strBGV);
+	DDX_Text(pDX, IDC_EDIT_OPTION_DIST, m_strDist);
+	DDX_Text(pDX, IDC_EDIT_OPTION_RMAX, m_strRadMax);
+	DDX_Text(pDX, IDC_EDIT_OPTION_RMIN, m_strRadMin);
+	DDX_Text(pDX, IDC_EDIT_OPTION_BGV, m_strBGV);
 	//DDX_Text(pDX, IDC_EDIT_OPTION_THMAX, strThMax);
 	//DDX_Text(pDX, IDC_EDIT_OPTION_THMIN, strThMin);
 }
@@ -47,6 +47,7 @@ BEGIN_MESSAGE_MAP(COptionFormView, CFormView)
 	ON_WM_CREATE()
 	ON_COMMAND(ID_APP_EXIT, &COptionFormView::OnAppExit)
 	ON_COMMAND(ID_OPTION_OPEN, &COptionFormView::OnOptionOpen)
+	ON_BN_CLICKED(IDC_BUTTON_DO, &COptionFormView::OnBnClickedButtonDo)
 END_MESSAGE_MAP()
 
 
@@ -91,7 +92,7 @@ void COptionFormView::OnEnChangeEditOptionDist()
 
 	//COptionDoc* pDoc = (COptionDoc*)GetDocument();
 	UpdateData();
-	int dist = _ttoi(strDist);
+	int dist = _ttoi(m_strDist);
 	if (dist > 0 && dist <= 30) // 직교거리 지정 가능한 범위
 		paraChanged2();
 	else
@@ -115,8 +116,8 @@ void COptionFormView::OnEnChangeEditOptionRmax()
 
 	//COptionDoc* pDoc = (COptionDoc*)GetDocument();
 	UpdateData();
-	int radMax = _ttoi(strRadMax);
-	if (radMax < _ttoi(strRadMin))
+	int radMax = _ttoi(m_strRadMax);
+	if (radMax < _ttoi(m_strRadMin))
 	{
 		MessageBox(_T("볼 크기 최소값보다 작습니다."));
 		return;
@@ -146,8 +147,8 @@ void COptionFormView::OnEnChangeEditOptionRmin()
 	//COptionDoc* pDoc = (COptionDoc*)GetDocument();
 	UpdateData();
 
-	int radMin = _ttoi(strRadMin);
-	if (radMin > _ttoi(strRadMax))
+	int radMin = _ttoi(m_strRadMin);
+	if (radMin > _ttoi(m_strRadMax))
 	{
 		MessageBox(_T("볼 크기 최대값보다 큽니다."));
 		return;
@@ -175,7 +176,7 @@ void COptionFormView::OnEnChangeEditOptionBgv()
 
 	//COptionDoc* pDoc = (COptionDoc*)GetDocument();
 	UpdateData();
-	int bgv = _ttoi(strBGV);
+	int bgv = _ttoi(m_strBGV);
 	if (bgv > 0 && bgv <= 255) // Ball Gray Value 지정 가능한 범위
 		paraChanged2();
 	else
@@ -269,12 +270,17 @@ int COptionFormView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	{
 		rs.Open(CRecordset::forwardOnly, _T("SELECT * FROM [Params]"));
 
-		rs.GetFieldValue(_T("Distance"), strDist);
-		rs.GetFieldValue(_T("RadMax"), strRadMax);
-		rs.GetFieldValue(_T("RadMin"), strRadMin);
-		rs.GetFieldValue(_T("BGV"), strBGV);
+		rs.GetFieldValue(_T("Distance"), m_strDist);
+		rs.GetFieldValue(_T("RadMax"), m_strRadMax);
+		rs.GetFieldValue(_T("RadMin"), m_strRadMin);
+		rs.GetFieldValue(_T("BGV"), m_strBGV);
 		//rs.GetFieldValue(_T("ThMax"), strThMax);
 		//rs.GetFieldValue(_T("ThMin"), strThMin);
+
+		m_nDist = _ttoi(m_strDist);
+		m_nRadMax = _ttoi(m_strRadMax);
+		m_nRadMin = _ttoi(m_strRadMin);
+		m_nBGV = _ttoi(m_strBGV);
 
 		db.Close();
 	}
@@ -283,12 +289,12 @@ int COptionFormView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		e->ReportError();
 	}
 	
-	GetParent()->SetWindowText(_T("파라미터 설정 뷰"));
+	GetParent()->SetWindowText(_T("설정 창"));
 
 	return 0;
 }
 
-void COptionFormView::OnBnClickedButtonOptionSave() // 저장버튼 (지금은 테스트용)
+void COptionFormView::OnBnClickedButtonOptionSave() // Edit Control의 값을 새로운 accdb파일에 저장
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	//CDatabase db;
@@ -304,22 +310,6 @@ void COptionFormView::OnBnClickedButtonOptionSave() // 저장버튼 (지금은 �
 	//db.Close();
 }
 
-//void COptionFormView::paraUpdate(CString fieldname ,CString paraname)
-//{
-//	// TODO: 여기에 구현 코드 추가.
-//	CDatabase db;
-//	CString strCon = _T("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=D://access test folder//Database2.accdb");
-//	if (!db.OpenEx(strCon))
-//	{
-//		MessageBox(_T("설정값 저장 파일이 연결되지 않았습니다."));
-//	}
-//	CString strUpdate;
-//	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), fieldname, _ttoi(paraname));
-//	db.ExecuteSQL(strUpdate);
-//	db.Close();
-//}
-
-
 void COptionFormView::OnAppExit()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
@@ -330,13 +320,13 @@ void COptionFormView::OnAppExit()
 		MessageBox(_T("설정값 저장 파일이 연결되지 않았습니다."));
 	}
 	CString strUpdate;
-	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("Distance"), _ttoi(strDist));
+	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("Distance"), _ttoi(m_strDist));
 	db.ExecuteSQL(strUpdate);
-	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("RadMax"), _ttoi(strRadMax));
+	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("RadMax"), _ttoi(m_strRadMax));
 	db.ExecuteSQL(strUpdate);
-	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("RadMin"), _ttoi(strRadMin));
+	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("RadMin"), _ttoi(m_strRadMin));
 	db.ExecuteSQL(strUpdate);
-	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("BGV"), _ttoi(strBGV));
+	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("BGV"), _ttoi(m_strBGV));
 	db.ExecuteSQL(strUpdate);
 	//strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("ThMax"), _ttoi(strThMax));
 	//db.ExecuteSQL(strUpdate);
@@ -367,16 +357,16 @@ void COptionFormView::paraChanged2()
 	CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
 	CImgViewerView* pView = pMain->pImgViewerView;
 
-	nDist = _ttoi(strDist);
-	nRadMax = _ttoi(strRadMax);
-	nRadMin = _ttoi(strRadMin);
-	nBGV = _ttoi(strBGV);
+	m_nDist = _ttoi(m_strDist);
+	m_nRadMax = _ttoi(m_strRadMax);
+	m_nRadMin = _ttoi(m_strRadMin);
+	m_nBGV = _ttoi(m_strBGV);
 
-	pView->m_Algorithm.SetDistance(nDist);
-	pView->m_Algorithm.SetCircleValue(nRadMin, nRadMax, nBGV);
+	pView->m_Algorithm.SetDistance(m_nDist);
+	pView->m_Algorithm.SetCircleValue(m_nRadMin, m_nRadMax, m_nBGV);
 
 	// 이미지에 적용
-	pView->paraChanged();
+	//pView->paraChanged();
 
 	// DB에 저장
 	CDatabase db;
@@ -386,13 +376,23 @@ void COptionFormView::paraChanged2()
 		MessageBox(_T("설정값 저장 파일이 연결되지 않았습니다."));
 	}
 	CString strUpdate;
-	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("Distance"), _ttoi(strDist));
+	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("Distance"), _ttoi(m_strDist));
 	db.ExecuteSQL(strUpdate);
-	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("RadMax"), _ttoi(strRadMax));
+	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("RadMax"), _ttoi(m_strRadMax));
 	db.ExecuteSQL(strUpdate);
-	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("RadMin"), _ttoi(strRadMin));
+	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("RadMin"), _ttoi(m_strRadMin));
 	db.ExecuteSQL(strUpdate);
-	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("BGV"), _ttoi(strBGV));
+	strUpdate.Format(_T("UPDATE [Params] SET [%s] = '%d' WHERE([file name] = 'default');"), _T("BGV"), _ttoi(m_strBGV));
 	db.ExecuteSQL(strUpdate);
 	db.Close();
+}
+
+
+void COptionFormView::OnBnClickedButtonDo()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	UpdateData();
+	CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
+	CImgViewerView* pView = pMain->pImgViewerView;
+	pView->paraChanged();
 }

@@ -33,14 +33,14 @@ public:
 
 	afx_msg void OnBnClickedButtonOptionSave();
 	CString strFilename;
-	CString strDist;
-	CString strRadMax;
-	CString strRadMin;
-	CString strBGV;
-	int nDist;
-	int nRadMax;
-	int nRadMin;
-	int nBGV;
+	CString m_strDist;
+	CString m_strRadMax;
+	CString m_strRadMin;
+	CString m_strBGV;
+	int m_nDist;
+	int m_nRadMax;
+	int m_nRadMin;
+	int m_nBGV;
 	//CString strThMax;
 	//CString strThMin;
 
@@ -53,10 +53,10 @@ public:
 
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 
-	void paraUpdate(CString fieldname, CString paraname);
 	afx_msg void OnAppExit();
 	afx_msg void OnOptionOpen();
 	void paraChanged2();
+	afx_msg void OnBnClickedButtonDo();
 };
 
 

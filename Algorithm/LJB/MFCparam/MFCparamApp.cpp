@@ -228,3 +228,4 @@ void CMFCparamApp::OnOptionOpen()
 	COptionFormView* pView = (COptionFormView*)pFrame->pOptionView;
 	pFrame->pOptionView->OnOptionOpen();
 }
+

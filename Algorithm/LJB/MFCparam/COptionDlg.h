@@ -21,16 +21,15 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
-	CListCtrl listView;
-	CString fileName;
-	CString listDist;
-	CString listRadMax;
-	CString listRadMin;
-	CString listBGV;
-	//CString listThMax;
-	//CString listThMin;
+	// 리스트 컨트롤 변수
+	CListCtrl listView; // 설정 파일 리스트 컨트롤
+	CString fileName; // 설정값의 이름
+	CString listDist; // 거리
+	CString listRadMax; // 최대 반지름
+	CString listRadMin; // 최소 반지름
+	CString listBGV; // BGV
+	//int nRow; // 
 
-	int nRow;
 	virtual BOOL OnInitDialog();
 	afx_msg void OnBnClickedButtonOptionOpen();
 };

@@ -96,7 +96,7 @@ BOOL COptionDlg::OnInitDialog()
 			row++;
 			rs.MoveNext();
 		}
-		nRow = row;
+		//nRow = row;
 		//nRow = rs.GetRecordCount();
 		db.Close();
 	}
@@ -125,12 +125,13 @@ void COptionDlg::OnBnClickedButtonOptionOpen()
 		if (LVIS_SELECTED == listView.GetItemState(i, LVIS_SELECTED))
 		{
 			pView->strFilename = listView.GetItemText(i, 0);
-			pView->strDist = listView.GetItemText(i, 1);
-			pView->strRadMax = listView.GetItemText(i, 2);
-			pView->strRadMin = listView.GetItemText(i, 3);
-			pView->strBGV = listView.GetItemText(i, 4);
+			pView->m_strDist = listView.GetItemText(i, 1);
+			pView->m_strRadMax = listView.GetItemText(i, 2);
+			pView->m_strRadMin = listView.GetItemText(i, 3);
+			pView->m_strBGV = listView.GetItemText(i, 4);
 		}
 	}
 	pView->paraChanged2();
 	OnOK();
 }
+
