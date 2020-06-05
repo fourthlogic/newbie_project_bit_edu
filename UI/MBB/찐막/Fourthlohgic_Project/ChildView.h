@@ -6,7 +6,7 @@
 
 enum DrawMode	//도형 종류
 {
-	DPoint, DLine, DEllipse, DRectangle
+	None = -1, DPoint, DLine, DEllipse, DRectangle
 };
 
 enum RollBackMode {	//롤백 명령어
@@ -69,9 +69,19 @@ public:
 	CPoint m_ePt;	//클라이언트 좌표
 	CPoint m_pos;	//무브 좌표(이미지 좌표계)
 	CRect m_bgRect;			// 화면 전체의 크기 - client 윈도의 전체크기
-	float m_Zoom;			//줌 비율
+	
 	double zoomWidth, zoomHeight;	//줌 크기
 	double PWidth, PHeight;			//픽셀 사이즈
+
+	float zoomView; //줌 비율
+	float rectScale; //확대/축소 비율
+	float printWidth; //출력 크기
+	float printHeight; //출력 크기
+	POINTF start_pos; //메모리 버퍼 시작 좌표
+	POINTF before_Image_pos; //확대/축소 전 마우스 원본에서 위치
+	POINTF before_Pixel_pos; //확대/축소 전 마우스 있는 픽셀에서의 위치
+	POINTF after_Image_pos; //확대/축소 후 마우스 원본에서 위치
+	POINTF after_Pixel_pos; //확대/축소 후 마우스 있는 픽셀에서의 위치
 
 	//정발산기슭곰발냄새타령부인사잘해
 	//그리기
@@ -107,9 +117,10 @@ public:
 	//사용자 설정 함수
 	void PrintText(CDC* pDC);	//RGB, Pixel 값 출력
 	void DrawTextEx(CDC* pDC, const CString& str, CRect rect, UINT nFormat);	//RGB 센터 출력
-	int draw();		//현재 그리는 도형 출력
-	void drawShape(int shapeNum, int penWd, int sx, int sy, int ex, int ey, COLORREF fgcolor);	//저장된 도형 출력
-
+	//int draw();		//현재 그리는 도형 출력
+	void drawShape(CDC* dc, int penType, MyShape a);	//저장된 도형 출력
+	void undo();
+	void redo();
 
 	//메세지 처리 함수
 	BOOL OnEraseBkgnd(CDC* pDC);
@@ -120,11 +131,11 @@ public:
 	afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint point);
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 
 	//메뉴 이벤트 처리 함수
 	afx_msg void OnPoint();		//점

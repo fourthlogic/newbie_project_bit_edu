@@ -79,7 +79,6 @@ BEGIN_MESSAGE_MAP(CChildView, CWnd)
 	ON_WM_MBUTTONDOWN()
 	ON_WM_MBUTTONUP()
 	ON_WM_CREATE()
-	ON_WM_KEYDOWN()
 	ON_COMMAND(ID_POINT, &CChildView::OnPoint)
 	ON_COMMAND(ID_LINE, &CChildView::OnLine)
 	ON_COMMAND(ID_ELLPSE, &CChildView::OnEllpse)
@@ -137,52 +136,81 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 	if (nFlags & MK_MBUTTON)
 	{
 		// A영역의 사각형 그리기 //m_sPt는 기존 포인트, point는 이동
-		if (m_sPt.x < point.x) // 오른쪽으로 끌었을때
+		if (start_pos.x == 0)
 		{
-			m_ePt.x -= point.x - m_sPt.x;
-			if (m_ePt.x <= 0)
+			if (m_sPt.x < point.x) // 오른쪽으로 끌었을때
 			{
-				if (z_pos.x > 0)
+				m_ePt.x -= point.x - m_sPt.x;
+
+				if (m_ePt.x <= 0)
 				{
-					i = 1 + ((0 - m_ePt.x) / (int)PWidth); //원본에서 움직여야되는 픽셀 수
-					z_pos.x -= i;
-					m_ePt.x += i * PWidth;
+					if (z_pos.x > 0)
+					{
+						i = 1 + ((0 - m_ePt.x) / PWidth);
+						z_pos.x -= i;
+						m_ePt.x += i * PWidth;
+					}
+				}
+			}
+			else // 왼쪽으로 끌었을때
+			{
+				m_ePt.x += m_sPt.x - point.x;
+
+				if (m_ePt.x + m_bgRect.right - (PWidth * (int)(zoomWidth + 2)) >= 0)
+				{
+					i = 1 + (m_ePt.x + m_bgRect.right - (PWidth * (int)(zoomWidth + 2))) / PWidth;
+					z_pos.x += i;
+					m_ePt.x -= i * PWidth;
+
 				}
 			}
 		}
-		else // 왼쪽으로 끌었을때
-		{
-			m_ePt.x += m_sPt.x - point.x;
 
-			if (m_ePt.x + m_bgRect.right - (m_Bitmap.bmWidth + PWidth) >= 0)
+
+		if (start_pos.y == 0)
+		{
+			if (m_sPt.y > point.y) // 위로 올렸을때
 			{
-				i = 1 + (m_ePt.x + m_bgRect.right - (m_Bitmap.bmWidth + PWidth)) / (int)PWidth;
-				z_pos.x += i;
-				m_ePt.x -= i * PWidth;
+				m_ePt.y += m_sPt.y - point.y;
+
+				if (m_ePt.y + m_bgRect.bottom - (PHeight * (int)(zoomHeight + 2)) >= 0)
+				{
+					i = 1 + (m_ePt.y + m_bgRect.bottom - (PHeight * (int)(zoomHeight + 2))) / PHeight;
+					z_pos.y += i;
+					m_ePt.y -= i * PHeight;
+				}
+
+			}
+			else // 아래로 내렸을때
+			{
+				m_ePt.y -= point.y - m_sPt.y;
+				if (m_ePt.y < 0)
+				{
+					if (z_pos.y > 0)
+					{
+						i = 1 + ((0 - m_ePt.y) / PHeight);
+						z_pos.y -= i;
+						m_ePt.y += i * PHeight;
+					}
+				}
 			}
 		}
 		// B영역의 사각형 그리기
-		if (m_sPt.y > point.y) // 위로 올렸을때
-		{
-			m_ePt.y += m_sPt.y - point.y;
 
-			if (m_ePt.y + m_bgRect.bottom - (m_Bitmap.bmHeight + PHeight) >= 0)
-			{
-				i = 1 + (m_ePt.y + m_bgRect.bottom - m_Bitmap.bmHeight + PHeight) / (int)PHeight;
-				z_pos.y += i;
-				m_ePt.y -= i * PHeight;
-			}
-		}
-		else // 아래로 내렸을때
+
+		//---------------------------
+		if (m_ePt.x + m_bgRect.right > PWidth * (int)(zoomWidth + 2))
 		{
-			m_ePt.y -= point.y - m_sPt.y;
-			if (m_ePt.y < 0)
-			{
-				i = 1 + ((0 - m_ePt.y) / (int)PHeight);
-				z_pos.y -= i;
-				m_ePt.y += i * PHeight;
-			}
+			z_pos.x += 1;
+			m_ePt.x -= PWidth;
 		}
+
+		if (m_ePt.y + m_bgRect.bottom > PHeight * (int)(zoomHeight + 2))
+		{
+			z_pos.y += 1;
+			m_ePt.y -= PHeight;
+		}
+		//----------------------------
 
 		if (m_ePt.x < 0)
 			m_ePt.x = 0;
@@ -201,28 +229,21 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 			if (data[choiceIdx].isClicked)
 			{
 				int xx, yy;
-				//CPoint TLX;
+
 				xx = d_sPt.x, yy = d_sPt.y;
 				d_sPt.x = z_pos.x + (m_ePt.x + point.x) / PWidth;
 				d_sPt.y = z_pos.y + (m_ePt.y + point.y) / PHeight;
 
 
-				//if (data[choiceIdx].rect.left <= x && x <= data[choiceIdx].rect.right && data[choiceIdx].rect.top <= y && y <= data[choiceIdx].rect.bottom)
-				{
-					//if (data[choiceIdx].shapeType != DrawMode::DLine)
-					{
-						CPoint pt;
-						pt.x = (d_sPt.x - xx);
-						pt.y = (d_sPt.y - yy);
+				CPoint pt;
+				pt.x = (d_sPt.x - xx);
+				pt.y = (d_sPt.y - yy);
 
-						data[choiceIdx].rect.right += pt.x;
-						data[choiceIdx].rect.left += pt.x;
-						data[choiceIdx].rect.top += pt.y;
-						data[choiceIdx].rect.bottom += pt.y;
+				data[choiceIdx].rect.right += pt.x;
+				data[choiceIdx].rect.left += pt.x;
+				data[choiceIdx].rect.top += pt.y;
+				data[choiceIdx].rect.bottom += pt.y;
 
-						//(pt);
-					}
-				}
 				InvalidateRect(data[choiceIdx].rect);
 			}
 		}
@@ -239,58 +260,36 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 				switch (resize)
 				{
 				case 1: {
-					//if (data[choiceIdx].shapeType != DrawMode::DLine)
-					{
-						pt.x = (d_sPt.x - xx);
-						pt.y = (d_sPt.y - yy);
+					pt.x = (d_sPt.x - xx);
+					pt.y = (d_sPt.y - yy);
 
-						data[choiceIdx].rect.left += pt.x;
+					data[choiceIdx].rect.left += pt.x;
 
-						data[choiceIdx].rect.top += pt.y;
-
-						//draw(pt);
-					}
+					data[choiceIdx].rect.top += pt.y;
 					break;
 				}
 				case 2: {
-					//if (data[choiceIdx].shapeType != DrawMode::DLine)
-					{
-						pt.x = (d_sPt.x - xx);
-						pt.y = (d_sPt.y - yy);
+					pt.x = (d_sPt.x - xx);
+					pt.y = (d_sPt.y - yy);
 
-						data[choiceIdx].rect.right += pt.x;
-						data[choiceIdx].rect.top += pt.y;
-
-						//draw(pt);
-					}
+					data[choiceIdx].rect.right += pt.x;
+					data[choiceIdx].rect.top += pt.y;
 					break;
 				}
 				case 3: {
-					//if (data[choiceIdx].shapeType != DrawMode::DLine)
-					{
-						pt.x = (d_sPt.x - xx);
-						pt.y = (d_sPt.y - yy);
+					pt.x = (d_sPt.x - xx);
+					pt.y = (d_sPt.y - yy);
 
-						data[choiceIdx].rect.left += pt.x;
-						data[choiceIdx].rect.bottom += pt.y;
-
-
-						//draw(pt);
-					}
+					data[choiceIdx].rect.left += pt.x;
+					data[choiceIdx].rect.bottom += pt.y;
 					break;
 				}
 				case 4: {
-					//if (data[choiceIdx].shapeType != DrawMode::DLine)
-					{
-						pt.x = (d_sPt.x - xx);
-						pt.y = (d_sPt.y - yy);
+					pt.x = (d_sPt.x - xx);
+					pt.y = (d_sPt.y - yy);
 
-						data[choiceIdx].rect.right += pt.x;
-						data[choiceIdx].rect.bottom += pt.y;
-
-
-						//draw(pt);
-					}
+					data[choiceIdx].rect.right += pt.x;
+					data[choiceIdx].rect.bottom += pt.y;
 					break;
 				}
 				default:
@@ -311,14 +310,12 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 		ePt.x = point.x;
 		ePt.y = point.y;
 
-		CRect rc(sPt.x, sPt.y, mov_Pt.x + 1, mov_Pt.y + 1);
-		Invalidate();
-		draw(); // 뷰에서 도형 그리기(draw) 함수 호출		
-		// 마우스 드래그시의 좌표 값을 도형 끝 값에 다시 저장	
-
 		mov_Pt.x = (z_pos.x + (m_ePt.x + pts.x) / PWidth);
 		mov_Pt.y = (z_pos.y + (m_ePt.y + pts.y) / PHeight);
-		//Invalidate();
+		shape.rect.right = mov_Pt.x;
+		shape.rect.bottom = mov_Pt.y;
+		shape.isClicked = true;
+		InvalidateRect(shape.rect);
 	}
 }
 
@@ -332,6 +329,9 @@ void CChildView::OnSize(UINT nType, int cx, int cy)
 	m_bgRect.right = cx;
 	m_bgRect.bottom = cy;
 
+	zoomWidth = cx * rectScale;
+	zoomHeight = cy * rectScale;
+
 	Invalidate();
 }
 
@@ -339,37 +339,123 @@ void CChildView::OnSize(UINT nType, int cx, int cy)
 BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	float zoomScale = 1;
 	if (zDelta <= 0)// 휠 내릴때
 	{
-		m_Zoom = 1.2f;
+		zoomScale = 1.25f;
+		zoomView *= 0.8f;
+		rectScale *= 1.25f;
 	}
 	else// 휠 올릴때
 	{
-		m_Zoom = 0.75f;
+		zoomScale = 0.8f;
+		zoomView *= 1.25f;
+		rectScale *= 0.8f;
 	}
 
-	z_pos.x += round(((((float)m_ePt.x + (float)m_pos.x) / (float)(PWidth * ((int)zoomWidth + 2))) * zoomWidth) - ((((float)m_ePt.x + (float)m_pos.x) / (float)(PWidth * ((int)zoomWidth + 2))) * (zoomWidth * m_Zoom)));
-	z_pos.y += round(((((float)m_ePt.y + (float)m_pos.y) / (float)(PHeight * ((int)zoomHeight + 2))) * zoomHeight) - ((((float)m_ePt.y + (float)m_pos.y) / (float)(PHeight * ((int)zoomHeight + 2))) * (zoomHeight * m_Zoom)));
+	before_Image_pos.x = z_pos.x + (m_ePt.x + m_pos.x) / PWidth;
+	before_Image_pos.y = z_pos.y + (m_ePt.y + m_pos.y) / PHeight;
+
+	before_Pixel_pos.x = (((m_ePt.x + m_pos.x) / PWidth - (int)((m_ePt.x + m_pos.x) / PWidth)));
+	before_Pixel_pos.y = (((m_ePt.y + m_pos.y) / PHeight - (int)((m_ePt.y + m_pos.y) / PHeight)));
+
+	//왼쪽위 꼭짓점
+	z_pos.x += round(((((float)m_ePt.x + (float)m_pos.x) / (PWidth * (int)(zoomWidth + 2))) * zoomWidth)
+		- ((((float)m_ePt.x + (float)m_pos.x) / (PWidth * (int)(zoomWidth + 2))) * (zoomWidth * zoomScale)));
+	z_pos.y += round(((((float)m_ePt.y + (float)m_pos.y) / (PHeight * (int)(zoomHeight + 2))) * zoomHeight)
+		- ((((float)m_ePt.y + (float)m_pos.y) / (PHeight * (int)(zoomHeight + 2))) * (zoomHeight * zoomScale)));
+
+	//원본에서 출력될 길이
+	zoomWidth = zoomWidth * zoomScale;
+	zoomHeight = zoomHeight * zoomScale;
+
+	printWidth = zoomWidth * zoomView;
+	printHeight = zoomHeight * zoomView;
+
+	//픽셀 크기
+	PWidth = (printWidth) / (zoomWidth);
+	PHeight = (printHeight) / (zoomHeight);
+
+	after_Image_pos.x = z_pos.x + (m_ePt.x + m_pos.x) / PWidth;
+	after_Image_pos.y = z_pos.y + (m_ePt.y + m_pos.y) / PHeight;
+
+	after_Pixel_pos.x = (((m_ePt.x + m_pos.x) / PWidth - (int)((m_ePt.x + m_pos.x) / PWidth)));
+	after_Pixel_pos.y = (((m_ePt.y + m_pos.y) / PHeight - (int)((m_ePt.y + m_pos.y) / PHeight)));
+
+	if (before_Image_pos.x - (int)(after_Image_pos.x) != 0)
+	{
+		z_pos.x += before_Image_pos.x - (int)(after_Image_pos.x);
+		m_ePt.x += (before_Pixel_pos.x * PWidth) - (after_Pixel_pos.x * PWidth);
+	}
+
+	if (before_Image_pos.y - (after_Image_pos.y) != 0)
+	{
+		z_pos.y += before_Image_pos.y - (int)(after_Image_pos.y);
+		m_ePt.y += (before_Pixel_pos.y * PHeight) - (after_Pixel_pos.y * PHeight);
+	}
 
 
+	//-----------------------------------------------
+	if (m_Bitmap.bmWidth * zoomView <= m_bgRect.right)
+	{
+		start_pos.x = m_bgRect.right / 2 - (m_Bitmap.bmWidth * zoomView) / 2;
+		z_pos.x = 0;
+	}
+	else
+	{
+		start_pos.x = 0;
+	}
 
-	if (m_ePt.x + m_bgRect.right > m_Bitmap.bmWidth + PWidth)
+	if (m_Bitmap.bmHeight * zoomView <= m_bgRect.bottom)
+	{
+		start_pos.y = m_bgRect.bottom / 2 - (m_Bitmap.bmHeight * zoomView) / 2;
+		z_pos.y = 0;
+	}
+	else
+	{
+		start_pos.y = 0;
+	}
+	//-----------------------------------
+	if (m_ePt.x >= PWidth)
 	{
 		z_pos.x += 1;
 		m_ePt.x -= PWidth;
 	}
-
-	if (m_ePt.y + m_bgRect.bottom > m_Bitmap.bmHeight + PHeight)
+	if (m_ePt.y >= PHeight)
 	{
 		z_pos.y += 1;
 		m_ePt.y -= PHeight;
 	}
+	//-----------------------------------
+	if (m_ePt.x < 0 && z_pos.x > 0)
+	{
+		z_pos.x -= 1;
+		m_ePt.x += PWidth;
+	}
+	if (m_ePt.y < 0 && z_pos.y > 0)
+	{
+		z_pos.y -= 1;
+		m_ePt.y += PHeight;
+	}
 
-	zoomWidth *= m_Zoom;
-	zoomHeight *= m_Zoom;
+	//-----------------------------------
+	if (m_ePt.x >= PWidth)
+	{
+		z_pos.x -= m_ePt.x / PWidth;
+		m_ePt.x = m_ePt.x - PWidth * (int)(m_ePt.x / PWidth);
+	}
 
-	PWidth = m_Bitmap.bmWidth / zoomWidth;
-	PHeight = m_Bitmap.bmHeight / zoomHeight;
+	if (m_ePt.y >= PHeight)
+	{
+		z_pos.y -= m_ePt.y / PHeight;
+		m_ePt.y = m_ePt.y - PHeight * (int)(m_ePt.y / PHeight);
+	}
+
+	//----------------------------------
+	if (z_pos.x <= 0)
+		z_pos.x = 0;
+	if (z_pos.y <= 0)
+		z_pos.y = 0;
 
 
 	Invalidate();
@@ -398,13 +484,13 @@ void CChildView::OnMButtonUp(UINT nFlags, CPoint point)
 void CChildView::PrintText(CDC* pDC)
 {
 	COLORREF rgb;
-	int a = 0, b = 0;
+	int cntWidth = 0, cntHeight = 0;
 
 	if (PWidth >= 65)
 	{
-		for (int i = z_pos.x; i < z_pos.x + zoomWidth; i++)
+		for (int i = z_pos.x; i < z_pos.x + zoomWidth + 2; i++)
 		{
-			for (int j = z_pos.y; j < z_pos.y + zoomHeight; j++)
+			for (int j = z_pos.y; j < z_pos.y + zoomHeight + 2; j++)
 			{
 				rgb = memDC.GetPixel(i, j);
 				int R = 0, G = 0, B = 0;
@@ -418,16 +504,15 @@ void CChildView::PrintText(CDC* pDC)
 
 
 				pDC->SetBkMode(TRANSPARENT);
-				//pDC->SetTextAlign(TA_CENTER);
 
-				if (pixelvale >= 185)
+				if (pixelvale >= 130)
 					pDC->SetTextColor(0x00000000);
 				else
 					pDC->SetTextColor(RGB(255, 255, 255));
 
 				HBRUSH myBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
 				HBRUSH oldBrush = (HBRUSH)pDC->SelectObject(myBrush);
-				CRect rc(a * PWidth, b * PHeight, a * PWidth + PWidth, b * PHeight + PHeight);
+				CRect rc(cntWidth * PWidth, cntHeight * PHeight, cntWidth * PWidth + PWidth, cntHeight * PHeight + PHeight);
 
 				pDC->Rectangle(rc);
 
@@ -450,25 +535,25 @@ void CChildView::PrintText(CDC* pDC)
 					_T("맑은고딕")           // 글꼴
 				);
 				pDC->SelectObject(cFont);
-				if (R == G == B)
-				{
-					strNum.Format(_T("%d\n%d\n%d"), R, G, B);
-					DrawTextEx(pDC, strNum, rc, DT_VCENTER | DT_CENTER);
-				}
-				else
+				if (R == G && G == B)
 				{
 					strNum.Format(_T("%d"), pixelvale);
 
 					pDC->DrawText(strNum, rc, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
 				}
+				else
+				{
+					strNum.Format(_T("%d\n%d\n%d"), R, G, B);
+					DrawTextEx(pDC, strNum, rc, DT_VCENTER | DT_CENTER);
+				}
 
 				pDC->SelectObject(oldBrush);
 				DeleteObject(myBrush);
 				DeleteObject(cFont);
-				b++;
+				cntHeight++;
 			}
-			a++;
-			b = 0;
+			cntWidth++;
+			cntHeight = 0;
 		}
 	}
 }
@@ -517,7 +602,7 @@ int CChildView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	resize = 0;
 	ctrl = false;
 	iscopy = false;
-
+	drawStyle = DrawMode::None;
 
 
 	pFrame = (CMainFrame*)AfxGetMainWnd();
@@ -525,7 +610,6 @@ int CChildView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		static TCHAR BASED_CODE szFilter[] = _T("이미지 파일(*.BMP, *.GIF, *.JPG, *PNG) | *.BMP;*.GIF;*.JPG;*.bmp;*.jpg;*.png;*.gif; |모든파일(*.*)|*.*||");
 		CString strFileList;
 		CString File;
-		//CFileDialog dlg(TRUE, _T("*.jpg"), _T("image"), OFN_HIDEREADONLY, szFilter);
 		CFileDialog dlg(TRUE, NULL, NULL, OFN_ALLOWMULTISELECT, szFilter);
 
 		const int c_cMaxFiles = 400 /*선택할 파일 숫자*/;	// 메모리 부족현상으로 확장 안해주면 몇개 못씀
@@ -575,134 +659,21 @@ int CChildView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	z_pos.x = 1;
 	z_pos.y = 1;
 
-	m_Zoom = 1;
+	PWidth = 1;
+	PHeight = 1;
+
+	zoomView = 1;
+	rectScale = 1;
+	printWidth = zoomWidth;
+	printHeight = zoomHeight;
+
+	start_pos.x = 0;
+	start_pos.y = 0;
 
 	PWidth = m_Bitmap.bmWidth / zoomWidth;
 	PHeight = m_Bitmap.bmHeight / zoomHeight;
 	
 	return 0;
-}
-
-
-void CChildView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
-{
-	if (IsCTRLPressed())
-		cout << "컨트롤";
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	switch (nChar) {
-	case VK_LEFT:
-		if (idx != 0)
-			idx--;
-		else
-			return;
-		break;
-	case VK_RIGHT:
-		if (idx != pFrame->imageList.size() - 1)
-			idx++;
-		else return;
-		break;
-	case VK_DELETE: {
-		if (choiceIdx != -1)
-		{
-			RollbackInfo info;
-			info.idx = choiceIdx;
-			info.undoShape = data[choiceIdx];
-			info.rollbackmode = RollBackMode::Delete;
-			if (rollbackIndex != -1)
-				rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
-			else if (rollback.size() != 0) 
-				rollback.erase(rollback.begin(), rollback.end());
-			rollback.push_back(info);
-			rollbackIndex = rollback.size() - 1;
-			data.RemoveAt(choiceIdx);
-			InvalidateRect(rollback[rollbackIndex].undoShape.rect);
-			choiceIdx = -1;
-			break;
-		}
-		return;
-	}
-	case VK_CONTROL: {
-		if (rollbackIndex + 1 < rollback.size()/* && rollbackIndex - 1 >= 0*/) {
-			switch (rollback[++rollbackIndex].rollbackmode)
-			{
-			case RollBackMode::Create: {
-				data.Add(rollback[rollbackIndex].undoShape);
-				break;
-			}
-			case RollBackMode::Delete: {
-
-				int idx = -1;
-				for (int i = 0; i < data.GetSize(); i++) {
-					if (data[i].shapeType == rollback[rollbackIndex].undoShape.shapeType
-						&& data[i].rect == rollback[rollbackIndex].undoShape.rect)
-					{
-						idx = i;
-						break;
-					}
-				}
-				data.RemoveAt(idx);
-				break;
-			}
-			case RollBackMode::Update: {
-				if (choiceIdx != -1)
-					data[choiceIdx].isClicked = false;
-				data[rollback[rollbackIndex].idx] = rollback[rollbackIndex].redoShape;
-				choiceIdx = rollback[rollbackIndex].idx;
-				data[choiceIdx].isClicked = true;
-				break;
-			}
-			default:
-				break;
-			}
-			Invalidate();
-		}
-		return;
-	}
-	case 0x5A: {
-		if (rollbackIndex != -1/* && rollbackIndex - 1 >= 0*/) {
-			switch (rollback[rollbackIndex].rollbackmode)
-			{
-			case RollBackMode::Create: {
-				data.RemoveAt(rollback[rollbackIndex].idx);
-				for (int i = 0; i < zOrder.size(); i++) {
-					if (zOrder[i] == rollback[rollbackIndex].idx)
-						zOrder.erase(zOrder.begin() + i);
-				}
-				rollbackIndex--;
-				choiceIdx = -1;
-				Invalidate();
-				break;
-			}
-			case RollBackMode::Delete: {
-				data.Add(rollback[rollbackIndex--].undoShape);
-				zOrder.insert(zOrder.begin(), data.GetSize() - 1);
-				break;
-			}
-			case RollBackMode::Update: {
-				if(choiceIdx!=-1)
-				data[choiceIdx].isClicked = false;
-				data[rollback[rollbackIndex].idx] = rollback[rollbackIndex].undoShape;
-				choiceIdx = rollback[rollbackIndex].idx;
-				data[choiceIdx].isClicked = true;
-				rollbackIndex--;
-				break;
-			}
-			default:
-				return;
-			}
-			Invalidate();
-
-		}
-		return;
-	}
-	default:
-		return;
-	}
-	cout << idx << endl;
-	pFrame->imageList[idx].setImage();
-	Invalidate();
-
-	CWnd::OnKeyDown(nChar, nRepCnt, nFlags);
 }
 
 
@@ -739,16 +710,29 @@ void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
 	CWnd::OnLButtonDown(nFlags, point);
+	CMainFrame* frame = (CMainFrame*)AfxGetMainWnd();
 	SetCapture();
-
-	m_lbtn = true;
-
+	
 	d_sPt.x = z_pos.x + (m_ePt.x + point.x) / PWidth;
 	d_sPt.y = z_pos.y + (m_ePt.y + point.y) / PHeight;
+	if (drawID) {
+		if (drawStyle == DrawMode::None)
+			return;
+		shape.shapeType = drawStyle;  // 도형 콤보 상자에서 선택된 도형 스타일을 저장		
+		shape.penWidth = l_width;
+		shape.rect.left = d_sPt.x; // 도형 시작좌표 저장
+		shape.rect.top = d_sPt.y;
+		shape.rect.right = mov_Pt.x; // 도형 끝 좌표 저장
+		shape.rect.bottom = mov_Pt.y;
+		shape.fgColor = frame->color;
+		shape.isClicked = false;
+	}
+	m_lbtn = true;
+
 
 	sPt.x = point.x;
 	sPt.y = point.y;
-
+	
 	//drawID = true; // 그리기 시작을 알리는 변수		
 	CPoint cp;
 	if (panID || (drawID && choiceIdx != -1))
@@ -839,13 +823,6 @@ void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
 		mov_Pt.x = (z_pos.x + (m_ePt.x + point.x) / PWidth) + 1;
 		mov_Pt.y = (z_pos.y + (m_ePt.y + point.y) / PHeight) + 1;
 
-		shape.shapeType = drawStyle;  // 도형 콤보 상자에서 선택된 도형 스타일을 저장		
-		shape.penWidth = l_width;
-		shape.rect.left = d_sPt.x; // 도형 시작좌표 저장
-		shape.rect.top = d_sPt.y;
-		shape.rect.right = mov_Pt.x; // 도형 끝 좌표 저장
-		shape.rect.bottom = mov_Pt.y;
-		shape.fgColor = frame->color;
 		shape.isClicked = true;
 
 		//저장된 shape를 배열에 저장
@@ -865,8 +842,8 @@ void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
 		}
 		rollback.push_back(info);
 		rollbackIndex = rollback.size() - 1;
-
 		InvalidateRect(shape.rect);
+		shape.isClicked = false;
 	}
 	else if (panID)
 	{
@@ -891,65 +868,64 @@ void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
 	ReleaseCapture();
 }
 
-int CChildView::draw()
-{
-	//CClientDC dc(this);
-	CMainFrame* frame = (CMainFrame*)AfxGetMainWnd();
-	CDC* dc = GetDC();
-	CPen myPen(PS_SOLID, PWidth * l_width, frame->color);
+//int CChildView::draw()
+//{
+//	//CClientDC dc(this);
+//	CMainFrame* frame = (CMainFrame*)AfxGetMainWnd();
+//	CDC* dc = GetDC();
+//	CPen myPen(PS_SOLID, PWidth * l_width, frame->color);
+//	CPen* oldPen;
+//
+//	HBRUSH myBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
+//	HBRUSH oldBrush = (HBRUSH)dc->SelectObject(myBrush);
+//
+//	oldPen = dc->SelectObject(&myPen);
+//
+//	if (drawStyle == DrawMode::DLine) // 콤보상자에서 직선 선택시
+//	{
+//		dc->MoveTo(sPt.x, sPt.y); dc->LineTo(ePt.x, ePt.y);
+//	}
+//	else if (drawStyle == DrawMode::DEllipse) // 콤보상자에서 원 선택시
+//	{
+//		dc->Ellipse(sPt.x, sPt.y, ePt.x, ePt.y);
+//	}
+//	else if (drawStyle == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
+//	{
+//		dc->Rectangle(sPt.x, sPt.y, ePt.x, ePt.y);
+//	}
+//
+//	dc->SelectObject(oldPen); // 이전 팬 선택		
+//	myPen.DeleteObject();  // 생성한 펜 메모리에서 제거		
+//	dc->SelectObject(oldBrush);
+//	DeleteObject(myBrush);
+//
+//
+//	return d_sPt.x, d_sPt.y, mov_Pt.x, mov_Pt.y;
+//}
+
+void CChildView::drawShape(CDC* dc, int penType, MyShape a) {
+	CPen myPen(penType, a.penWidth, a.fgColor);
 	CPen* oldPen;
+	oldPen = dc->SelectObject(&myPen);
 
 	HBRUSH myBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
 	HBRUSH oldBrush = (HBRUSH)dc->SelectObject(myBrush);
-
-	oldPen = dc->SelectObject(&myPen);
-
-	if (drawStyle == DrawMode::DLine) // 콤보상자에서 직선 선택시
+	switch (a.shapeType)
 	{
-		dc->MoveTo(sPt.x, sPt.y); dc->LineTo(ePt.x, ePt.y);
+	case DrawMode::DLine: {
+		dc->MoveTo(a.rect.left, a.rect.top); dc->LineTo(a.rect.right, a.rect.bottom);
+		break;
 	}
-	else if (drawStyle == DrawMode::DEllipse) // 콤보상자에서 원 선택시
-	{
-		dc->Ellipse(sPt.x, sPt.y, ePt.x, ePt.y);
+	case DrawMode::DEllipse: {
+		dc->Ellipse(a.rect.left, a.rect.top, a.rect.right, a.rect.bottom);
+		break;
 	}
-	else if (drawStyle == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
-	{
-		dc->Rectangle(sPt.x, sPt.y, ePt.x, ePt.y);
+	case DrawMode::DRectangle: {
+		dc->Rectangle(a.rect.left, a.rect.top, a.rect.right, a.rect.bottom);
+		break;
 	}
-
-	dc->SelectObject(oldPen); // 이전 팬 선택		
-	myPen.DeleteObject();  // 생성한 펜 메모리에서 제거		
-	dc->SelectObject(oldBrush);
-	DeleteObject(myBrush);
-
-
-	return d_sPt.x, d_sPt.y, mov_Pt.x, mov_Pt.y;
-}
-
-void CChildView::drawShape(int shapeNum, int penWd, int sx, int sy, int ex, int ey, COLORREF fgcolor)
-{
-	//CBrush myBrush, * oldBrush;
-	CPen myPen(PS_SOLID, penWd, fgcolor);
-	CPen* oldPen;
-	oldPen = memDC.SelectObject(&myPen);
-
-	HBRUSH myBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
-	HBRUSH oldBrush = (HBRUSH)memDC.SelectObject(myBrush);
-	if (shapeNum == 1)	// 직선 선택시
-	{
-		memDC.MoveTo(sx, sy); memDC.LineTo(ex, ey);
-		printf("Shape x: %d y: %d\n", sx, sy);
-
-
-	}
-	else if (shapeNum == 2) // 원 선택시
-	{
-		memDC.Ellipse(sx, sy, ex, ey);
-	}
-	else if (shapeNum == 3) // 사각형 선택시
-	{
-		// 화면에 사각형을 그린다.
-		memDC.Rectangle(sx, sy, ex, ey);
+	default:
+		break;
 	}
 	memDC.SelectObject(oldBrush);
 	DeleteObject(myBrush);
@@ -970,7 +946,7 @@ void CChildView::OnPaint()
 	memDC.CreateCompatibleDC(pDC);
 	mdcOffScreen.CreateCompatibleDC(pDC);
 
-	bmpOffScreen.CreateCompatibleBitmap(pDC, GetSystemMetrics(SM_CXFULLSCREEN), GetSystemMetrics(SM_CXFULLSCREEN));
+	bmpOffScreen.CreateCompatibleBitmap(pDC, PWidth * (int)(zoomWidth + 2), PHeight * (int)(zoomHeight + 2));
 
 
 	oldbitmap = mdcOffScreen.SelectObject(&bmpOffScreen);
@@ -978,40 +954,31 @@ void CChildView::OnPaint()
 
 
 
+	if (shape.isClicked)
+		drawShape(&memDC, PS_SOLID, shape);
 	for (int i = 0; i < data.GetSize(); i++)
 	{
-		drawShape(data[i].shapeType, data[i].penWidth,
-			data[i].rect.left, data[i].rect.top,
-			data[i].rect.right, data[i].rect.bottom, data[i].fgColor);
-	}
-	if (choiceIdx != -1)
-	{
-		if (data[choiceIdx].isClicked)
+		int penType;
+		if (i != choiceIdx)
+			penType = PS_SOLID;
+		else
+			penType = PS_DOT;
+		if (i==choiceIdx&&data[choiceIdx].isClicked)
 		{
-			CPen pen0(PS_DOT, 1, RGB(0, 0, 0));
-			memDC.SelectObject(pen0);
-			memDC.SelectStockObject(NULL_BRUSH);
-
-			if (data[choiceIdx].shapeType != DrawMode::DLine)
+			HBRUSH oldBrush = (HBRUSH)memDC.SelectStockObject(WHITE_BRUSH);
+			if (data[i].shapeType != DrawMode::DLine)
 			{
-				
-				int left = data[choiceIdx].rect.left - 10;
-				int top = data[choiceIdx].rect.top - 10;
-				int right = data[choiceIdx].rect.right + 10;
-				int bottom = data[choiceIdx].rect.bottom + 10;
-				memDC.Rectangle(left, top, right, bottom);
-
-				mRect[0].SetRect(left - 10, top - 10,
-					left + 10, top + 10);
-				mRect[1].SetRect(right - 10, bottom - 10,
-					right + 10, bottom + 10);
-				mRect[2].SetRect(right - 10, top - 10,
-					right + 10, top + 10);
-				mRect[3].SetRect(left - 10, bottom - 10,
-					left + 10, bottom + 10);
+				mRect[0].SetRect(data[choiceIdx].rect.left - 10, data[choiceIdx].rect.top - 10,
+					data[choiceIdx].rect.left + 10, data[choiceIdx].rect.top + 10);
+				mRect[1].SetRect(data[choiceIdx].rect.right - 10, data[choiceIdx].rect.bottom - 10,
+					data[choiceIdx].rect.right + 10, data[choiceIdx].rect.bottom + 10);
+				mRect[2].SetRect(data[choiceIdx].rect.right - 10, data[choiceIdx].rect.top - 10,
+					data[choiceIdx].rect.right + 10, data[choiceIdx].rect.top + 10);
+				mRect[3].SetRect(data[choiceIdx].rect.left - 10, data[choiceIdx].rect.bottom - 10,
+					data[choiceIdx].rect.left + 10, data[choiceIdx].rect.bottom + 10);
 
 				CPen* oldPen;
-				CPen pen(PS_SOLID, 2, RGB(0, 0, 0));
+				CPen pen(PS_SOLID, 1, RGB(0, 0, 0));
 				oldPen = memDC.SelectObject(&pen);
 				memDC.SelectStockObject(WHITE_BRUSH);
 				memDC.Ellipse(mRect[0]);
@@ -1033,20 +1000,19 @@ void CChildView::OnPaint()
 					data[choiceIdx].rect.left + 10, data[choiceIdx].rect.top + 10);
 				mRect[1].SetRect(data[choiceIdx].rect.right - 10, data[choiceIdx].rect.bottom - 10,
 					data[choiceIdx].rect.right + 10, data[choiceIdx].rect.bottom + 10);
-
-				memDC.Polygon(po, 4);
 				CPen* oldPen;
 				CPen pen(PS_SOLID, 2, RGB(0, 0, 0));
 				oldPen = memDC.SelectObject(&pen);
 				memDC.SelectStockObject(WHITE_BRUSH);
 				memDC.Ellipse(mRect[0]);
-				memDC.Ellipse(mRect[1]);				
+				memDC.Ellipse(mRect[1]);
 			}
 		}
+		drawShape(&memDC, penType, data[i]);
 	}
 
 	mdcOffScreen.SetStretchBltMode(HALFTONE);
-	mdcOffScreen.StretchBlt(0, 0, PWidth * ((int)zoomWidth + 2), PHeight * ((int)zoomHeight + 2), &memDC,
+	mdcOffScreen.StretchBlt(start_pos.x, start_pos.y, PWidth * ((int)zoomWidth + 2), PHeight * ((int)zoomHeight + 2), &memDC,
 		z_pos.x, z_pos.y, zoomWidth + 2, zoomHeight + 2, SRCCOPY);
 
 	PrintText(&mdcOffScreen);
@@ -1096,7 +1062,6 @@ void CChildView::OnLwidth1()
 		info.idx = choiceIdx;
 		info.undoShape = data[choiceIdx];
 		data[choiceIdx].penWidth = l_width;
-		//deepCopy(info.updateShape, data[choiceIdx]);
 		info.redoShape = data[choiceIdx];
 		info.rollbackmode = RollBackMode::Update;
 		if (rollbackIndex != -1)
@@ -1122,7 +1087,6 @@ void CChildView::OnLwidth2()
 		info.idx = choiceIdx;
 		info.undoShape = data[choiceIdx];
 		data[choiceIdx].penWidth = l_width;
-		//deepCopy(info.updateShape, data[choiceIdx]);
 		info.redoShape = data[choiceIdx];
 		info.rollbackmode = RollBackMode::Update;
 		if (rollbackIndex != -1)
@@ -1147,7 +1111,6 @@ void CChildView::On32797()
 		info.idx = choiceIdx;
 		info.undoShape = data[choiceIdx];
 		data[choiceIdx].penWidth = l_width;
-		//deepCopy(info.updateShape, data[choiceIdx]);
 		info.redoShape = data[choiceIdx];
 		info.rollbackmode = RollBackMode::Update;
 		if (rollbackIndex != -1)
@@ -1172,7 +1135,6 @@ void CChildView::On32798()
 		info.idx = choiceIdx;
 		info.undoShape = data[choiceIdx];
 		data[choiceIdx].penWidth = l_width;
-		//deepCopy(info.updateShape, data[choiceIdx]);
 		info.redoShape = data[choiceIdx];
 		info.rollbackmode = RollBackMode::Update;
 		if (rollbackIndex != -1)
@@ -1197,7 +1159,6 @@ void CChildView::On32799()
 		info.idx = choiceIdx;
 		info.undoShape = data[choiceIdx];
 		data[choiceIdx].penWidth = l_width;
-		//deepCopy(info.updateShape, data[choiceIdx]);
 		info.redoShape = data[choiceIdx];
 		info.rollbackmode = RollBackMode::Update;
 		if (rollbackIndex != -1)
@@ -1222,7 +1183,6 @@ void CChildView::On32800()
 		info.idx = choiceIdx;
 		info.undoShape = data[choiceIdx];
 		data[choiceIdx].penWidth = l_width;
-		//deepCopy(info.updateShape, data[choiceIdx]);
 		info.redoShape = data[choiceIdx];
 		info.rollbackmode = RollBackMode::Update;
 		if (rollbackIndex != -1)
@@ -1240,16 +1200,13 @@ void CChildView::On32800()
 void CChildView::OnCopy()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	//if (panID)  // 도형 그리기 상태일 동안만
+
+	if (choiceIdx != -1)
 	{
-		if (choiceIdx != -1)
-		{
-			//info.updateShape = data[0];
-			copyShape = data[choiceIdx];
-			pasteW = data[choiceIdx].rect.right - data[choiceIdx].rect.left;
-			pasteH = data[choiceIdx].rect.bottom - data[choiceIdx].rect.top;
-			iscopy = true;
-		}
+		copyShape = data[choiceIdx];
+		pasteW = data[choiceIdx].rect.right - data[choiceIdx].rect.left;
+		pasteH = data[choiceIdx].rect.bottom - data[choiceIdx].rect.top;
+		iscopy = true;
 	}
 }
 
@@ -1303,7 +1260,6 @@ void CChildView::OnDelete()
 	{
 		RollbackInfo info;
 		info.idx = choiceIdx;
-		//info.updateShape = data[0];
 		info.undoShape = data[choiceIdx];
 		info.rollbackmode = RollBackMode::Delete;
 		if (rollbackIndex != -1)
@@ -1314,9 +1270,8 @@ void CChildView::OnDelete()
 		rollback.push_back(info);
 		rollbackIndex = rollback.size() - 1;
 		data.RemoveAt(choiceIdx);
-		//InvalidateRect(data[choiceIdx].rect);
-		Invalidate();
 		choiceIdx = -1;
+		Invalidate();
 	}
 	return;
 }
@@ -1362,7 +1317,6 @@ void CChildView::OnLinecolor()
 			info.idx = choiceIdx;
 			info.undoShape = data[choiceIdx];
 			data[choiceIdx].fgColor = colorDlg.GetColor();
-			//deepCopy(info.updateShape, data[choiceIdx]);
 			info.redoShape = data[choiceIdx];
 			info.rollbackmode = RollBackMode::Update;
 			if (rollbackIndex != -1)
@@ -1374,5 +1328,126 @@ void CChildView::OnLinecolor()
 			rollbackIndex = rollback.size() - 1;
 			Invalidate();
 		}
+	}
+}
+
+
+BOOL CChildView::PreTranslateMessage(MSG* pMsg)
+{
+	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	if (pMsg->message == WM_KEYDOWN)
+	{
+		if (::GetKeyState(VK_CONTROL) < 0)
+		{
+			switch (pMsg->wParam)
+			{
+				case 99: case 67:	// ctrl - C
+				{
+					OnCopy();
+					break;
+				}
+				case 118: case 86:	// ctrl - V
+				{
+					ctrl = true;
+					OnPaste();
+					break;
+				}
+				case 89: case 121:	// ctrl - Y
+				{
+					redo();
+					break;
+				}
+				case 90: case 122:	//ctrl - Z
+				{
+					undo();
+					break;
+				}
+			}
+		}
+		else if (::GetKeyState(VK_DELETE) < 0)
+		{
+			OnDelete();
+		}
+	}
+	return CWnd::PreTranslateMessage(pMsg);
+}
+
+void CChildView::undo() {
+	if (rollbackIndex != -1) {
+		switch (rollback[rollbackIndex].rollbackmode)
+		{
+			case RollBackMode::Create: {
+				data.RemoveAt(rollback[rollbackIndex].idx);
+				for (int i = 0; i < zOrder.size(); i++) {
+					if (zOrder[i] == rollback[rollbackIndex].idx)
+						zOrder.erase(zOrder.begin() + i);
+				}
+				rollbackIndex--;
+				choiceIdx = -1;
+				Invalidate();
+				break;
+			}
+			case RollBackMode::Delete: {
+				data.Add(rollback[rollbackIndex--].undoShape);
+				zOrder.insert(zOrder.begin(), data.GetSize() - 1);
+				choiceIdx = zOrder[0];
+				data[choiceIdx].isClicked = true;
+
+				break;
+			}
+			case RollBackMode::Update: {
+				if (choiceIdx != -1)
+					data[choiceIdx].isClicked = false;
+				data[rollback[rollbackIndex].idx] = rollback[rollbackIndex].undoShape;
+				choiceIdx = rollback[rollbackIndex].idx;
+				data[choiceIdx].isClicked = true;
+				rollbackIndex--;
+				break;
+			}
+			default:
+				break;
+		}
+		Invalidate();
+	}
+}
+
+void CChildView::redo() {
+	if (rollbackIndex + 1 < rollback.size())
+	{
+		switch (rollback[++rollbackIndex].rollbackmode)
+		{
+		case RollBackMode::Create: {
+			data.Add(rollback[rollbackIndex].undoShape);
+			zOrder.insert(zOrder.begin(), data.GetSize() - 1);
+			choiceIdx = zOrder[0];
+			data[choiceIdx].isClicked = true;
+			break;
+		}
+		case RollBackMode::Delete: {
+
+			int idx = -1;
+			for (int i = 0; i < data.GetSize(); i++) {
+				if (data[i].shapeType == rollback[rollbackIndex].undoShape.shapeType
+					&& data[i].rect == rollback[rollbackIndex].undoShape.rect)
+				{
+					idx = i;
+					break;
+				}
+			}
+			data.RemoveAt(idx);
+			break;
+		}
+		case RollBackMode::Update: {
+			if (choiceIdx != -1)
+				data[choiceIdx].isClicked = false;
+			data[rollback[rollbackIndex].idx] = rollback[rollbackIndex].redoShape;
+			choiceIdx = rollback[rollbackIndex].idx;
+			data[choiceIdx].isClicked = true;
+			break;
+		}
+		default:
+			break;
+		}
+		Invalidate();
 	}
 }
