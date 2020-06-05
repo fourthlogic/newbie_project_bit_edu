@@ -188,7 +188,10 @@
   <ItemGroup>
     <ClInclude Include="CImgViewerFrame.h" />
     <ClInclude Include="CircleDection.h" />
-    <ClInclude Include="COptionDlg.h" />
+    <ClInclude Include="COptionDlg.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="COptionDoc.h" />
     <ClInclude Include="COptionFormView.h" />
     <ClInclude Include="COptionFrame.h" />
@@ -197,6 +200,7 @@
     <ClInclude Include="MFCparam.h" />
     <ClInclude Include="CImgViewerDoc.h" />
     <ClInclude Include="CImgViewerView.h" />
+    <ClInclude Include="myADO.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
@@ -204,7 +208,10 @@
   <ItemGroup>
     <ClCompile Include="CImgViewerFrame.cpp" />
     <ClCompile Include="CircleDection.cpp" />
-    <ClCompile Include="COptionDlg.cpp" />
+    <ClCompile Include="COptionDlg.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="COptionDoc.cpp" />
     <ClCompile Include="COptionFormView.cpp" />
     <ClCompile Include="COptionFrame.cpp" />
@@ -212,6 +219,7 @@
     <ClCompile Include="MFCparamApp.cpp" />
     <ClCompile Include="CImgViewerDoc.cpp" />
     <ClCompile Include="CImgViewerView.cpp" />
+    <ClCompile Include="myADO.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

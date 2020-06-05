@@ -2,6 +2,7 @@
 #include "MainFrm.h"
 #include "CImgViewerDoc.h"
 #include "CircleDection.h"
+
 // COptionFormView 폼 보기
 
 class COptionFormView : public CFormView
@@ -44,10 +45,10 @@ public:
 	//CString strThMax;
 	//CString strThMin;
 
-	afx_msg void OnEnChangeEditOptionDist();
-	afx_msg void OnEnChangeEditOptionRmax();
-	afx_msg void OnEnChangeEditOptionRmin();
-	afx_msg void OnEnChangeEditOptionBgv();
+//	afx_msg void OnEnChangeEditOptionDist();
+//	afx_msg void OnEnChangeEditOptionRmax();
+//	afx_msg void OnEnChangeEditOptionRmin();
+//	afx_msg void OnEnChangeEditOptionBgv();
 	//afx_msg void OnEnChangeEditOptionThmax();
 	//afx_msg void OnEnChangeEditOptionThmin();
 
@@ -55,7 +56,7 @@ public:
 
 	afx_msg void OnAppExit();
 	afx_msg void OnOptionOpen();
-	void paraChanged2();
+	//void paraChanged2();
 	afx_msg void OnBnClickedButtonDo();
 };
 

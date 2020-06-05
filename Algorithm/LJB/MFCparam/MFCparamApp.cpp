@@ -149,6 +149,7 @@ BOOL CMFCparamApp::InitInstance()
 
 
 
+
 	return TRUE;
 }
 

@@ -341,6 +341,7 @@ void CImgViewerView::paraChanged() // 이미지 처리 및 버퍼에 붙이기
 	// TODO: 여기에 구현 코드 추가.
 	if (!m_Algorithm.isReady())
 		return;
+
 	m_Algorithm.Run();
 	//m_Algorithm.ShowSrcImage();
 	//m_Algorithm.ShowResultImage();
