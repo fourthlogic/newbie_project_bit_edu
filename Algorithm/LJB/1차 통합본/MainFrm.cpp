@@ -20,6 +20,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_WM_CREATE()
 	ON_WM_SIZE()
 	ON_WM_GETMINMAXINFO()
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -121,6 +122,7 @@ void CMainFrame::OnSize(UINT nType, int cx, int cy)
 	
 	pOptionFrame->MoveWindow(m_rect.right - width, 0, width, m_rect.bottom - 47, 1);
 	pImgViewerFrame->MoveWindow(0, 0, m_rect.right - width, m_rect.bottom - 47, 1);
+	Invalidate();
 }
 
 
@@ -133,4 +135,12 @@ void CMainFrame::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 	lpMMI->ptMinTrackSize.y = 540;
 
 	CMDIFrameWnd::OnGetMinMaxInfo(lpMMI);
+}
+
+void CMainFrame::OnClose()
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	pOptionView->OnAppExit();
+
+	CMDIFrameWnd::OnClose();
 }

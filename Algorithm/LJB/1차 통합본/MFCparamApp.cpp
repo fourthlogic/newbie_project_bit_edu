@@ -104,7 +104,7 @@ BOOL CMFCparamApp::InitInstance()
 	//  문서, 프레임 창 및 뷰 사이의 연결 역할을 합니다.
 
 	// Option(설정창) 문서 템플릿 추가
-	pDocTemplate1 = new CMultiDocTemplate(IDR_MFCparamTYPE,
+	pDocTemplate1 = new CMultiDocTemplate(IDR_MAINFRAME,
 		RUNTIME_CLASS(COptionDoc),
 		RUNTIME_CLASS(COptionFrame), // 사용자 지정 MDI 자식 프레임입니다.
 		RUNTIME_CLASS(COptionFormView));
@@ -113,7 +113,7 @@ BOOL CMFCparamApp::InitInstance()
 	AddDocTemplate(pDocTemplate1);
 
 	// 이미지 뷰어 문서 템플릿 추가
-	pDocTemplate2 = new CMultiDocTemplate(IDR_MFCparamTYPE,
+	pDocTemplate2 = new CMultiDocTemplate(IDR_MAINFRAME,
 		RUNTIME_CLASS(CImgViewerDoc),
 		RUNTIME_CLASS(CImgViewerFrame), // 사용자 지정 MDI 자식 프레임입니다.
 		RUNTIME_CLASS(CImgViewerView));

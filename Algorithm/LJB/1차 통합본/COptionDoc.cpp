@@ -55,10 +55,14 @@ void COptionDoc::Serialize(CArchive& ar)
 	if (ar.IsStoring())
 	{
 		// TODO: 여기에 저장 코드를 추가합니다.
+		//ar << m_strDist;
+		//AfxMessageBox(m_strDist);
 	}
 	else
 	{
 		// TODO: 여기에 로딩 코드를 추가합니다.
+		//ar >> m_strDist;
+		//AfxMessageBox(m_strDist);
 	}
 }
 #endif
@@ -70,9 +74,5 @@ void COptionDoc::Serialize(CArchive& ar)
 void COptionDoc::OnOptionOpen()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	//CDatabase db;
-
-	//CString strCon = _T("Driver={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=D://access test folder//Database1.accdb");
-
 
 }

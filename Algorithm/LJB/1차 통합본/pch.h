@@ -12,13 +12,15 @@
 #include <afxext.h>
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include "x64/Debug/msado15.tlh"
+
 
 //DB 사용을 위한 설정
 #import "C:\Program Files\Common Files\System\ADO\msado15.dll" rename("EOF", "EndOfFile")
 //DB 파일 압축을 위한 설정
 //#import "C:\Program Files\Common Files\System\ado\msjro.dll" no_namespace
 //DB 파일 생성을 위한 설정
-#import "c:\Program Files\Common Files\system\ado\msadox.dll"
+#import "C:\Program Files\Common Files\system\ado\msadox.dll"
 using namespace ADODB;
 using namespace ADOX;
 

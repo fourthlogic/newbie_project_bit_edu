@@ -29,7 +29,8 @@ public:
 	CString m_strRadMax;
 	CString m_strRadMin;
 	CString m_strBGV;
-	CString m_strThMax;
-	CString m_strThMin;
+
+
+
 	afx_msg void OnOptionOpen();
 };

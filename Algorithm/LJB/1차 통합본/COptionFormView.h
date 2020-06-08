@@ -52,12 +52,13 @@ public:
 	//afx_msg void OnEnChangeEditOptionThmax();
 	//afx_msg void OnEnChangeEditOptionThmin();
 
-	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+//	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 
 	afx_msg void OnAppExit();
 	afx_msg void OnOptionOpen();
 	//void paraChanged2();
 	afx_msg void OnBnClickedButtonDo();
+	afx_msg void OnOptionSave();
 };
 
 

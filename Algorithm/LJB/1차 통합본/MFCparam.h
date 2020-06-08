@@ -18,7 +18,6 @@
 #include "COptionDoc.h"
 #include "COptionFormView.h"
 
-#include "COptionDlg.h"
 // CMFCparamApp:
 // 이 클래스의 구현에 대해서는 MFCparam.cpp을(를) 참조하세요.
 //

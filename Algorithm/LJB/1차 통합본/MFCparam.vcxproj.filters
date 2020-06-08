@@ -54,12 +54,6 @@
     <ClInclude Include="CircleDection.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="COptionDlg.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="myADO.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MainFrm.cpp">
@@ -90,12 +84,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="CircleDection.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="COptionDlg.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="myADO.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

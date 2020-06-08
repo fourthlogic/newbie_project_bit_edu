@@ -10,6 +10,24 @@
 #include "COptionFrame.h"
 #include "CircleDection.h"
 
+class imageData {
+	std::string fileName;
+	Mat src;
+	HBITMAP image;
+public:
+	std::string getFileName() { return fileName; }
+	void setFileName(std::string fileName) { this->fileName = fileName; }
+
+	Mat getSrc() { return this->src; }
+	void setImage() {
+		this->image = getHbitmap();
+	}
+	HBITMAP getImage() {
+		return image;
+	}
+	HBITMAP getHbitmap();
+};
+
 class CMainFrame : public CMDIFrameWnd
 {
 	DECLARE_DYNAMIC(CMainFrame)
@@ -61,9 +79,10 @@ public:
 	CImgViewerDoc* pImgViewerDoc = NULL;
 	CImgViewerView* pImgViewerView = NULL;
 	CImgViewerFrame* pImgViewerFrame = NULL;
+	vector<imageData> imageList;
+	COLORREF color;
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
-	int nn = 0;
-
+	afx_msg void OnClose();
 };
 
 
