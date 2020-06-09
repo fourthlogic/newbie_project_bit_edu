@@ -1,20 +1,26 @@
-﻿// ChildView.cpp: CChildView 클래스의 구현
+﻿
+// MFCparamView.cpp: CMFCparamView 클래스의 구현
 //
 
 #include "pch.h"
 #include "framework.h"
-#include "Fourthlohgic_Project.h"
-#include "ChildView.h"
-#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console");
+// SHARED_HANDLERS는 미리 보기, 축소판 그림 및 검색 필터 처리기를 구현하는 ATL 프로젝트에서 정의할 수 있으며
+// 해당 프로젝트와 문서 코드를 공유하도록 해 줍니다.
+#ifndef SHARED_HANDLERS
+#include "MFCparam.h"
+#endif
+
+#include "CImgViewerDoc.h"
+#include "CImgViewerView.h"
+#include "LINE_WIDTH.h"
 #define IsCTRLPressed()  ( 0x8000 ==(GetKeyState(VK_CONTROL) & 0x8000 ))
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
-extern CFourthlohgicProjectApp theApp;
-// CChildView
 
+// CMFCparamView
 bool IsContain(CRect rc, Point pt) {
 	int left, right, top, bottom;
 	if (rc.Width() > 0) {
@@ -35,10 +41,12 @@ bool IsContain(CRect rc, Point pt) {
 	}
 	return left <= pt.x && pt.x <= right && top <= pt.y && pt.y <= bottom;
 }
+
 int isLeft(CPoint linePt1, CPoint linePt2, CPoint pos)
 {
 	return ((linePt2.x - linePt1.x) * (pos.y - linePt1.y) - (pos.x - linePt1.x) * (linePt2.y - linePt1.y));
 }
+
 int isContainPolygon(CPoint pos, CPoint* vertices, int size)
 {
 	int wideNum = 0;
@@ -60,73 +68,113 @@ int isContainPolygon(CPoint pos, CPoint* vertices, int size)
 }
 
 
-CChildView::CChildView()
-{
+IMPLEMENT_DYNCREATE(CImgViewerView, CView)
 
-}
-
-CChildView::~CChildView()
-{
-}
-
-
-BEGIN_MESSAGE_MAP(CChildView, CWnd)
-	ON_WM_PAINT()
-	ON_WM_SIZE()
-	ON_WM_ERASEBKGND()
+BEGIN_MESSAGE_MAP(CImgViewerView, CView)
+	// 표준 인쇄 명령입니다.
+	ON_COMMAND(ID_FILE_PRINT, &CView::OnFilePrint)
+	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
+	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
 	ON_WM_MOUSEMOVE()
+	ON_WM_SIZE()
+	ON_WM_MOUSEHWHEEL()
 	ON_WM_MOUSEWHEEL()
 	ON_WM_MBUTTONDOWN()
 	ON_WM_MBUTTONUP()
-	ON_WM_CREATE()
-	ON_COMMAND(ID_POINT, &CChildView::OnPoint)
-	ON_COMMAND(ID_LINE, &CChildView::OnLine)
-	ON_COMMAND(ID_ELLPSE, &CChildView::OnEllpse)
-	ON_COMMAND(ID_RECTANGLE, &CChildView::OnRectangle)
-	ON_WM_LBUTTONUP()
-	ON_WM_LBUTTONDOWN()
-	ON_COMMAND(ID_DRAWID, &CChildView::OnDrawid)
-	ON_COMMAND(ID_PANID, &CChildView::OnPanid)
-	ON_COMMAND(ID_LWIDTH1, &CChildView::OnLwidth1)
-	ON_COMMAND(ID_LWIDTH2, &CChildView::OnLwidth2)
-	ON_COMMAND(ID_32797, &CChildView::On32797)
-	ON_COMMAND(ID_32798, &CChildView::On32798)
-	ON_COMMAND(ID_32799, &CChildView::On32799)
-	ON_COMMAND(ID_32800, &CChildView::On32800)
-	ON_COMMAND(ID_COPY, &CChildView::OnCopy)
-	ON_COMMAND(ID_PASTE, &CChildView::OnPaste)
-	ON_COMMAND(ID_DELETE, &CChildView::OnDelete)
-	ON_COMMAND(ID_LINECOLOR, &CChildView::OnLinecolor)
+	ON_WM_PAINT()
+	ON_COMMAND(ID_FILE_OPEN, &CImgViewerView::OnFileOpen)
 	ON_WM_CONTEXTMENU()
+	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONUP()
 	ON_WM_RBUTTONDOWN()
+	ON_COMMAND(ID_DRAW_POINT, &CImgViewerView::OnDrawPoint)
+	ON_COMMAND(ID_DRAW_LINE, &CImgViewerView::OnDrawLine)
+	ON_COMMAND(ID_DRAW_ELLPSE, &CImgViewerView::OnDrawEllpse)
+	ON_COMMAND(ID_DRAW_RECT, &CImgViewerView::OnDrawRect)
+	ON_COMMAND(ID_MODE_DRAW, &CImgViewerView::OnModeDraw)
+	ON_COMMAND(ID_MODE_SELECT, &CImgViewerView::OnModeSelect)
+	ON_COMMAND(ID_THICK_1, &CImgViewerView::OnThick1)
+	ON_COMMAND(ID_THICK_2, &CImgViewerView::OnThick2)
+	ON_COMMAND(ID_THICK_3, &CImgViewerView::OnThick3)
+	ON_COMMAND(ID_THICK_4, &CImgViewerView::OnThick4)
+	ON_COMMAND(ID_THICK_5, &CImgViewerView::OnThick5)
+	ON_COMMAND(ID_THICK_10, &CImgViewerView::OnThick10)
+	ON_COMMAND(ID_CONTEXT_COPY, &CImgViewerView::OnContextCopy)
+	ON_COMMAND(ID_CONTEXT_PASTE, &CImgViewerView::OnContextPaste)
+	ON_COMMAND(ID_CONTEXT_DELETE, &CImgViewerView::OnContextDelete)
+	ON_COMMAND(ID_CONTEXT_LINECOLOR, &CImgViewerView::OnContextLinecolor)
+	ON_COMMAND(ID_FILE_SAVE_WITHSHAPE, &CImgViewerView::OnFileSaveWithshape)
+	ON_COMMAND(ID_FILE_SAVE_ONLYIMG, &CImgViewerView::OnFileSaveOnlyimg)
+	ON_WM_CREATE()
+	ON_WM_ERASEBKGND()
 END_MESSAGE_MAP()
 
-
-
-// CChildView 메시지 처리기
-
-BOOL CChildView::PreCreateWindow(CREATESTRUCT& cs)
+// CMFCparamView 생성/소멸
+CImgViewerView::CImgViewerView() noexcept
 {
-	if (!CWnd::PreCreateWindow(cs))
-		return FALSE;
+	// TODO: 여기에 생성 코드를 추가합니다.
+}
 
+CImgViewerView::~CImgViewerView()
+{
+}
+
+BOOL CImgViewerView::PreCreateWindow(CREATESTRUCT& cs)
+{
+	// TODO: CREATESTRUCT cs를 수정하여 여기에서
+	//  Window 클래스 또는 스타일을 수정합니다.
 	cs.dwExStyle |= WS_EX_CLIENTEDGE;
 	cs.style &= ~WS_BORDER;
 	cs.lpszClass = AfxRegisterWndClass(CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS,
 		::LoadCursor(nullptr, IDC_ARROW), reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1), nullptr);
 
-	return TRUE;
+	return CView::PreCreateWindow(cs);
 }
 
+// CMFCparamView 그리기
 
-
-BOOL CChildView::OnEraseBkgnd(CDC* pDC)
+void CImgViewerView::OnDraw(CDC* /*pDC*/)
 {
-	return false;
+	CImgViewerDoc* pDoc = GetDocument();
+	ASSERT_VALID(pDoc);
+	if (!pDoc)
+		return;
+	
+	// TODO: 여기에 원시 데이터에 대한 그리기 코드를 추가합니다.
 }
 
+// CMFCparamView 진단
 
-void CChildView::OnMouseMove(UINT nFlags, CPoint point)
+#ifdef _DEBUG
+void CImgViewerView::AssertValid() const
+{
+	CView::AssertValid();
+}
+
+void CImgViewerView::Dump(CDumpContext& dc) const
+{
+	CView::Dump(dc);
+}
+
+CImgViewerDoc* CImgViewerView::GetDocument() const // 디버그되지 않은 버전은 인라인으로 지정됩니다.
+{
+	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CImgViewerDoc)));
+	return (CImgViewerDoc*)m_pDocument;
+}
+#endif //_DEBUG
+
+// CMFCparamView 메시지 처리기
+
+void CImgViewerView::OnInitialUpdate()
+{
+	CView::OnInitialUpdate();
+
+	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	GetParent()->SetWindowText(_T("이미지 뷰"));
+
+}
+
+void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	CWnd::OnMouseMove(nFlags, point);
@@ -252,7 +300,7 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 		{
 			CPoint pt;
 			int xx, yy;
-			
+
 			xx = d_sPt.x, yy = d_sPt.y;
 			d_sPt.x = z_pos.x + (m_ePt.x + point.x) / PWidth;
 			d_sPt.y = z_pos.y + (m_ePt.y + point.y) / PHeight;
@@ -264,7 +312,6 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 					pt.y = (d_sPt.y - yy);
 
 					data[choiceIdx].rect.left += pt.x;
-
 					data[choiceIdx].rect.top += pt.y;
 					break;
 				}
@@ -300,28 +347,25 @@ void CChildView::OnMouseMove(UINT nFlags, CPoint point)
 		}
 	}
 	//도형 그리기
-	if (m_lbtn && drawID && resize == 0) // 마우스를 클릭하여 드래그일 동안만 
+	if (nFlags & MK_LBUTTON && drawID && resize == 0) // 마우스를 클릭하여 드래그일 동안만 
 	{
 		if (choiceIdx != -1)
 			data[choiceIdx].isClicked = false;
 		pts.x = (z_pos.x + (m_ePt.x + point.x) / PWidth);
 		pts.y = (z_pos.y + (m_ePt.y + point.y) / PHeight);
-
-		ePt.x = point.x;
-		ePt.y = point.y;
-
-		mov_Pt.x = (z_pos.x + (m_ePt.x + pts.x) / PWidth);
-		mov_Pt.y = (z_pos.y + (m_ePt.y + pts.y) / PHeight);
-		shape.rect.right = mov_Pt.x;
-		shape.rect.bottom = mov_Pt.y;
+		shape.rect.right = pts.x;
+		shape.rect.bottom = pts.y;
 		shape.isClicked = true;
 		InvalidateRect(shape.rect);
 	}
+	else {
+		shape.isClicked = false;
+	}
 }
 
-void CChildView::OnSize(UINT nType, int cx, int cy)
+void CImgViewerView::OnSize(UINT nType, int cx, int cy)
 {
-	CWnd::OnSize(nType, cx, cy);
+	CView::OnSize(nType, cx, cy);
 
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	m_bgRect.left = 0;
@@ -335,8 +379,7 @@ void CChildView::OnSize(UINT nType, int cx, int cy)
 	Invalidate();
 }
 
-
-BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
+BOOL CImgViewerView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	float zoomScale = 1;
@@ -462,26 +505,397 @@ BOOL CChildView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	return CWnd::OnMouseWheel(nFlags, zDelta, pt);
 }
 
-void CChildView::OnMButtonDown(UINT nFlags, CPoint point)
+void CImgViewerView::OnMButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-
-	CWnd::OnMButtonDown(nFlags, point);
-
+	CView::OnMButtonDown(nFlags, point);
 	SetCapture();
 	m_sPt = point;
 }
 
-void CChildView::OnMButtonUp(UINT nFlags, CPoint point)
+void CImgViewerView::OnMButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-
-	CWnd::OnMButtonUp(nFlags, point);
-
+	CView::OnMButtonUp(nFlags, point);
 	ReleaseCapture();
 }
 
-void CChildView::PrintText(CDC* pDC)
+void CImgViewerView::OnPaint()
+{
+	CPaintDC dc(this); // 그리기를 위한 디바이스 컨텍스트입니다.
+
+	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+	CDC* pDC = GetDC();
+	CBitmap* oldbitmap, * oldbitmap2;	//원본 오브젝트 저장
+
+	m_background.Detach();
+	if (!m_background.Attach(::CopyImage(result_bmp, IMAGE_BITMAP, 0, 0, 0)))
+		return;
+	
+	memDC.CreateCompatibleDC(pDC);
+	mdcOffScreen.CreateCompatibleDC(pDC);
+
+	bmpOffScreen.CreateCompatibleBitmap(pDC, PWidth * (int)(zoomWidth + 2), PHeight * (int)(zoomHeight + 2));
+
+	oldbitmap = mdcOffScreen.SelectObject(&bmpOffScreen);
+	oldbitmap2 = memDC.SelectObject(&m_background);
+
+	if (shape.isClicked)
+		drawShape(&memDC, PS_SOLID, shape);
+	for (int i = 0; i < data.GetSize(); i++)
+	{
+		int penType = PS_SOLID;
+	/*	if (!data[i].isClicked)
+			penType = PS_SOLID;
+		else
+			penType = PS_DOT;*/
+		if (data[i].isClicked)
+		{
+			CPen pen0(PS_DOT, 1, RGB(0, 0, 0));
+			memDC.SelectObject(pen0);
+			HBRUSH oldBrush = (HBRUSH)memDC.SelectStockObject(NULL_BRUSH);
+			if (data[i].shapeType != DrawMode::DLine)
+			{
+				
+				int left = data[choiceIdx].rect.left;
+				int top = data[choiceIdx].rect.top;
+				int right = data[choiceIdx].rect.right;
+				int bottom = data[choiceIdx].rect.bottom;
+				if (left < right)
+				{
+					left -= 10;
+					right += 10;
+				}
+				else if (right < left)
+				{
+					left += 10;
+					right -= 10;
+				}
+
+				if (top < bottom)
+				{
+					top -= 10;
+					bottom += 10;
+				}
+				else if (bottom < top)
+				{
+					top += 10;
+					bottom -= 10;
+				}
+
+				memDC.Rectangle(left, top, right, bottom);
+				mRect[0].SetRect(left - 5, top - 5,
+					left + 5, top + 5);
+				mRect[1].SetRect(right - 5, bottom - 5,
+					right + 5, bottom + 5);
+				mRect[2].SetRect(right - 5, top - 5,
+					right + 5, top + 5);
+				mRect[3].SetRect(left - 5, bottom - 5,
+					left + 5, bottom + 5);
+
+				CPen* oldPen;
+				CPen pen(PS_SOLID, 1, RGB(0, 0, 0));
+				oldPen = memDC.SelectObject(&pen);
+				memDC.SelectStockObject(WHITE_BRUSH);
+				memDC.Ellipse(mRect[0]);
+				memDC.Ellipse(mRect[1]);
+				memDC.Ellipse(mRect[2]);
+				memDC.Ellipse(mRect[3]);
+
+			}
+			else {
+				CPoint po[4];
+				double a = (data[choiceIdx].rect.bottom - data[choiceIdx].rect.top * 1.0) / (data[choiceIdx].rect.right - data[choiceIdx].rect.left * 1.0);
+				double b = data[choiceIdx].rect.top - a * data[choiceIdx].rect.left;
+				po[0] = CPoint(data[choiceIdx].rect.left, data[choiceIdx].rect.left * a + b - 10);
+				po[1] = CPoint(data[choiceIdx].rect.right, data[choiceIdx].rect.right * a + b - 10);
+				po[2] = CPoint(data[choiceIdx].rect.right, data[choiceIdx].rect.right * a + b + 10);
+				po[3] = CPoint(data[choiceIdx].rect.left, data[choiceIdx].rect.left * a + b + 10);
+
+				mRect[0].SetRect(data[choiceIdx].rect.left - 5, data[choiceIdx].rect.top - 5,
+					data[choiceIdx].rect.left + 5, data[choiceIdx].rect.top + 5);
+				mRect[1].SetRect(data[choiceIdx].rect.right - 5, data[choiceIdx].rect.bottom - 5,
+					data[choiceIdx].rect.right + 5, data[choiceIdx].rect.bottom + 5);
+				CPen* oldPen;
+				CPen pen(PS_SOLID, 1, RGB(0, 0, 0));
+				oldPen = memDC.SelectObject(&pen);
+				memDC.SelectStockObject(WHITE_BRUSH);
+				memDC.Ellipse(mRect[0]);
+				memDC.Ellipse(mRect[1]);
+			}
+		}
+		drawShape(&memDC, penType, data[i]);
+	}
+
+	mdcOffScreen.SetStretchBltMode(HALFTONE);
+	mdcOffScreen.StretchBlt(start_pos.x, start_pos.y, PWidth * ((int)zoomWidth + 2), PHeight * ((int)zoomHeight + 2), &memDC,
+		z_pos.x, z_pos.y, zoomWidth + 2, zoomHeight + 2, SRCCOPY);
+
+	PrintText(&mdcOffScreen);
+
+	pDC->SetStretchBltMode(HALFTONE);
+	pDC->StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom, &mdcOffScreen,
+		m_ePt.x, m_ePt.y, m_bgRect.right, m_bgRect.bottom, SRCCOPY);
+
+	memDC.SelectObject(oldbitmap2);
+	memDC.DeleteDC();
+	mdcOffScreen.SelectObject(oldbitmap);
+	mdcOffScreen.DeleteDC();
+	bmpOffScreen.DeleteObject();
+	oldbitmap->DeleteObject();
+	oldbitmap2->DeleteObject();
+}
+
+void CImgViewerView::OnFileOpen()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
+	COptionFormView* pView = pMain->pOptionView; // 설정 창 View 포인터
+
+	if (!m_Algorithm.SelectImage())
+		return;
+	m_Algorithm.SetDistance(pView->m_nDist);
+	m_Algorithm.SetCircleValue(pView->m_nRadMin, pView->m_nRadMax, pView->m_nBGV);
+	m_Algorithm.Run();
+
+	result_mat = m_Algorithm.GetResultImage();
+	result_bmp = m_Algorithm.MatToBitmap(result_mat);
+
+	m_background.Detach();
+	m_background.Attach(result_bmp);
+	m_background.GetBitmap(&m_Bitmap);
+
+	zoomWidth = m_Bitmap.bmWidth;
+	zoomHeight = m_Bitmap.bmHeight;
+
+	m_ePt.x = 0;
+	m_ePt.y = 0;
+
+	z_pos.x = 1;
+	z_pos.y = 1;
+
+	PWidth = 1;
+	PHeight = 1;
+
+	zoomView = 1;
+	rectScale = 1;
+	printWidth = zoomWidth;
+	printHeight = zoomHeight;
+
+	start_pos.x = 0;
+	start_pos.y = 0;
+
+	PWidth = m_Bitmap.bmWidth / zoomWidth;
+	PHeight = m_Bitmap.bmHeight / zoomHeight;
+
+	Invalidate(FALSE);
+}
+
+void CImgViewerView::paraChanged() // 이미지 처리 및 버퍼에 붙이기
+{
+	// TODO: 여기에 구현 코드 추가.
+	if (!m_Algorithm.isReady())
+		return;
+
+	m_Algorithm.Run();
+	//m_Algorithm.ShowSrcImage();
+	//m_Algorithm.ShowResultImage();
+	result_mat = m_Algorithm.GetResultImage();
+	//imshow("dst", m_Algorithm.GetResultImage());
+	result_bmp = m_Algorithm.MatToBitmap(result_mat);
+
+	m_background.Detach();
+	m_background.Attach(result_bmp);
+	m_background.GetBitmap(&m_Bitmap);
+
+	Invalidate(FALSE);
+}
+
+void CImgViewerView::OnContextMenu(CWnd* /*pWnd*/, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+	if (choiceIdx == -1)
+		return;
+	CMenu popup;
+	CMenu* pMenu;
+
+	popup.LoadMenuW(IDR_MENU_CONTEXT);
+	pMenu = popup.GetSubMenu(0);
+
+	pMenu->TrackPopupMenu(TPM_LEFTALIGN || TPM_RIGHTBUTTON, point.x, point.y, this);
+}
+
+void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	CMainFrame* frame = (CMainFrame*)AfxGetMainWnd();
+	SetCapture();
+
+	d_sPt.x = z_pos.x + (m_ePt.x + point.x) / PWidth;
+	d_sPt.y = z_pos.y + (m_ePt.y + point.y) / PHeight;
+	if (drawID) {
+		if (drawStyle == DrawMode::None)
+			return;
+		shape.shapeType = drawStyle;  // 도형 콤보 상자에서 선택된 도형 스타일을 저장		
+		shape.penWidth = l_width;
+		shape.rect.left = d_sPt.x; // 도형 시작좌표 저장
+		shape.rect.top = d_sPt.y;
+		shape.rect.right = mov_Pt.x; // 도형 끝 좌표 저장
+		shape.rect.bottom = mov_Pt.y;
+		shape.fgColor = frame->color;
+		shape.isClicked = false;
+	}
+	m_lbtn = true;
+
+	CPoint cp;
+	if (panID || (drawID && choiceIdx != -1))
+	{
+		if (mRect[0].left <= d_sPt.x && d_sPt.x <= mRect[0].right && mRect[0].top <= d_sPt.y && d_sPt.y <= mRect[0].bottom)
+		{
+			//왼쪽 위
+			resize = 1;
+		}
+		else if (mRect[2].left <= d_sPt.x && d_sPt.x <= mRect[2].right && mRect[2].top <= d_sPt.y && d_sPt.y <= mRect[2].bottom)
+		{
+			//오른쪽 위
+			resize = 2;
+		}
+		else if (mRect[3].left <= d_sPt.x && d_sPt.x <= mRect[3].right && mRect[3].top <= d_sPt.y && d_sPt.y <= mRect[3].bottom)
+		{
+			//왼쪽 아래
+			resize = 3;
+		}
+		else if (mRect[1].left <= d_sPt.x && d_sPt.x <= mRect[1].right && mRect[1].top <= d_sPt.y && d_sPt.y <= mRect[1].bottom)
+		{
+			//오른쪽 아래
+			resize = 4;
+		}
+		else if (panID)
+		{
+			if (choiceIdx != -1)
+				data[choiceIdx].isClicked = false;
+
+			//resize = 0;
+			for (int i = 0; i < data.GetSize(); i++)
+			{
+				cp.x = z_pos.x + (m_ePt.x + point.x) / PWidth;
+				cp.y = z_pos.y + (m_ePt.y + point.y) / PHeight;
+
+				choiceIdx = -1;
+				if (data[zOrder[i]].shapeType != DrawMode::DLine)
+				{
+					if (IsContain(data[zOrder[i]].rect, Point(cp.x, cp.y)))
+					{
+						drawID = false;
+						panID = true;
+						data[zOrder[i]].isClicked = true;
+						temp = data[zOrder[i]];
+						zOrder.insert(zOrder.begin(), zOrder[i]);
+						zOrder.erase(zOrder.begin() + i + 1);
+						choiceIdx = zOrder[0];
+						data[choiceIdx].isClicked = true;
+						break;
+					}
+				}
+				else {
+					CPoint po[4];
+					double a = (data[zOrder[i]].rect.bottom - data[zOrder[i]].rect.top * 1.0) / (data[zOrder[i]].rect.right - data[zOrder[i]].rect.left * 1.0);
+					double b = data[zOrder[i]].rect.top - a * data[zOrder[i]].rect.left;
+					po[0] = CPoint(data[zOrder[i]].rect.left, data[zOrder[i]].rect.left * a + b - 10);
+					po[1] = CPoint(data[zOrder[i]].rect.right, data[zOrder[i]].rect.right * a + b - 10);
+					po[2] = CPoint(data[zOrder[i]].rect.right, data[zOrder[i]].rect.right * a + b + 10);
+					po[3] = CPoint(data[zOrder[i]].rect.left, data[zOrder[i]].rect.left * a + b + 10);
+					int flag = isContainPolygon(CPoint(cp.x, cp.y), po, 4);
+					if (flag != 0) {
+						drawID = false;
+						panID = true;
+						data[zOrder[i]].isClicked = true;
+						temp = data[zOrder[i]];
+						zOrder.insert(zOrder.begin(), zOrder[i]);
+						zOrder.erase(zOrder.begin() + i + 1);
+						choiceIdx = zOrder[0];
+						break;
+					}
+
+				}
+			}
+		}
+	}
+	Invalidate();
+	CView::OnLButtonDown(nFlags, point);
+}
+
+void CImgViewerView::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	CMainFrame* frame = (CMainFrame*)AfxGetMainWnd();
+	if (m_lbtn && drawID && resize == 0)  // 도형 그리기 상태일 동안만
+	{
+		if (choiceIdx != -1)
+			if (data[choiceIdx].isClicked)
+				return;
+		mov_Pt.x = (z_pos.x + (m_ePt.x + point.x) / PWidth) + 1;
+		mov_Pt.y = (z_pos.y + (m_ePt.y + point.y) / PHeight) + 1;
+		if (!shape.isClicked)
+			return;
+		shape.isClicked = true;
+
+		//저장된 shape를 배열에 저장
+		data.Add(shape);
+		zOrder.insert(zOrder.begin(), data.GetSize() - 1);
+		choiceIdx = zOrder[0];
+
+		RollbackInfo info;
+		m_lbtn = false;
+		info.idx = choiceIdx;
+		info.redoShape = data[choiceIdx];
+		info.undoShape = shape;
+		info.rollbackmode = RollBackMode::Create;
+		if (rollbackIndex != -1)
+			rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
+		else if (rollback.size() != 0) {
+			rollback.erase(rollback.begin(), rollback.end());
+		}
+		rollback.push_back(info);
+		rollbackIndex = rollback.size() - 1;
+		InvalidateRect(shape.rect);
+		shape.isClicked = false;
+		d_sPt.x = -1;
+		d_sPt.y = -1;
+	}
+	else if (panID)
+	{
+		if (choiceIdx != -1) {
+			if (data[choiceIdx].isClicked)
+			{
+				RollbackInfo info;
+				info.idx = choiceIdx;
+				info.redoShape = data[choiceIdx];
+				info.undoShape = temp;
+				info.rollbackmode = RollBackMode::Update;
+				if (rollbackIndex != -1)
+					rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
+				rollback.push_back(info);
+				rollbackIndex = rollback.size() - 1;
+				InvalidateRect(data[choiceIdx].rect);
+			}
+		}
+	}
+	m_lbtn = false;
+	resize = 0;
+	ReleaseCapture();
+	CView::OnLButtonUp(nFlags, point);
+}
+
+void CImgViewerView::OnRButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	p_pt.x = z_pos.x + (m_ePt.x + point.x) / PWidth;
+	p_pt.y = z_pos.y + (m_ePt.y + point.y) / PHeight;
+	CView::OnRButtonDown(nFlags, point);
+}
+
+void CImgViewerView::PrintText(CDC* pDC)
 {
 	COLORREF rgb;
 	int cntWidth = 0, cntHeight = 0;
@@ -558,7 +972,7 @@ void CChildView::PrintText(CDC* pDC)
 	}
 }
 
-void CChildView::DrawTextEx(CDC* pDC, const CString& str, CRect rect, UINT nFormat)
+void CImgViewerView::DrawTextEx(CDC* pDC, const CString& str, CRect rect, UINT nFormat)
 {
 	int    nLineCount = 0;
 
@@ -585,325 +999,31 @@ void CChildView::DrawTextEx(CDC* pDC, const CString& str, CRect rect, UINT nForm
 	pDC->DrawText(str, rect, nFormat);
 }
 
-
-int CChildView::OnCreate(LPCREATESTRUCT lpCreateStruct)
-{
-	if (CWnd::OnCreate(lpCreateStruct) == -1)
-		return -1;
-
-	// TODO:  여기에 특수화된 작성 코드를 추가합니다.
-	drawID = true;
-	panID = false;
-	l_width = 1;
-	idx = 0;
-	rollbackIndex = -1;
-	choiceIdx = -1;
-	m_lbtn = false;
-	resize = 0;
-	ctrl = false;
-	iscopy = false;
-	drawStyle = DrawMode::None;
-
-
-	pFrame = (CMainFrame*)AfxGetMainWnd();
-	if (pFrame->imageList.empty()) {
-		static TCHAR BASED_CODE szFilter[] = _T("이미지 파일(*.BMP, *.GIF, *.JPG, *PNG) | *.BMP;*.GIF;*.JPG;*.bmp;*.jpg;*.png;*.gif; |모든파일(*.*)|*.*||");
-		CString strFileList;
-		CString File;
-		CFileDialog dlg(TRUE, NULL, NULL, OFN_ALLOWMULTISELECT, szFilter);
-
-		const int c_cMaxFiles = 400 /*선택할 파일 숫자*/;	// 메모리 부족현상으로 확장 안해주면 몇개 못씀
-
-		const int c_cbBuffSize = (c_cMaxFiles * (MAX_PATH + 1)) + 1;
-
-		dlg.GetOFN().lpstrFile = strFileList.GetBuffer(c_cbBuffSize);
-
-		dlg.GetOFN().nMaxFile = c_cbBuffSize;
-
-		if (dlg.DoModal() == IDOK)
-		{
-			for (POSITION pos = dlg.GetStartPosition(); pos != NULL;)
-
-			{
-				CString sFilename = dlg.GetNextPathName(pos);
-#ifdef _UNICODE
-				CT2CA pszConvertedAnsiString(sFilename);
-				std::string fileName(pszConvertedAnsiString);
-				imageData temp;
-				temp.setFileName(fileName);
-				pFrame->imageList.push_back(temp);
-#else
-				std::string fileName((LPCTSTR)sFilename);
-				imageData temp;
-				temp.setFileName(fileName);
-				pFrame->imageList.push_back(temp);
-#endif
-			}
-
-		}
-		else  return -1;
-
-	}
-	pFrame->imageList[idx].setImage();
-	m_background.Attach(pFrame->imageList[idx].getImage());
-	m_background.GetBitmap(&m_Bitmap);
-
-	m_background.GetObject(sizeof(BITMAP), (LPVOID)&m_Bitmap);
-
-	zoomWidth = m_Bitmap.bmWidth;
-	zoomHeight = m_Bitmap.bmHeight;
-
-	m_ePt.x = 0;
-	m_ePt.y = 0;
-
-	z_pos.x = 1;
-	z_pos.y = 1;
-
-	PWidth = 1;
-	PHeight = 1;
-
-	zoomView = 1;
-	rectScale = 1;
-	printWidth = zoomWidth;
-	printHeight = zoomHeight;
-
-	start_pos.x = 0;
-	start_pos.y = 0;
-
-	PWidth = m_Bitmap.bmWidth / zoomWidth;
-	PHeight = m_Bitmap.bmHeight / zoomHeight;
-	
-	return 0;
-}
-
-
-void CChildView::OnPoint()
+void CImgViewerView::OnDrawPoint()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	drawStyle = DrawMode::DPoint;
 }
 
-
-void CChildView::OnLine()
+void CImgViewerView::OnDrawLine()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	drawStyle = DrawMode::DLine;
 }
 
-
-void CChildView::OnEllpse()
+void CImgViewerView::OnDrawEllpse()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	drawStyle = DrawMode::DEllipse;
 }
 
-
-void CChildView::OnRectangle()
+void CImgViewerView::OnDrawRect()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	drawStyle = DrawMode::DRectangle;
 }
 
-
-void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
-{
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-
-	CWnd::OnLButtonDown(nFlags, point);
-	CMainFrame* frame = (CMainFrame*)AfxGetMainWnd();
-	SetCapture();
-	
-	d_sPt.x = z_pos.x + (m_ePt.x + point.x) / PWidth;
-	d_sPt.y = z_pos.y + (m_ePt.y + point.y) / PHeight;
-	if (drawID) {
-		if (drawStyle == DrawMode::None)
-			return;
-		shape.shapeType = drawStyle;  // 도형 콤보 상자에서 선택된 도형 스타일을 저장		
-		shape.penWidth = l_width;
-		shape.rect.left = d_sPt.x; // 도형 시작좌표 저장
-		shape.rect.top = d_sPt.y;
-		shape.rect.right = mov_Pt.x; // 도형 끝 좌표 저장
-		shape.rect.bottom = mov_Pt.y;
-		shape.fgColor = frame->color;
-		shape.isClicked = false;
-	}
-	m_lbtn = true;
-
-
-	sPt.x = point.x;
-	sPt.y = point.y;
-	
-	//drawID = true; // 그리기 시작을 알리는 변수		
-	CPoint cp;
-	if (panID || (drawID && choiceIdx != -1))
-	{
-		if (mRect[0].left <= d_sPt.x && d_sPt.x <= mRect[0].right && mRect[0].top <= d_sPt.y && d_sPt.y <= mRect[0].bottom)
-		{
-			//왼쪽 위
-			resize = 1;
-		}
-		else if (mRect[2].left <= d_sPt.x && d_sPt.x <= mRect[2].right && mRect[2].top <= d_sPt.y && d_sPt.y <= mRect[2].bottom)
-		{
-			//오른쪽 위
-			resize = 2;
-		}
-		else if (mRect[3].left <= d_sPt.x && d_sPt.x <= mRect[3].right && mRect[3].top <= d_sPt.y && d_sPt.y <= mRect[3].bottom)
-		{
-			//왼쪽 아래
-			resize = 3;
-		}
-		else if (mRect[1].left <= d_sPt.x && d_sPt.x <= mRect[1].right && mRect[1].top <= d_sPt.y && d_sPt.y <= mRect[1].bottom)
-		{
-			//오른쪽 아래
-			resize = 4;
-		}
-		else if (panID)
-		{
-			if (choiceIdx != -1)
-				data[choiceIdx].isClicked = false;
-
-			//resize = 0;
-			for (int i = 0; i < data.GetSize(); i++)
-			{
-				cp.x = z_pos.x + (m_ePt.x + point.x) / PWidth;
-				cp.y = z_pos.y + (m_ePt.y + point.y) / PHeight;
-
-				choiceIdx = -1;
-				if (data[zOrder[i]].shapeType != DrawMode::DLine)
-				{
-					if (IsContain(data[zOrder[i]].rect, Point(cp.x, cp.y)))
-					{
-						drawID = false;
-						panID = true;
-						data[zOrder[i]].isClicked = true;
-						temp = data[zOrder[i]];
-						zOrder.insert(zOrder.begin(), zOrder[i]);
-						zOrder.erase(zOrder.begin() + i + 1);
-						choiceIdx = zOrder[0];
-						data[choiceIdx].isClicked = true;
-						break;
-					}
-				}
-				else {
-					CPoint po[4];
-					double a = (data[zOrder[i]].rect.bottom - data[zOrder[i]].rect.top * 1.0) / (data[zOrder[i]].rect.right - data[zOrder[i]].rect.left * 1.0);
-					double b = data[zOrder[i]].rect.top - a * data[zOrder[i]].rect.left;
-					po[0] = CPoint(data[zOrder[i]].rect.left, data[zOrder[i]].rect.left * a + b - 10);
-					po[1] = CPoint(data[zOrder[i]].rect.right, data[zOrder[i]].rect.right * a + b - 10);
-					po[2] = CPoint(data[zOrder[i]].rect.right, data[zOrder[i]].rect.right * a + b + 10);
-					po[3] = CPoint(data[zOrder[i]].rect.left, data[zOrder[i]].rect.left * a + b + 10);
-					int flag = isContainPolygon(CPoint(cp.x, cp.y), po, 4);
-					if (flag != 0) {
-						drawID = false;
-						panID = true;
-						data[zOrder[i]].isClicked = true;
-						temp = data[zOrder[i]];
-						zOrder.insert(zOrder.begin(), zOrder[i]);
-						zOrder.erase(zOrder.begin() + i + 1);
-						choiceIdx = zOrder[0];
-						break;
-					}
-
-				}
-			}
-		}
-	}
-	Invalidate();
-}
-
-
-void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
-{
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	CWnd::OnLButtonUp(nFlags, point);
-	CMainFrame* frame = (CMainFrame*)AfxGetMainWnd();
-	if (m_lbtn && drawID && resize == 0)  // 도형 그리기 상태일 동안만
-	{
-
-		mov_Pt.x = (z_pos.x + (m_ePt.x + point.x) / PWidth) + 1;
-		mov_Pt.y = (z_pos.y + (m_ePt.y + point.y) / PHeight) + 1;
-
-		shape.isClicked = true;
-
-		//저장된 shape를 배열에 저장
-		data.Add(shape);
-		zOrder.insert(zOrder.begin(), data.GetSize() - 1);
-		choiceIdx = zOrder[0];
-
-		RollbackInfo info;
-		info.idx = choiceIdx;
-		info.redoShape = data[choiceIdx];
-		info.undoShape = shape;
-		info.rollbackmode = RollBackMode::Create;
-		if (rollbackIndex != -1)
-			rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
-		else if (rollback.size() != 0) {
-			rollback.erase(rollback.begin(), rollback.end());
-		}
-		rollback.push_back(info);
-		rollbackIndex = rollback.size() - 1;
-		InvalidateRect(shape.rect);
-		shape.isClicked = false;
-	}
-	else if (panID)
-	{
-		if (choiceIdx != -1) {
-			if (data[choiceIdx].isClicked)
-			{
-				RollbackInfo info;
-				info.idx = choiceIdx;
-				info.redoShape = data[choiceIdx];
-				info.undoShape = temp;
-				info.rollbackmode = RollBackMode::Update;
-				if (rollbackIndex != -1)
-					rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
-				rollback.push_back(info);
-				rollbackIndex = rollback.size() - 1;
-				InvalidateRect(data[choiceIdx].rect);
-			}
-		}
-	}
-	m_lbtn = false;
-	resize = 0;
-	ReleaseCapture();
-}
-
-//int CChildView::draw()
-//{
-//	//CClientDC dc(this);
-//	CMainFrame* frame = (CMainFrame*)AfxGetMainWnd();
-//	CDC* dc = GetDC();
-//	CPen myPen(PS_SOLID, PWidth * l_width, frame->color);
-//	CPen* oldPen;
-//
-//	HBRUSH myBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
-//	HBRUSH oldBrush = (HBRUSH)dc->SelectObject(myBrush);
-//
-//	oldPen = dc->SelectObject(&myPen);
-//
-//	if (drawStyle == DrawMode::DLine) // 콤보상자에서 직선 선택시
-//	{
-//		dc->MoveTo(sPt.x, sPt.y); dc->LineTo(ePt.x, ePt.y);
-//	}
-//	else if (drawStyle == DrawMode::DEllipse) // 콤보상자에서 원 선택시
-//	{
-//		dc->Ellipse(sPt.x, sPt.y, ePt.x, ePt.y);
-//	}
-//	else if (drawStyle == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
-//	{
-//		dc->Rectangle(sPt.x, sPt.y, ePt.x, ePt.y);
-//	}
-//
-//	dc->SelectObject(oldPen); // 이전 팬 선택		
-//	myPen.DeleteObject();  // 생성한 펜 메모리에서 제거		
-//	dc->SelectObject(oldBrush);
-//	DeleteObject(myBrush);
-//
-//
-//	return d_sPt.x, d_sPt.y, mov_Pt.x, mov_Pt.y;
-//}
-
-void CChildView::drawShape(CDC* dc, int penType, MyShape a) {
+void CImgViewerView::drawShape(CDC* dc, int penType, MyShape a) {
 	CPen myPen(penType, a.penWidth, a.fgColor);
 	CPen* oldPen;
 	oldPen = dc->SelectObject(&myPen);
@@ -931,128 +1051,27 @@ void CChildView::drawShape(CDC* dc, int penType, MyShape a) {
 	DeleteObject(myBrush);
 }
 
-
-void CChildView::OnPaint()
-{
-	CPaintDC dc(this); // 그리기를 위한 디바이스 컨텍스트입니다.
-
-	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
-	//---------------------------------------------------
-	CDC* pDC = GetDC();
-	CBitmap* oldbitmap, * oldbitmap2;	//원본 오브젝트 저장
-
-	m_background.Detach();
-	m_background.Attach(::CopyImage(pFrame->imageList[idx].getImage(), IMAGE_BITMAP, 0, 0, 0));
-	memDC.CreateCompatibleDC(pDC);
-	mdcOffScreen.CreateCompatibleDC(pDC);
-
-	bmpOffScreen.CreateCompatibleBitmap(pDC, PWidth * (int)(zoomWidth + 2), PHeight * (int)(zoomHeight + 2));
-
-
-	oldbitmap = mdcOffScreen.SelectObject(&bmpOffScreen);
-	oldbitmap2 = memDC.SelectObject(&m_background);
-
-
-
-	if (shape.isClicked)
-		drawShape(&memDC, PS_SOLID, shape);
-	for (int i = 0; i < data.GetSize(); i++)
-	{
-		int penType;
-		if (i != choiceIdx)
-			penType = PS_SOLID;
-		else
-			penType = PS_DOT;
-		if (i==choiceIdx&&data[choiceIdx].isClicked)
-		{
-			HBRUSH oldBrush = (HBRUSH)memDC.SelectStockObject(WHITE_BRUSH);
-			if (data[i].shapeType != DrawMode::DLine)
-			{
-				mRect[0].SetRect(data[choiceIdx].rect.left - 10, data[choiceIdx].rect.top - 10,
-					data[choiceIdx].rect.left + 10, data[choiceIdx].rect.top + 10);
-				mRect[1].SetRect(data[choiceIdx].rect.right - 10, data[choiceIdx].rect.bottom - 10,
-					data[choiceIdx].rect.right + 10, data[choiceIdx].rect.bottom + 10);
-				mRect[2].SetRect(data[choiceIdx].rect.right - 10, data[choiceIdx].rect.top - 10,
-					data[choiceIdx].rect.right + 10, data[choiceIdx].rect.top + 10);
-				mRect[3].SetRect(data[choiceIdx].rect.left - 10, data[choiceIdx].rect.bottom - 10,
-					data[choiceIdx].rect.left + 10, data[choiceIdx].rect.bottom + 10);
-
-				CPen* oldPen;
-				CPen pen(PS_SOLID, 1, RGB(0, 0, 0));
-				oldPen = memDC.SelectObject(&pen);
-				memDC.SelectStockObject(WHITE_BRUSH);
-				memDC.Ellipse(mRect[0]);
-				memDC.Ellipse(mRect[1]);
-				memDC.Ellipse(mRect[2]);
-				memDC.Ellipse(mRect[3]);
-
-			}
-			else {
-				CPoint po[4];
-				double a = (data[choiceIdx].rect.bottom - data[choiceIdx].rect.top * 1.0) / (data[choiceIdx].rect.right - data[choiceIdx].rect.left * 1.0);
-				double b = data[choiceIdx].rect.top - a * data[choiceIdx].rect.left;
-				po[0] = CPoint(data[choiceIdx].rect.left, data[choiceIdx].rect.left * a + b - 10);
-				po[1] = CPoint(data[choiceIdx].rect.right, data[choiceIdx].rect.right * a + b - 10);
-				po[2] = CPoint(data[choiceIdx].rect.right, data[choiceIdx].rect.right * a + b + 10);
-				po[3] = CPoint(data[choiceIdx].rect.left, data[choiceIdx].rect.left * a + b + 10);
-
-				mRect[0].SetRect(data[choiceIdx].rect.left - 10, data[choiceIdx].rect.top - 10,
-					data[choiceIdx].rect.left + 10, data[choiceIdx].rect.top + 10);
-				mRect[1].SetRect(data[choiceIdx].rect.right - 10, data[choiceIdx].rect.bottom - 10,
-					data[choiceIdx].rect.right + 10, data[choiceIdx].rect.bottom + 10);
-				CPen* oldPen;
-				CPen pen(PS_SOLID, 2, RGB(0, 0, 0));
-				oldPen = memDC.SelectObject(&pen);
-				memDC.SelectStockObject(WHITE_BRUSH);
-				memDC.Ellipse(mRect[0]);
-				memDC.Ellipse(mRect[1]);
-			}
-		}
-		drawShape(&memDC, penType, data[i]);
-	}
-
-	mdcOffScreen.SetStretchBltMode(HALFTONE);
-	mdcOffScreen.StretchBlt(start_pos.x, start_pos.y, PWidth * ((int)zoomWidth + 2), PHeight * ((int)zoomHeight + 2), &memDC,
-		z_pos.x, z_pos.y, zoomWidth + 2, zoomHeight + 2, SRCCOPY);
-
-	PrintText(&mdcOffScreen);
-
-	pDC->SetStretchBltMode(HALFTONE);
-	pDC->StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom, &mdcOffScreen,
-		m_ePt.x, m_ePt.y, m_bgRect.right, m_bgRect.bottom, SRCCOPY);
-
-	memDC.SelectObject(oldbitmap2);
-	memDC.DeleteDC();
-	mdcOffScreen.SelectObject(oldbitmap);
-	mdcOffScreen.DeleteDC();
-	bmpOffScreen.DeleteObject();
-	oldbitmap->DeleteObject();
-	oldbitmap2->DeleteObject();
-}
-
-void CChildView::OnDrawid()
+void CImgViewerView::OnModeDraw()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	drawID = true;
 	panID = false;
-	if (choiceIdx != -1) {
+	if (choiceIdx != -1)
+	{
 		data[choiceIdx].isClicked = false;
 		InvalidateRect(data[choiceIdx].rect);
 		choiceIdx = -1;
-
 	}
 }
 
-
-void CChildView::OnPanid()
+void CImgViewerView::OnModeSelect()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	drawID = false;
 	panID = true;
 }
 
-
-void CChildView::OnLwidth1()
+void CImgViewerView::OnThick1()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	l_width = 1;
@@ -1073,11 +1092,9 @@ void CChildView::OnLwidth1()
 		rollbackIndex = rollback.size() - 1;
 		Invalidate();
 	}
-	
 }
 
-
-void CChildView::OnLwidth2()
+void CImgViewerView::OnThick2()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	l_width = 2;
@@ -1100,8 +1117,7 @@ void CChildView::OnLwidth2()
 	}
 }
 
-
-void CChildView::On32797()
+void CImgViewerView::OnThick3()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	l_width = 3;
@@ -1124,8 +1140,7 @@ void CChildView::On32797()
 	}
 }
 
-
-void CChildView::On32798()
+void CImgViewerView::OnThick4()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	l_width = 4;
@@ -1148,8 +1163,7 @@ void CChildView::On32798()
 	}
 }
 
-
-void CChildView::On32799()
+void CImgViewerView::OnThick5()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	l_width = 5;
@@ -1172,11 +1186,14 @@ void CChildView::On32799()
 	}
 }
 
-
-void CChildView::On32800()
+void CImgViewerView::OnThick10()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	l_width = 10;
+	LINE_WIDTH dlg;
+	if (dlg.DoModal())
+	{
+		l_width = dlg.l_width;
+	}
 	if (choiceIdx != -1)
 	{
 		RollbackInfo info;
@@ -1194,13 +1211,29 @@ void CChildView::On32800()
 		rollbackIndex = rollback.size() - 1;
 		Invalidate();
 	}
+	/*l_width = 10;
+	if (choiceIdx != -1)
+	{
+		RollbackInfo info;
+		info.idx = choiceIdx;
+		info.undoShape = data[choiceIdx];
+		data[choiceIdx].penWidth = l_width;
+		info.redoShape = data[choiceIdx];
+		info.rollbackmode = RollBackMode::Update;
+		if (rollbackIndex != -1)
+			rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
+		else if (rollback.size() != 0) {
+			rollback.erase(rollback.begin(), rollback.end());
+		}
+		rollback.push_back(info);
+		rollbackIndex = rollback.size() - 1;
+		Invalidate();
+	}*/
 }
 
-
-void CChildView::OnCopy()
+void CImgViewerView::OnContextCopy()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-
 	if (choiceIdx != -1)
 	{
 		copyShape = data[choiceIdx];
@@ -1210,8 +1243,7 @@ void CChildView::OnCopy()
 	}
 }
 
-
-void CChildView::OnPaste()
+void CImgViewerView::OnContextPaste()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	if (iscopy)
@@ -1251,11 +1283,9 @@ void CChildView::OnPaste()
 	}
 }
 
-
-void CChildView::OnDelete()
+void CImgViewerView::OnContextDelete()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-
 	if (choiceIdx != -1)
 	{
 		RollbackInfo info;
@@ -1267,6 +1297,11 @@ void CChildView::OnDelete()
 		else if (rollback.size() != 0) {
 			rollback.erase(rollback.begin(), rollback.end());
 		}
+		for (int i = 1; i < zOrder.size(); i++) {
+			if (zOrder[i] > choiceIdx)
+				zOrder[i]--;
+		}
+				zOrder.erase(zOrder.begin());
 		rollback.push_back(info);
 		rollbackIndex = rollback.size() - 1;
 		data.RemoveAt(choiceIdx);
@@ -1276,38 +1311,10 @@ void CChildView::OnDelete()
 	return;
 }
 
-
-void CChildView::OnContextMenu(CWnd* /*pWnd*/, CPoint point)
-{
-	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
-	if (choiceIdx == -1)
-		return;
-	CMenu popup;
-	CMenu* pMenu;
-
-	popup.LoadMenuW(IDR_MENU1);
-	pMenu = popup.GetSubMenu(0);
-
-	pMenu->TrackPopupMenu(TPM_LEFTALIGN || TPM_RIGHTBUTTON, point.x, point.y, this);
-}
-
-
-void CChildView::OnRButtonDown(UINT nFlags, CPoint point)
-{
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-
-	CWnd::OnRButtonDown(nFlags, point);
-
-	p_pt.x = z_pos.x + (m_ePt.x + point.x) / PWidth;
-	p_pt.y = z_pos.y + (m_ePt.y + point.y) / PHeight;
-}
-
-
-
-void CChildView::OnLinecolor()
+void CImgViewerView::OnContextLinecolor()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	if (choiceIdx !=-1)
+	if (choiceIdx != -1)
 	{
 		CColorDialog colorDlg;
 
@@ -1331,8 +1338,7 @@ void CChildView::OnLinecolor()
 	}
 }
 
-
-BOOL CChildView::PreTranslateMessage(MSG* pMsg)
+BOOL CImgViewerView::PreTranslateMessage(MSG* pMsg)
 {
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
 	if (pMsg->message == WM_KEYDOWN)
@@ -1341,77 +1347,77 @@ BOOL CChildView::PreTranslateMessage(MSG* pMsg)
 		{
 			switch (pMsg->wParam)
 			{
-				case 99: case 67:	// ctrl - C
-				{
-					OnCopy();
-					break;
-				}
-				case 118: case 86:	// ctrl - V
-				{
-					ctrl = true;
-					OnPaste();
-					break;
-				}
-				case 89: case 121:	// ctrl - Y
-				{
-					redo();
-					break;
-				}
-				case 90: case 122:	//ctrl - Z
-				{
-					undo();
-					break;
-				}
+			case 99: case 67:	// ctrl - C
+			{
+				OnContextCopy();
+				break;
+			}
+			case 118: case 86:	// ctrl - V
+			{
+				ctrl = true;
+				OnContextPaste();
+				break;
+			}
+			case 89: case 121:	// ctrl - Y
+			{
+				redo();
+				break;
+			}
+			case 90: case 122:	//ctrl - Z
+			{
+				undo();
+				break;
+			}
 			}
 		}
 		else if (::GetKeyState(VK_DELETE) < 0)
 		{
-			OnDelete();
+			OnContextDelete();
 		}
 	}
-	return CWnd::PreTranslateMessage(pMsg);
+	return CView::PreTranslateMessage(pMsg);
 }
 
-void CChildView::undo() {
+void CImgViewerView::undo() {
 	if (rollbackIndex != -1) {
 		switch (rollback[rollbackIndex].rollbackmode)
 		{
-			case RollBackMode::Create: {
-				data.RemoveAt(rollback[rollbackIndex].idx);
-				for (int i = 0; i < zOrder.size(); i++) {
-					if (zOrder[i] == rollback[rollbackIndex].idx)
-						zOrder.erase(zOrder.begin() + i);
-				}
-				rollbackIndex--;
-				choiceIdx = -1;
-				Invalidate();
-				break;
+		case RollBackMode::Create: {
+			data.RemoveAt(rollback[rollbackIndex].idx);
+			for (int i = 0; i < zOrder.size(); i++) {
+				if (zOrder[i] == rollback[rollbackIndex].idx)
+					zOrder.erase(zOrder.begin() + i);
 			}
-			case RollBackMode::Delete: {
-				data.Add(rollback[rollbackIndex--].undoShape);
-				zOrder.insert(zOrder.begin(), data.GetSize() - 1);
-				choiceIdx = zOrder[0];
-				data[choiceIdx].isClicked = true;
+			rollbackIndex--;
+			choiceIdx = -1;
+			Invalidate();
+			break;
+		}
+		case RollBackMode::Delete: {
+			data.Add(rollback[rollbackIndex--].undoShape);
+			zOrder.insert(zOrder.begin(), data.GetSize() - 1);
+			choiceIdx = zOrder[0];
+			data[choiceIdx].isClicked = true;
 
-				break;
-			}
-			case RollBackMode::Update: {
-				if (choiceIdx != -1)
-					data[choiceIdx].isClicked = false;
-				data[rollback[rollbackIndex].idx] = rollback[rollbackIndex].undoShape;
-				choiceIdx = rollback[rollbackIndex].idx;
-				data[choiceIdx].isClicked = true;
-				rollbackIndex--;
-				break;
-			}
-			default:
-				break;
+			break;
+		}
+		case RollBackMode::Update: {
+			if (choiceIdx != -1)
+				data[choiceIdx].isClicked = false;
+			data[rollback[rollbackIndex].idx] = rollback[rollbackIndex].undoShape;
+			choiceIdx = rollback[rollbackIndex].idx;
+			data[choiceIdx].isClicked = true;
+			rollbackIndex--;
+			break;
+		}
+		default:
+			break;
 		}
 		Invalidate();
 	}
 }
 
-void CChildView::redo() {
+void CImgViewerView::redo() {
 	if (rollbackIndex + 1 < rollback.size())
 	{
 		switch (rollback[++rollbackIndex].rollbackmode)
@@ -1450,4 +1456,73 @@ void CChildView::redo() {
 		}
 		Invalidate();
 	}
+}
+
+void CImgViewerView::OnFileSaveWithshape()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	data[choiceIdx].isClicked = false;
+	choiceIdx = -1;
+	Invalidate();
+
+	static TCHAR BASED_CODE szFilter[] = _T("이미지 파일(*.BMP, *.GIF, *.JPG, *PNG) | *.BMP;*.GIF;*.JPG;*.bmp;*.jpg;*.png;*.gif; |모든파일(*.*)|*.*||");
+	CString strFileList;
+	CString File;
+	CStdioFile csFile;
+	CFileDialog fsDlg(FALSE, _T("png"), NULL, OFN_FILEMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR, szFilter, NULL);
+	if (fsDlg.DoModal() == IDOK)
+	{
+		CString fileSave = fsDlg.GetPathName();  //파일경로 얻어와서
+
+		CImage image;
+		image.Attach(m_background);
+		image.Save(fileSave, Gdiplus::ImageFormatJPEG);
+	}
+}
+
+void CImgViewerView::OnFileSaveOnlyimg()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	static TCHAR BASED_CODE szFilter[] = _T("이미지 파일(*.BMP, *.GIF, *.JPG, *PNG) | *.BMP;*.GIF;*.JPG;*.bmp;*.jpg;*.png;*.gif; |모든파일(*.*)|*.*||");
+
+	CFileDialog fsDlg(FALSE, _T("png"), NULL, OFN_FILEMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR, szFilter, NULL);
+	if (fsDlg.DoModal() == IDOK)
+	{
+		CString fileSave = fsDlg.GetPathName();  //파일경로 얻어와서
+
+		CImage image;
+		m_background.Detach();
+		m_background.Attach(::CopyImage(result_bmp, IMAGE_BITMAP, 0, 0, 0));
+		image.Attach(m_background);
+		image.Save(fileSave, Gdiplus::ImageFormatJPEG);
+	}
+}
+
+int CImgViewerView::OnCreate(LPCREATESTRUCT lpCreateStruct)
+{
+	if (CView::OnCreate(lpCreateStruct) == -1)
+		return -1;
+
+	// TODO:  여기에 특수화된 작성 코드를 추가합니다.
+	drawID = true;
+	panID = false;
+	l_width = 1;
+	idx = 0;
+	rollbackIndex = -1;
+	choiceIdx = -1;
+	m_lbtn = false;
+	resize = 0;
+	ctrl = false;
+	iscopy = false;
+	drawStyle = DrawMode::None;
+
+	return 0;
+}
+
+
+BOOL CImgViewerView::OnEraseBkgnd(CDC* pDC)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	return false;
 }

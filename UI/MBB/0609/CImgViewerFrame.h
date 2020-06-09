@@ -3,13 +3,12 @@
 //
 
 #pragma once
-#include "ChildView.h"
 
-class CChildFrame : public CMDIChildWnd
+class CImgViewerFrame : public CMDIChildWnd
 {
-	DECLARE_DYNCREATE(CChildFrame)
+	DECLARE_DYNCREATE(CImgViewerFrame)
 public:
-	CChildFrame() noexcept;
+	CImgViewerFrame() noexcept;
 
 // 특성입니다.
 protected:
@@ -20,15 +19,11 @@ public:
 public:
 
 // 재정의입니다.
-	public:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
-	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
 
 // 구현입니다.
 public:
-	// 프레임의 클라이언트 영역에 대한 뷰입니다.
-	CChildView m_wndView;
-	virtual ~CChildFrame();
+	virtual ~CImgViewerFrame();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
@@ -36,8 +31,7 @@ public:
 
 // 생성된 메시지 맵 함수
 protected:
-	afx_msg void OnFileClose();
-	afx_msg void OnSetFocus(CWnd* pOldWnd);
-	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 };
