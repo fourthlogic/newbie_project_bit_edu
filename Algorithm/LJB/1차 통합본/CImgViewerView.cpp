@@ -533,8 +533,11 @@ void CImgViewerView::OnPaint()
 
 	m_background.Detach();
 	if (!m_background.Attach(::CopyImage(result_bmp, IMAGE_BITMAP, 0, 0, 0)))
+	{
 		return;
+	}
 	
+
 	memDC.CreateCompatibleDC(pDC);
 	mdcOffScreen.CreateCompatibleDC(pDC);
 
@@ -627,11 +630,8 @@ void CImgViewerView::OnFileOpen()
 
 	if (!m_Algorithm.SelectImage())
 		return;
-	m_Algorithm.SetDistance(pView->m_nDist);
-	m_Algorithm.SetCircleValue(pView->m_nRadMin, pView->m_nRadMax, pView->m_nBGV);
-	m_Algorithm.Run();
 
-	result_mat = m_Algorithm.GetResultImage();
+	result_mat = m_Algorithm.GetSourceImage();
 	result_bmp = m_Algorithm.MatToBitmap(result_mat);
 
 	m_background.Detach();
@@ -652,11 +652,12 @@ void CImgViewerView::OnFileOpen()
 
 	zoomView = 1;
 	rectScale = 1;
-	printWidth = zoomWidth;
-	printHeight = zoomHeight;
 
 	start_pos.x = 0;
 	start_pos.y = 0;
+	printWidth = zoomWidth;
+	printHeight = zoomHeight;
+
 
 	PWidth = m_Bitmap.bmWidth / zoomWidth;
 	PHeight = m_Bitmap.bmHeight / zoomHeight;
@@ -1464,7 +1465,6 @@ int CImgViewerView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	ctrl = false;
 	iscopy = false;
 	drawStyle = DrawMode::None;
-
 	return 0;
 }
 
@@ -1472,6 +1472,17 @@ int CImgViewerView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 BOOL CImgViewerView::OnEraseBkgnd(CDC* pDC)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	if (!m_Algorithm.isReady()/*isAttach*/)
+	{
+		CBrush backBrush(RGB(255, 255, 255));
 
-	return false;
+		CBrush* pOldBrush = pDC->SelectObject(&backBrush);
+		CRect rect; pDC->GetClipBox(&rect);
+		pDC->PatBlt(rect.left, rect.top, rect.Width(), rect.Height(), PATCOPY);
+		pDC->SelectObject(pOldBrush);
+
+		return TRUE;
+	}
+
+	return FALSE;
 }

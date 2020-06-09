@@ -91,6 +91,7 @@ public:
     Mat GetSourceImage();
     Mat GetResultImage();
     CircleValue* GetCircleValue();
+    
 
     // show 함수
     bool ShowSrcImage(); // 소스 이미지 출력

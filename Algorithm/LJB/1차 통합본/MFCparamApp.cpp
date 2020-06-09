@@ -121,6 +121,14 @@ BOOL CMFCparamApp::InitInstance()
 		return FALSE;
 	AddDocTemplate(pDocTemplate2);
 
+	pDocTemplate3 = new CMultiDocTemplate(IDR_MAINFRAME,
+		RUNTIME_CLASS(CNavigatorDoc),
+		RUNTIME_CLASS(CNavigatorFrame), // 사용자 지정 MDI 자식 프레임입니다.
+		RUNTIME_CLASS(CNavigatorView));
+	if (!pDocTemplate3)
+		return FALSE;
+	AddDocTemplate(pDocTemplate3);
+
 	// 주 MDI 프레임 창을 만듭니다.
 	CMainFrame* pMainFrame = new CMainFrame;
 	if (!pMainFrame || !pMainFrame->LoadFrame(IDR_MAINFRAME))
@@ -142,6 +150,7 @@ BOOL CMFCparamApp::InitInstance()
 	// Child 프레임 창들을 미리 띄우기 위함
 	pDocTemplate1->OpenDocumentFile(NULL); // 파라미터 창
 	pDocTemplate2->OpenDocumentFile(NULL); // 이미지 뷰 창
+	pDocTemplate3->OpenDocumentFile(NULL); // 네비게이터 창
 
 	// 주 창이 초기화되었으므로 이를 표시하고 업데이트합니다.
 	pMainFrame->ShowWindow(m_nCmdShow);

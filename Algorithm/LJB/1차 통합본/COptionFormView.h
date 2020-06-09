@@ -32,33 +32,22 @@ public:
 	virtual void OnInitialUpdate();
 
 
-	afx_msg void OnBnClickedButtonOptionSave();
-	CString strFilename;
-	CString m_strDist;
-	CString m_strRadMax;
-	CString m_strRadMin;
-	CString m_strBGV;
+	CString m_strDist;							// 직교거리
+	CString m_strRadMax;						// 검출 원 최대 반지름
+	CString m_strRadMin;						// 검출 원 최소 반지름
+	CString m_strBGV;							// BGV 값
+
 	int m_nDist;
 	int m_nRadMax;
 	int m_nRadMin;
 	int m_nBGV;
-	//CString strThMax;
-	//CString strThMin;
 
-//	afx_msg void OnEnChangeEditOptionDist();
-//	afx_msg void OnEnChangeEditOptionRmax();
-//	afx_msg void OnEnChangeEditOptionRmin();
-//	afx_msg void OnEnChangeEditOptionBgv();
-	//afx_msg void OnEnChangeEditOptionThmax();
-	//afx_msg void OnEnChangeEditOptionThmin();
-
-//	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-
-	afx_msg void OnAppExit();
-	afx_msg void OnOptionOpen();
-	//void paraChanged2();
-	afx_msg void OnBnClickedButtonDo();
-	afx_msg void OnOptionSave();
+	afx_msg void OnOptionOpen();				// 설정파일 열기
+	afx_msg void OnOptionSave();				// 설정파일 저장
+	afx_msg void OnAppExit();					// 끝내기
+	afx_msg void OnBnClickedButtonDo();			// 실행버튼
+	afx_msg void OnBnClickedButtonOptionSave();	// 설정파일 저장버튼
+	int m_nRuntime;
 };
 
 

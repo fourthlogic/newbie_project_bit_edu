@@ -14,6 +14,7 @@ COptionFormView::COptionFormView()
 	, m_strRadMax(_T(""))
 	, m_strRadMin(_T(""))
 	, m_strBGV(_T(""))
+	, m_nRuntime(0)
 {
 
 }
@@ -29,6 +30,7 @@ void COptionFormView::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_OPTION_RMAX, m_strRadMax);
 	DDX_Text(pDX, IDC_EDIT_OPTION_RMIN, m_strRadMin);
 	DDX_Text(pDX, IDC_EDIT_OPTION_BGV, m_strBGV);
+	DDX_Text(pDX, IDC_EDIT_OPTION_RUNTIME, m_nRuntime);
 }
 
 BEGIN_MESSAGE_MAP(COptionFormView, CFormView)
@@ -38,6 +40,7 @@ BEGIN_MESSAGE_MAP(COptionFormView, CFormView)
 	ON_COMMAND(ID_OPTION_OPEN, &COptionFormView::OnOptionOpen)
 	ON_BN_CLICKED(IDC_BUTTON_DO, &COptionFormView::OnBnClickedButtonDo)
 	ON_COMMAND(ID_OPTION_SAVE, &COptionFormView::OnOptionSave)
+//	ON_UPDATE_COMMAND_UI(ID_OPTION_SAVE, &COptionFormView::OnUpdateOptionSave)
 END_MESSAGE_MAP()
 
 
@@ -126,16 +129,15 @@ void COptionFormView::OnOptionOpen() // 설정파일 열기
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	static TCHAR BASED_CODE szFilter[] = _T("데이터 파일(*.accdb) | *.ACCDB;*.accdb |모든파일(*.*)|*.*||");
 	CFileDialog dlg(TRUE, _T("*.accdb"), _T(""), OFN_HIDEREADONLY, szFilter);
-	if (IDOK == dlg.DoModal())
+	if (dlg.DoModal() == IDOK)
 	{
 		CString pathName = dlg.GetPathName();
-		//myADO ado;
 		::CoInitialize(NULL);
 		ADODB::_ConnectionPtr m_pConnection;
 		try
 		{
 			HRESULT hr = S_OK;
-			//연결 인스턴스 생성
+			// 연결 인스턴스 생성
 			hr = m_pConnection.CreateInstance(__uuidof(Connection));
 			if (SUCCEEDED(hr))
 			{
@@ -178,68 +180,76 @@ void COptionFormView::OnOptionOpen() // 설정파일 열기
 void COptionFormView::OnOptionSave()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+
+	// Edit control에 직접 변경한 설정값들 적용
+	UpdateData();
+	m_nDist = _ttoi(m_strDist);
+	m_nRadMax = _ttoi(m_strRadMax);
+	m_nRadMin = _ttoi(m_strRadMin);
+	m_nBGV = _ttoi(m_strBGV);
+
 	static TCHAR BASED_CODE szFilter[] = _T("데이터 파일(*.accdb) | *.accdb;*.ACCDB |모든파일(*.*)|*.*||");
 	CFileDialog dlg(FALSE, _T("*.accdb"), _T(""), OFN_OVERWRITEPROMPT, szFilter);
-	// 경로, 이름이 중복일 때에도 파일을 Create하려고 해서 에러남. 중복일 때는 Create 건너뛰고 값 수정만 하도록 코드 수정해야 함.
-	if (IDOK == dlg.DoModal())
+	if (dlg.DoModal() == IDOK)
 	{
 		CString pathName = dlg.GetPathName();
-		//myADO ado;
 		::CoInitialize(NULL);
 		ADOX::_CatalogPtr m_pCatalog = NULL;
 		ADOX::_TablePtr m_pTable = NULL;
 		ADOX::_ColumnPtr m_pColumn = NULL;
-		ADOX::_IndexPtr m_pIndex = NULL;
 		ADODB::_ConnectionPtr m_pConnection = NULL;
 
-		/* 각 Object에 대한 Instance 생성 */
+		// 각 Object에 대한 Instance 생성
 		m_pCatalog.CreateInstance(__uuidof (Catalog));
 		m_pTable.CreateInstance(__uuidof (Table));
-		//m_pIndex.CreateInstance(__uuidof (Index));
 
-		CString temp;
-		temp.Format(_T("Provider=Microsoft.ACE.OLEDB.16.0;Data Source=%s;"), pathName);
-		m_pCatalog->Create((_bstr_t)temp);
+		CString strPath;
+		strPath.Format(_T("Provider=Microsoft.ACE.OLEDB.16.0;Data Source=%s;"), pathName);
 
-		m_pTable->PutName("Params");
-		//m_pTable->Columns->Append("ID", ADOX::adVarWChar, 10);
-		m_pTable->Columns->Append("Distance", ADOX::adVarWChar, 10);
-		m_pTable->Columns->Append("RadMax", ADOX::adVarWChar, 10);
-		m_pTable->Columns->Append("RadMin", ADOX::adVarWChar, 10);
-		m_pTable->Columns->Append("BGV", ADOX::adVarWChar, 10);
+		CString queryInsert, queryUpdate; // 쿼리문이 저장될 변수
+		_bstr_t executeQuery;
 
-		//m_pIndex->Name = "ParamsIndex";
-		//m_pIndex->Columns->Append("ID", ADOX::adVarWChar, 0);
-		//m_pIndex->PutPrimaryKey(-1);
-		//m_pIndex->PutUnique(-1);
+		// 파일이 존재하지 않을 경우
+		if (!PathFileExists(pathName))
+		{
+			// 파일 생성
+			m_pCatalog->Create((_bstr_t)strPath);
 
-		//m_pTable->Indexes->Append(_variant_t((IDispatch*)m_pIndex));
-		m_pCatalog->Tables->Append(_variant_t((IDispatch*)m_pTable));
+			// 테이블 항목 생성
+			m_pTable->PutName("Params");
+			m_pTable->Columns->Append("Distance", ADOX::adVarWChar, 10);
+			m_pTable->Columns->Append("RadMax", ADOX::adVarWChar, 10);
+			m_pTable->Columns->Append("RadMin", ADOX::adVarWChar, 10);
+			m_pTable->Columns->Append("BGV", ADOX::adVarWChar, 10);
 
-		m_pCatalog = NULL;
-		m_pTable = NULL;
-		//m_pIndex = NULL;
+			m_pCatalog->Tables->Append(_variant_t((IDispatch*)m_pTable));
+
+			m_pCatalog = NULL;
+			m_pTable = NULL;
+
+			queryInsert.Format(_T("INSERT INTO Params(Distance, RadMax, RadMin, BGV) values('%d', '%d', '%d', '%d')"), m_nDist, m_nRadMax, m_nRadMin, m_nBGV);
+			executeQuery = queryInsert;
+		}
+		// 파일이 이미 존재할 경우
+		else
+		{
+			queryUpdate.Format(_T("UPDATE [Params] SET [Distance] = '%d', [Radmax] = '%d', [RadMin] = '%d', [BGV] = '%d'"), m_nDist, m_nRadMax, m_nRadMin, m_nBGV);
+			executeQuery = queryUpdate;
+		}
+		
+		// 파일에 연결 후 값 저장
 		try
 		{
 			HRESULT hr = S_OK;
-			/* 연결 인스턴스 생성*/
+			// 연결 인스턴스 생성
 			hr = m_pConnection.CreateInstance(__uuidof(Connection));
 			if (SUCCEEDED(hr))
 			{
-				/* DB 연결*/
-				m_pConnection->ConnectionString = _bstr_t(temp);
+				// DB 연결
+				m_pConnection->ConnectionString = _bstr_t(strPath);
 				m_pConnection->Open("", "", "", adModeUnknown);
 			}
-			// 직접 변경한 설정값들 적용
-			UpdateData();
-			m_nDist = _ttoi(m_strDist);
-			m_nRadMax = _ttoi(m_strRadMax);
-			m_nRadMin = _ttoi(m_strRadMin);
-			m_nBGV = _ttoi(m_strBGV);
 
-			CString query; // 쿼리문이 저장될 변수
-			query.Format(_T("INSERT INTO Params(Distance, RadMax, RadMin, BGV) values('%d', '%d', '%d', '%d')"), m_nDist, m_nRadMax, m_nRadMin, m_nBGV);
-			_bstr_t executeQuery = query;
 			m_pConnection->BeginTrans();
 			m_pConnection->Execute(executeQuery, NULL, adCmdUnspecified);
 			m_pConnection->CommitTrans();

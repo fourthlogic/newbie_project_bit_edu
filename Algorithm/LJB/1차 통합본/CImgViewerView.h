@@ -99,7 +99,6 @@ public:
 	POINTF after_Image_pos; //확대/축소 후 마우스 원본에서 위치
 	POINTF after_Pixel_pos; //확대/축소 후 마우스 있는 픽셀에서의 위치
 
-	//정발산기슭곰발냄새타령부인사잘해
 	//그리기
 	bool drawID;		//그리기 상태
 	int l_width;		//도형 선 굵기

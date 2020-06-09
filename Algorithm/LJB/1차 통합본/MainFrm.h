@@ -8,7 +8,12 @@
 #include "COptionDoc.h"
 #include "COptionFormView.h"
 #include "COptionFrame.h"
+
 #include "CircleDection.h"
+
+#include "CNavigatorFrame.h"
+#include "CNavigatorDoc.h"
+#include "CNavigatorView.h"
 
 class imageData {
 	std::string fileName;
@@ -79,10 +84,16 @@ public:
 	CImgViewerDoc* pImgViewerDoc = NULL;
 	CImgViewerView* pImgViewerView = NULL;
 	CImgViewerFrame* pImgViewerFrame = NULL;
+	CNavigatorDoc* pNavigatorDoc = NULL;
+	CNavigatorView* pNavigatorView = NULL;
+	CNavigatorFrame* pNavigatorFrame = NULL;
+
 	vector<imageData> imageList;
 	COLORREF color;
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 	afx_msg void OnClose();
+	afx_msg void OnOptionSave();
+	afx_msg void OnFileOpen();
 };
 
 

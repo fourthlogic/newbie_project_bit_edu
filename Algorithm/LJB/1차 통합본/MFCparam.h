@@ -18,6 +18,10 @@
 #include "COptionDoc.h"
 #include "COptionFormView.h"
 
+#include "CNavigatorFrame.h"
+#include "CNavigatorDoc.h"
+#include "CNavigatorView.h"
+
 // CMFCparamApp:
 // 이 클래스의 구현에 대해서는 MFCparam.cpp을(를) 참조하세요.
 //
@@ -40,6 +44,7 @@ public:
 	afx_msg void OnFileOpen();
 	CMultiDocTemplate* pDocTemplate1;
 	CMultiDocTemplate* pDocTemplate2;
+	CMultiDocTemplate* pDocTemplate3;
 	afx_msg void OnAppExit();
 	afx_msg void OnOptionOpen();
 };

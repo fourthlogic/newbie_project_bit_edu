@@ -12,7 +12,6 @@
 #include <afxext.h>
 #include <opencv2/opencv.hpp>
 #include <iostream>
-#include "x64/Debug/msado15.tlh"
 
 
 //DB 사용을 위한 설정

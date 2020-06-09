@@ -7,6 +7,7 @@
 #define IDP_OLE_INIT_FAILED             100
 #define IDS_OPTION_TITLE                101
 #define IDS_IMGVIEWER_TITLE             102
+#define ID_INDICATOR_USER_FILENAME      103
 #define IDR_MAINFRAME                   128
 #define IDR_MFCparamTYPE                130
 #define ID_WINDOW_MANAGER               131
@@ -24,6 +25,8 @@
 #define IDC_EDIT_OPTION_THMAX           1005
 #define IDC_BUTTON_DO                   1005
 #define IDC_EDIT_OPTION_THMIN           1006
+#define IDC_EDIT_OPTION_BGV2            1006
+#define IDC_EDIT_OPTION_RUNTIME         1006
 #define ID_32771                        32771
 #define ID_32772                        32772
 #define ID_OPTION_OPEN                  32773
