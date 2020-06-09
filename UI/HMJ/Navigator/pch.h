@@ -6,12 +6,22 @@
 
 #ifndef PCH_H
 #define PCH_H
-
 // 여기에 미리 컴파일하려는 헤더 추가
-
 #include "framework.h"
-#include "atlimage.h"
-#include "main.h"
-#include "MainFrm.h"
-#include "ChildView.h"
+#include <afxwin.h>
+#include <afxext.h>
+#include <opencv2/opencv.hpp>
+#include <iostream>
+
+
+//DB 사용을 위한 설정
+#import "C:\Program Files\Common Files\System\ADO\msado15.dll" rename("EOF", "EndOfFile")
+//DB 파일 압축을 위한 설정
+//#import "C:\Program Files\Common Files\System\ado\msjro.dll" no_namespace
+//DB 파일 생성을 위한 설정
+#import "C:\Program Files\Common Files\system\ado\msadox.dll"
+using namespace ADODB;
+using namespace ADOX;
+
+
 #endif //PCH_H

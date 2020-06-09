@@ -1,9 +1,11 @@
 ﻿
-// ChildView.h: CChildView 클래스의 인터페이스
+// MFCparamView.h: CMFCparamView 클래스의 인터페이스
 //
-#pragma once
-// CChildView 창
 
+#pragma once
+#include "CircleDection.h"
+using namespace cv;
+using namespace std;
 enum DrawMode	//도형 종류
 {
 	None = -1, DPoint, DLine, DEllipse, DRectangle
@@ -29,39 +31,53 @@ struct RollbackInfo {	//롤백 정보
 	MyShape redoShape;	//다음 도형
 	MyShape undoShape;	//이전 도형
 };
-class CChildView : public CWnd
+class CImgViewerView : public CView
 {
-	// 생성입니다.
-public:
-	CChildView();
+protected: // serialization에서만 만들어집니다.
+	CImgViewerView() noexcept;
+	DECLARE_DYNCREATE(CImgViewerView)
 
-	// 특성입니다.
+// 특성입니다.
+public:
+	CImgViewerDoc* GetDocument() const;
+
+// 작업입니다.
 public:
 
-	// 작업입니다.
+// 재정의입니다.
 public:
-
-	// 재정의입니다.
-protected:
+	virtual void OnDraw(CDC* pDC);  // 이 뷰를 그리기 위해 재정의되었습니다.
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 
-	// 구현입니다.
+// 구현입니다.
 public:
-	virtual ~CChildView();
+	virtual ~CImgViewerView();
+#ifdef _DEBUG
+	virtual void AssertValid() const;
+	virtual void Dump(CDumpContext& dc) const;
+#endif
 
-	// 생성된 메시지 맵 함수
+protected:
+
+// 생성된 메시지 맵 함수
 protected:
 	DECLARE_MESSAGE_MAP()
 public:
-	CMainFrame* pFrame;		//메인 프레임
+	virtual void OnInitialUpdate();
+	
+	//CMainFrame* pFrame;		//메인 프레임
 
+	// 이미지 처리용
+	CircleDection m_Algorithm;
+	Mat result_mat;
+	HBITMAP result_bmp;
 
 	CDC memDC;				// 처리 CDC을 지정 한다.
 	CDC mdcOffScreen;		// 더블버퍼링을 위한 메모리 그림버퍼
 	CBitmap bmpOffScreen;	// 더블버퍼링을 위한 비트맵 객체를 만든다.
 	CBitmap m_background;	//배경 이미지
 	BITMAP m_Bitmap;		//이미지 정보
-		
+
 
 	//패닝 && 줌
 	CPoint m_sPt;	//클릭 시작 좌표(이미지 좌표계)
@@ -69,7 +85,7 @@ public:
 	CPoint m_ePt;	//클라이언트 좌표
 	CPoint m_pos;	//무브 좌표(이미지 좌표계)
 	CRect m_bgRect;			// 화면 전체의 크기 - client 윈도의 전체크기
-	
+
 	double zoomWidth, zoomHeight;	//줌 크기
 	double PWidth, PHeight;			//픽셀 사이즈
 
@@ -83,7 +99,6 @@ public:
 	POINTF after_Image_pos; //확대/축소 후 마우스 원본에서 위치
 	POINTF after_Pixel_pos; //확대/축소 후 마우스 있는 픽셀에서의 위치
 
-	//정발산기슭곰발냄새타령부인사잘해
 	//그리기
 	bool drawID;		//그리기 상태
 	int l_width;		//도형 선 굵기
@@ -114,6 +129,9 @@ public:
 	MyShape temp;		// 변환 전 도형
 	vector<RollbackInfo> rollback;	//롤백 리스트
 
+	// 이미지 정보 유무
+	bool isAttach = false;
+
 	//사용자 설정 함수
 	void PrintText(CDC* pDC);	//RGB, Pixel 값 출력
 	void DrawTextEx(CDC* pDC, const CString& str, CRect rect, UINT nFormat);	//RGB 센터 출력
@@ -122,36 +140,44 @@ public:
 	void undo();
 	void redo();
 
-	//메세지 처리 함수
-	BOOL OnEraseBkgnd(CDC* pDC);
-	afx_msg void OnPaint();
+
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
-	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
-	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnPaint();
+	afx_msg void OnFileOpen();
+	void paraChanged();
+	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint /*point*/);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
-	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint point);
+	afx_msg void OnDrawPoint();
+	afx_msg void OnDrawLine();
+	afx_msg void OnDrawEllpse();
+	afx_msg void OnDrawRect();
+	afx_msg void OnModeDraw();
+	afx_msg void OnModeSelect();
+	afx_msg void OnThick1();
+	afx_msg void OnThick2();
+	afx_msg void OnThick3();
+	afx_msg void OnThick4();
+	afx_msg void OnThick5();
+	afx_msg void OnThick10();
+	afx_msg void OnContextCopy();
+	afx_msg void OnContextPaste();
+	afx_msg void OnContextDelete();
+	afx_msg void OnContextLinecolor();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
-
-	//메뉴 이벤트 처리 함수
-	afx_msg void OnPoint();		//점
-	afx_msg void OnLine();		//선
-	afx_msg void OnEllpse();	//원
-	afx_msg void OnRectangle();	//사각형
-	afx_msg void OnDrawid();	//그리기 모드
-	afx_msg void OnPanid();		//선택 모드
-	afx_msg void OnLwidth1();	//선 굵기 1
-	afx_msg void OnLwidth2();	//선 굵기 2
-	afx_msg void On32797();		//선 굵기 3
-	afx_msg void On32798();		//선 굵기 4
-	afx_msg void On32799();		//선 굵기 5
-	afx_msg void On32800();		//선 굵기 10
-	afx_msg void OnCopy();		//복사
-	afx_msg void OnPaste();		//붙여 넣기
-	afx_msg void OnDelete();	//삭제
-	afx_msg void OnLinecolor();	//도형 색 변경
+	afx_msg void OnFileSaveWithshape();
+	afx_msg void OnFileSaveOnlyimg();
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 };
+
+#ifndef _DEBUG  // MFCparamView.cpp의 디버그 버전
+inline CImgViewerDoc* CImgViewerView::GetDocument() const
+   { return reinterpret_cast<CImgViewerDoc*>(m_pDocument); }
+#endif
+

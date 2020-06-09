@@ -20,9 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{6D650FED-4BDB-4CCD-8B73-15C05F956EFF}</ProjectGuid>
+    <ProjectGuid>{3549A439-E4D3-4868-A379-05F28EF6C427}</ProjectGuid>
     <Keyword>MFCProj</Keyword>
-    <RootNamespace>FourthlohgicProject</RootNamespace>
+    <RootNamespace>MFCparam</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -46,7 +46,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
-    <UseOfMfc>Dynamic</UseOfMfc>
+    <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -69,7 +69,7 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="opencv\opencv4_debug.props" />
+    <Import Project="D:\OpenCV_Config2\opencv4_debug.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -94,6 +94,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -184,22 +185,36 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ChildFrm.h" />
-    <ClInclude Include="ChildView.h" />
-    <ClInclude Include="Fourthlohgic_Project.h" />
+    <ClInclude Include="CImgViewerFrame.h" />
+    <ClInclude Include="CircleDection.h" />
+    <ClInclude Include="CNavigatorDoc.h" />
+    <ClInclude Include="CNavigatorFrame.h" />
+    <ClInclude Include="CNavigatorView.h" />
+    <ClInclude Include="COptionDoc.h" />
+    <ClInclude Include="COptionFormView.h" />
+    <ClInclude Include="COptionFrame.h" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="main.h" />
     <ClInclude Include="MainFrm.h" />
+    <ClInclude Include="MFCparam.h" />
+    <ClInclude Include="CImgViewerDoc.h" />
+    <ClInclude Include="CImgViewerView.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ChildFrm.cpp" />
-    <ClCompile Include="ChildView.cpp" />
-    <ClCompile Include="FillPoly.cpp" />
-    <ClCompile Include="Fourthlohgic_Project.cpp" />
+    <ClCompile Include="CImgViewerFrame.cpp" />
+    <ClCompile Include="CircleDection.cpp" />
+    <ClCompile Include="CNavigatorDoc.cpp" />
+    <ClCompile Include="CNavigatorFrame.cpp" />
+    <ClCompile Include="CNavigatorView.cpp" />
+    <ClCompile Include="COptionDoc.cpp" />
+    <ClCompile Include="COptionFormView.cpp" />
+    <ClCompile Include="COptionFrame.cpp" />
     <ClCompile Include="MainFrm.cpp" />
+    <ClCompile Include="MFCparamApp.cpp" />
+    <ClCompile Include="CImgViewerDoc.cpp" />
+    <ClCompile Include="CImgViewerView.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -208,13 +223,15 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="FourthlohgicProject.rc" />
+    <ResourceCompile Include="MFCparam.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\FourthlohgicProject.rc2" />
+    <None Include="res\MFCparam.rc2" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\Fourthlohgic_Project.ico" />
+    <Image Include="res\icon1.ico" />
+    <Image Include="res\MFCparam.ico" />
+    <Image Include="res\MFCparamDoc.ico" />
     <Image Include="res\Toolbar.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
