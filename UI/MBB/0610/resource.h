@@ -13,7 +13,7 @@
 #define IDD_COptionFormView             310
 #define IDD_DIALOG_OPTION_OPEN          313
 #define IDR_MENU_CONTEXT                315
-#define IDD_DIALOG_LINE_WIDTH           316
+#define IDD_LINE_WIDTH                  316
 #define IDC_EDIT_TEST                   1000
 #define IDC_EDIT_OPTION_DIST            1000
 #define IDC_BUTTON_TEST                 1001
@@ -25,12 +25,8 @@
 #define IDC_EDIT_OPTION_THMAX           1005
 #define IDC_BUTTON_DO                   1005
 #define IDC_EDIT_OPTION_THMIN           1006
-#define IDC_LINEWIDTH                   1006
-#define IDC_LWIDTHTXT                   1007
-#define IDC_BUTTON1                     1008
-#define IDC_BtnOK                       1008
-#define ID_32771                        32771
-#define ID_32772                        32772
+#define IDC_SLIDER_LW                   1006
+#define IDC_EDIT_LW                     1007
 #define ID_OPTION_OPEN                  32773
 #define ID_OPTION_SAVE                  32774
 #define ID_CONTEXTMENU                  32777
@@ -42,54 +38,33 @@
 #define ID_CONTEXTMENU_PASTE            32783
 #define ID_CONTEXTMENU_DELETE           32784
 #define ID_CONTEXTMENU_LINECOLOR        32785
-#define ID_32786                        32786
-#define ID_32787                        32787
-#define ID_32788                        32788
-#define ID_                             32789
 #define ID_IMGSAVE_WITHSHAPE            32790
 #define ID_SAVEIMG_ONLYIMG              32791
 #define ID_SAVEIMG_WITHSHAPE            32792
 #define ID_FILE_SAVE_WITHSHAPE          32793
 #define ID_FILE_SAVE_ONLYIMG            32794
-#define ID_32795                        32795
-#define ID_32796                        32796
-#define ID_32797                        32797
-#define ID_32798                        32798
 #define ID_DRAW_POINT                   32799
 #define ID_DRAW_LINE                    32800
 #define ID_DRAW_CIR                     32801
 #define ID_DRAW_ELLPSE                  32802
 #define ID_DRAW_RECT                    32803
-#define ID_32804                        32804
-#define ID_32805                        32805
 #define ID_MODE_DRAW                    32806
 #define ID_MODE_SELECT                  32807
-#define ID_32808                        32808
-#define ID_32809                        32809
-#define ID_32810                        32810
-#define ID_32811                        32811
-#define ID_32812                        32812
-#define ID_32813                        32813
-#define ID_THICK                        32814
-#define ID_THICK_1                      32815
-#define ID_THICK_2                      32816
-#define ID_THICK_3                      32817
-#define ID_THICK4                       32818
-#define ID_THICK_4                      32819
-#define ID_THICK_5                      32820
-#define ID_THICK_10                     32821
 #define ID_CONTEXT_COPY                 32822
 #define ID_CONTEXT_PASTE                32823
 #define ID_CONTEXT_DELETE               32824
 #define ID_CONTEXT_LINECOLOR            32825
+#define ID_SELECT_COLOR                 32826
+#define ID_SELECT_LWIDTH                32827
+#define ID_CONTEXT_LINEWIDTH            32829
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        318
-#define _APS_NEXT_COMMAND_VALUE         32826
-#define _APS_NEXT_CONTROL_VALUE         1009
+#define _APS_NEXT_COMMAND_VALUE         32830
+#define _APS_NEXT_CONTROL_VALUE         1008
 #define _APS_NEXT_SYMED_VALUE           311
 #endif
 #endif

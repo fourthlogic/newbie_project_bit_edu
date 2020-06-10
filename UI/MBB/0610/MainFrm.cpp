@@ -6,6 +6,7 @@
 #include "framework.h"
 #include "MFCparam.h"
 #include "MainFrm.h"
+#include "SelectLineWidth.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -22,11 +23,13 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_WM_GETMINMAXINFO()
 	ON_WM_CLOSE()
 	ON_COMMAND(ID_MODE_DRAW, &CMainFrame::OnModeDraw)
+	ON_COMMAND(ID_MODE_SELECT, &CMainFrame::OnModeSelect)
 	ON_COMMAND(ID_DRAW_ELLPSE, &CMainFrame::OnDrawEllpse)
 	ON_COMMAND(ID_DRAW_LINE, &CMainFrame::OnDrawLine)
 	ON_COMMAND(ID_DRAW_POINT, &CMainFrame::OnDrawPoint)
 	ON_COMMAND(ID_DRAW_RECT, &CMainFrame::OnDrawRect)
-	ON_COMMAND(ID_MODE_SELECT, &CMainFrame::OnModeSelect)
+	ON_COMMAND(ID_SELECT_COLOR, &CMainFrame::OnClickedSelectColor)
+	ON_COMMAND(ID_SELECT_LWIDTH, &CMainFrame::OnClickedSelectLWidth)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -71,6 +74,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
 	EnableDocking(CBRS_ALIGN_ANY);
 	DockControlBar(&m_wndToolBar);
+
+	lwidth = 1;
 
 	return 0;
 }
@@ -151,8 +156,6 @@ void CMainFrame::OnClose()
 	CMDIFrameWnd::OnClose();
 }
 
-
-
 void CMainFrame::OnDrawEllpse()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
@@ -192,4 +195,23 @@ void CMainFrame::OnModeSelect()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	pImgViewerView->OnModeSelect();
+}
+
+void CMainFrame::OnClickedSelectColor()
+{
+	CColorDialog colorDlg;
+
+	if (colorDlg.DoModal() == IDOK)
+	{
+		color = colorDlg.GetColor();
+	}
+}
+
+void CMainFrame::OnClickedSelectLWidth()
+{
+	SelectLineWidth dlg;
+	if (dlg.DoModal() == IDOK)
+	{
+		lwidth = dlg.l_width;
+	}
 }

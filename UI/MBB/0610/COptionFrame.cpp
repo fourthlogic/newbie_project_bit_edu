@@ -48,9 +48,8 @@ int COptionFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 
 	// TODO:  여기에 특수화된 작성 코드를 추가합니다.
-	CMenu* p_menu = this->GetSystemMenu(FALSE);
-
-	p_menu->EnableMenuItem(SC_CLOSE, MF_BYCOMMAND | MF_ENABLED);  // X 무효화
+	CMenu* p_menu = this->GetSystemMenu(FALSE); 
+	p_menu->EnableMenuItem(SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);  // X 무효화
 
 	return 0;
 }

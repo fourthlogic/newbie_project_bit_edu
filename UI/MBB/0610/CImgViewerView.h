@@ -25,6 +25,7 @@ struct MyShape
 	bool isClicked = false;	//도형 클릭 여부
 };
 
+
 struct RollbackInfo {	//롤백 정보
 	int rollbackmode;	//롤백 명령어
 	int idx;			//도형 인덱스
@@ -123,7 +124,6 @@ public:
 	bool iscopy;	//복사 상태
 	MyShape copyShape;	// 복사한 도형
 	vector<int> zOrder;		//zOrder 리스트
-
 	//되돌리기
 	int rollbackIndex;	//롤백 인덱스
 	MyShape temp;		// 변환 전 도형
@@ -136,7 +136,6 @@ public:
 	void drawShape(CDC* dc, int penType, MyShape a);	//저장된 도형 출력
 	void undo();
 	void redo();
-
 
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
@@ -156,12 +155,6 @@ public:
 	afx_msg void OnDrawRect();
 	afx_msg void OnModeDraw();
 	afx_msg void OnModeSelect();
-	afx_msg void OnThick1();
-	afx_msg void OnThick2();
-	afx_msg void OnThick3();
-	afx_msg void OnThick4();
-	afx_msg void OnThick5();
-	afx_msg void OnThick10();
 	afx_msg void OnContextCopy();
 	afx_msg void OnContextPaste();
 	afx_msg void OnContextDelete();
@@ -171,6 +164,7 @@ public:
 	afx_msg void OnFileSaveOnlyimg();
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg void OnContextLinewidth();
 };
 
 #ifndef _DEBUG  // MFCparamView.cpp의 디버그 버전

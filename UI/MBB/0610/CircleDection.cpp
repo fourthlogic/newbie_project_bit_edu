@@ -3,15 +3,6 @@
 #include "CircleDection.h"
 
 
-//void main()
-//{
-//    CircleDection cir;
-//    cir.Run();
-//    cir.ShowSrcImage();
-//    cir.ShowResultImage();
-//    waitKey();
-//}
-
 
 HBITMAP CircleDection::MatToBitmap(Mat & src)
 {

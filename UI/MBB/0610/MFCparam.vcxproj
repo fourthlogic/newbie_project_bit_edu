@@ -191,13 +191,13 @@
     <ClInclude Include="COptionFormView.h" />
     <ClInclude Include="COptionFrame.h" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="LINE_WIDTH.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="MFCparam.h" />
     <ClInclude Include="CImgViewerDoc.h" />
     <ClInclude Include="CImgViewerView.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SelectLineWidth.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
@@ -206,7 +206,6 @@
     <ClCompile Include="COptionDoc.cpp" />
     <ClCompile Include="COptionFormView.cpp" />
     <ClCompile Include="COptionFrame.cpp" />
-    <ClCompile Include="LINE_WIDTH.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="MFCparamApp.cpp" />
     <ClCompile Include="CImgViewerDoc.cpp" />
@@ -217,6 +216,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="SelectLineWidth.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MFCparam.rc" />

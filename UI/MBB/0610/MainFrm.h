@@ -81,6 +81,7 @@ public:
 	CImgViewerFrame* pImgViewerFrame = NULL;
 	vector<imageData> imageList;
 	COLORREF color;
+	int lwidth;
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 	afx_msg void OnClose();
 	afx_msg void OnDrawEllpse();
@@ -89,6 +90,8 @@ public:
 	afx_msg void OnDrawRect();
 	afx_msg void OnModeDraw();
 	afx_msg void OnModeSelect();
+	afx_msg void OnClickedSelectColor();
+	afx_msg void OnClickedSelectLWidth();
 };
 
 

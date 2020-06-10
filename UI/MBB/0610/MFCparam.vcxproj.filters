@@ -54,7 +54,7 @@
     <ClInclude Include="CircleDection.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="LINE_WIDTH.h">
+    <ClInclude Include="SelectLineWidth.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
@@ -89,7 +89,7 @@
     <ClCompile Include="CircleDection.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="LINE_WIDTH.cpp">
+    <ClCompile Include="SelectLineWidth.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

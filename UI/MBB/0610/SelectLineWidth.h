@@ -1,19 +1,19 @@
 ﻿#pragma once
 
 
-// LINE_WIDTH 대화 상자
+// SelectLineWidth 대화 상자
 
-class LINE_WIDTH : public CDialogEx
+class SelectLineWidth : public CDialogEx
 {
-	DECLARE_DYNAMIC(LINE_WIDTH)
+	DECLARE_DYNAMIC(SelectLineWidth)
 
 public:
-	LINE_WIDTH(CWnd* pParent = nullptr);   // 표준 생성자입니다.
-	virtual ~LINE_WIDTH();
+	SelectLineWidth(CWnd* pParent = nullptr);   // 표준 생성자입니다.
+	virtual ~SelectLineWidth();
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_DIALOG_LINE_WIDTH };
+	enum { IDD = IDD_LINE_WIDTH };
 #endif
 
 protected:
@@ -22,9 +22,9 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	int l_width;
-	CSliderCtrl m_ctrSlider;
+	CSliderCtrl m_Sliderctr;
+	CEdit m_lwidth;
 	virtual BOOL OnInitDialog();
-	CEdit m_lwidthtxt;
 	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
-	afx_msg void OnBnClickedBtnok();
+	afx_msg void OnBnClickedOk();
 };

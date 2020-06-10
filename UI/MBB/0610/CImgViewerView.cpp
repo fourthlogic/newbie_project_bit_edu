@@ -12,12 +12,12 @@
 
 #include "CImgViewerDoc.h"
 #include "CImgViewerView.h"
-#include "LINE_WIDTH.h"
 #define IsCTRLPressed()  ( 0x8000 ==(GetKeyState(VK_CONTROL) & 0x8000 ))
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+#include "SelectLineWidth.h"
 
 
 // CMFCparamView
@@ -93,12 +93,6 @@ BEGIN_MESSAGE_MAP(CImgViewerView, CView)
 	ON_COMMAND(ID_DRAW_RECT, &CImgViewerView::OnDrawRect)
 	ON_COMMAND(ID_MODE_DRAW, &CImgViewerView::OnModeDraw)
 	ON_COMMAND(ID_MODE_SELECT, &CImgViewerView::OnModeSelect)
-	ON_COMMAND(ID_THICK_1, &CImgViewerView::OnThick1)
-	ON_COMMAND(ID_THICK_2, &CImgViewerView::OnThick2)
-	ON_COMMAND(ID_THICK_3, &CImgViewerView::OnThick3)
-	ON_COMMAND(ID_THICK_4, &CImgViewerView::OnThick4)
-	ON_COMMAND(ID_THICK_5, &CImgViewerView::OnThick5)
-	ON_COMMAND(ID_THICK_10, &CImgViewerView::OnThick10)
 	ON_COMMAND(ID_CONTEXT_COPY, &CImgViewerView::OnContextCopy)
 	ON_COMMAND(ID_CONTEXT_PASTE, &CImgViewerView::OnContextPaste)
 	ON_COMMAND(ID_CONTEXT_DELETE, &CImgViewerView::OnContextDelete)
@@ -107,6 +101,7 @@ BEGIN_MESSAGE_MAP(CImgViewerView, CView)
 	ON_COMMAND(ID_FILE_SAVE_ONLYIMG, &CImgViewerView::OnFileSaveOnlyimg)
 	ON_WM_CREATE()
 	ON_WM_ERASEBKGND()
+	ON_COMMAND(ID_CONTEXT_LINEWIDTH, &CImgViewerView::OnContextLinewidth)
 END_MESSAGE_MAP()
 
 // CMFCparamView 생성/소멸
@@ -312,6 +307,7 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 					pt.y = (d_sPt.y - yy);
 
 					data[choiceIdx].rect.left += pt.x;
+
 					data[choiceIdx].rect.top += pt.y;
 					break;
 				}
@@ -351,16 +347,15 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 	{
 		if (choiceIdx != -1)
 			data[choiceIdx].isClicked = false;
-		pts.x = (z_pos.x + (m_ePt.x + point.x) / PWidth);
-		pts.y = (z_pos.y + (m_ePt.y + point.y) / PHeight);
-		shape.rect.right = pts.x;
-		shape.rect.bottom = pts.y;
+		mov_Pt.x = z_pos.x + (m_ePt.x + point.x) / (PWidth)+1;
+		mov_Pt.y = z_pos.y + (m_ePt.y + point.y) / (PHeight)+1;
+		shape.rect.right = mov_Pt.x;
+		shape.rect.bottom = mov_Pt.y;
 		shape.isClicked = true;
 		InvalidateRect(shape.rect);
 	}
-	else {
+	else
 		shape.isClicked = false;
-	}
 }
 
 void CImgViewerView::OnSize(UINT nType, int cx, int cy)
@@ -544,11 +539,18 @@ void CImgViewerView::OnPaint()
 		drawShape(&memDC, PS_SOLID, shape);
 	for (int i = 0; i < data.GetSize(); i++)
 	{
-		int penType = PS_SOLID;
-	/*	if (!data[i].isClicked)
-			penType = PS_SOLID;
+		int penType;
+		if (data[i].isClicked)
+		{
+			if (data[i].shapeType == DrawMode::DLine)
+				penType = PS_DOT;
+			else
+				penType = PS_SOLID;
+			
+		}
 		else
-			penType = PS_DOT;*/
+			penType = PS_SOLID;
+		drawShape(&memDC, penType, data[i]);
 		if (data[i].isClicked)
 		{
 			CPen pen0(PS_DOT, 1, RGB(0, 0, 0));
@@ -556,11 +558,10 @@ void CImgViewerView::OnPaint()
 			HBRUSH oldBrush = (HBRUSH)memDC.SelectStockObject(NULL_BRUSH);
 			if (data[i].shapeType != DrawMode::DLine)
 			{
-				
-				int left = data[choiceIdx].rect.left;
-				int top = data[choiceIdx].rect.top;
-				int right = data[choiceIdx].rect.right;
-				int bottom = data[choiceIdx].rect.bottom;
+				int left = data[i].rect.left;
+				int top = data[i].rect.top;
+				int right = data[i].rect.right;
+				int bottom = data[i].rect.bottom;
 				if (left < right)
 				{
 					left -= 10;
@@ -605,17 +606,17 @@ void CImgViewerView::OnPaint()
 			}
 			else {
 				CPoint po[4];
-				double a = (data[choiceIdx].rect.bottom - data[choiceIdx].rect.top * 1.0) / (data[choiceIdx].rect.right - data[choiceIdx].rect.left * 1.0);
-				double b = data[choiceIdx].rect.top - a * data[choiceIdx].rect.left;
-				po[0] = CPoint(data[choiceIdx].rect.left, data[choiceIdx].rect.left * a + b - 10);
-				po[1] = CPoint(data[choiceIdx].rect.right, data[choiceIdx].rect.right * a + b - 10);
-				po[2] = CPoint(data[choiceIdx].rect.right, data[choiceIdx].rect.right * a + b + 10);
-				po[3] = CPoint(data[choiceIdx].rect.left, data[choiceIdx].rect.left * a + b + 10);
+				double a = (data[i].rect.bottom - data[i].rect.top * 1.0) / (data[i].rect.right - data[i].rect.left * 1.0);
+				double b = data[i].rect.top - a * data[i].rect.left;
+				po[0] = CPoint(data[i].rect.left, data[i].rect.left * a + b - 10);
+				po[1] = CPoint(data[i].rect.right, data[i].rect.right * a + b - 10);
+				po[2] = CPoint(data[i].rect.right, data[i].rect.right * a + b + 10);
+				po[3] = CPoint(data[i].rect.left, data[i].rect.left * a + b + 10);
 
-				mRect[0].SetRect(data[choiceIdx].rect.left - 5, data[choiceIdx].rect.top - 5,
-					data[choiceIdx].rect.left + 5, data[choiceIdx].rect.top + 5);
-				mRect[1].SetRect(data[choiceIdx].rect.right - 5, data[choiceIdx].rect.bottom - 5,
-					data[choiceIdx].rect.right + 5, data[choiceIdx].rect.bottom + 5);
+				mRect[0].SetRect(data[i].rect.left - 5, data[i].rect.top - 5,
+					data[i].rect.left + 5, data[i].rect.top + 5);
+				mRect[1].SetRect(data[i].rect.right - 5, data[i].rect.bottom - 5,
+					data[i].rect.right + 5, data[i].rect.bottom + 5);
 				CPen* oldPen;
 				CPen pen(PS_SOLID, 1, RGB(0, 0, 0));
 				oldPen = memDC.SelectObject(&pen);
@@ -624,7 +625,6 @@ void CImgViewerView::OnPaint()
 				memDC.Ellipse(mRect[1]);
 			}
 		}
-		drawShape(&memDC, penType, data[i]);
 	}
 
 	mdcOffScreen.SetStretchBltMode(HALFTONE);
@@ -747,6 +747,7 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 	}
 	m_lbtn = true;
 
+	//drawID = true; // 그리기 시작을 알리는 변수		
 	CPoint cp;
 	if (panID || (drawID && choiceIdx != -1))
 	{
@@ -868,16 +869,18 @@ void CImgViewerView::OnLButtonUp(UINT nFlags, CPoint point)
 		if (choiceIdx != -1) {
 			if (data[choiceIdx].isClicked)
 			{
-				RollbackInfo info;
-				info.idx = choiceIdx;
-				info.redoShape = data[choiceIdx];
-				info.undoShape = temp;
-				info.rollbackmode = RollBackMode::Update;
-				if (rollbackIndex != -1)
-					rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
-				rollback.push_back(info);
-				rollbackIndex = rollback.size() - 1;
-				InvalidateRect(data[choiceIdx].rect);
+				if (data[choiceIdx].rect != temp.rect) {
+					RollbackInfo info;
+					info.idx = choiceIdx;
+					info.redoShape = data[choiceIdx];
+					info.undoShape = temp;
+					info.rollbackmode = RollBackMode::Update;
+					if (rollbackIndex != -1)
+						rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
+					rollback.push_back(info);
+					rollbackIndex = rollback.size() - 1;
+					InvalidateRect(data[choiceIdx].rect);
+				}
 			}
 		}
 	}
@@ -1049,6 +1052,7 @@ void CImgViewerView::drawShape(CDC* dc, int penType, MyShape a) {
 	}
 	memDC.SelectObject(oldBrush);
 	DeleteObject(myBrush);
+	DeleteObject(myPen);
 }
 
 void CImgViewerView::OnModeDraw()
@@ -1071,165 +1075,6 @@ void CImgViewerView::OnModeSelect()
 	panID = true;
 }
 
-void CImgViewerView::OnThick1()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	l_width = 1;
-	if (choiceIdx != -1)
-	{
-		RollbackInfo info;
-		info.idx = choiceIdx;
-		info.undoShape = data[choiceIdx];
-		data[choiceIdx].penWidth = l_width;
-		info.redoShape = data[choiceIdx];
-		info.rollbackmode = RollBackMode::Update;
-		if (rollbackIndex != -1)
-			rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
-		else if (rollback.size() != 0) {
-			rollback.erase(rollback.begin(), rollback.end());
-		}
-		rollback.push_back(info);
-		rollbackIndex = rollback.size() - 1;
-		Invalidate();
-	}
-}
-
-void CImgViewerView::OnThick2()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	l_width = 2;
-	if (choiceIdx != -1)
-	{
-		RollbackInfo info;
-		info.idx = choiceIdx;
-		info.undoShape = data[choiceIdx];
-		data[choiceIdx].penWidth = l_width;
-		info.redoShape = data[choiceIdx];
-		info.rollbackmode = RollBackMode::Update;
-		if (rollbackIndex != -1)
-			rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
-		else if (rollback.size() != 0) {
-			rollback.erase(rollback.begin(), rollback.end());
-		}
-		rollback.push_back(info);
-		rollbackIndex = rollback.size() - 1;
-		Invalidate();
-	}
-}
-
-void CImgViewerView::OnThick3()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	l_width = 3;
-	if (choiceIdx != -1)
-	{
-		RollbackInfo info;
-		info.idx = choiceIdx;
-		info.undoShape = data[choiceIdx];
-		data[choiceIdx].penWidth = l_width;
-		info.redoShape = data[choiceIdx];
-		info.rollbackmode = RollBackMode::Update;
-		if (rollbackIndex != -1)
-			rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
-		else if (rollback.size() != 0) {
-			rollback.erase(rollback.begin(), rollback.end());
-		}
-		rollback.push_back(info);
-		rollbackIndex = rollback.size() - 1;
-		Invalidate();
-	}
-}
-
-void CImgViewerView::OnThick4()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	l_width = 4;
-	if (choiceIdx != -1)
-	{
-		RollbackInfo info;
-		info.idx = choiceIdx;
-		info.undoShape = data[choiceIdx];
-		data[choiceIdx].penWidth = l_width;
-		info.redoShape = data[choiceIdx];
-		info.rollbackmode = RollBackMode::Update;
-		if (rollbackIndex != -1)
-			rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
-		else if (rollback.size() != 0) {
-			rollback.erase(rollback.begin(), rollback.end());
-		}
-		rollback.push_back(info);
-		rollbackIndex = rollback.size() - 1;
-		Invalidate();
-	}
-}
-
-void CImgViewerView::OnThick5()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	l_width = 5;
-	if (choiceIdx != -1)
-	{
-		RollbackInfo info;
-		info.idx = choiceIdx;
-		info.undoShape = data[choiceIdx];
-		data[choiceIdx].penWidth = l_width;
-		info.redoShape = data[choiceIdx];
-		info.rollbackmode = RollBackMode::Update;
-		if (rollbackIndex != -1)
-			rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
-		else if (rollback.size() != 0) {
-			rollback.erase(rollback.begin(), rollback.end());
-		}
-		rollback.push_back(info);
-		rollbackIndex = rollback.size() - 1;
-		Invalidate();
-	}
-}
-
-void CImgViewerView::OnThick10()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	LINE_WIDTH dlg;
-	if (dlg.DoModal())
-	{
-		l_width = dlg.l_width;
-	}
-	if (choiceIdx != -1)
-	{
-		RollbackInfo info;
-		info.idx = choiceIdx;
-		info.undoShape = data[choiceIdx];
-		data[choiceIdx].penWidth = l_width;
-		info.redoShape = data[choiceIdx];
-		info.rollbackmode = RollBackMode::Update;
-		if (rollbackIndex != -1)
-			rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
-		else if (rollback.size() != 0) {
-			rollback.erase(rollback.begin(), rollback.end());
-		}
-		rollback.push_back(info);
-		rollbackIndex = rollback.size() - 1;
-		Invalidate();
-	}
-	/*l_width = 10;
-	if (choiceIdx != -1)
-	{
-		RollbackInfo info;
-		info.idx = choiceIdx;
-		info.undoShape = data[choiceIdx];
-		data[choiceIdx].penWidth = l_width;
-		info.redoShape = data[choiceIdx];
-		info.rollbackmode = RollBackMode::Update;
-		if (rollbackIndex != -1)
-			rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
-		else if (rollback.size() != 0) {
-			rollback.erase(rollback.begin(), rollback.end());
-		}
-		rollback.push_back(info);
-		rollbackIndex = rollback.size() - 1;
-		Invalidate();
-	}*/
-}
 
 void CImgViewerView::OnContextCopy()
 {
@@ -1298,10 +1143,10 @@ void CImgViewerView::OnContextDelete()
 			rollback.erase(rollback.begin(), rollback.end());
 		}
 		for (int i = 1; i < zOrder.size(); i++) {
-			if (zOrder[i] > choiceIdx)
+			if(zOrder[i]>zOrder[0])
 				zOrder[i]--;
 		}
-				zOrder.erase(zOrder.begin());
+		zOrder.erase(zOrder.begin());
 		rollback.push_back(info);
 		rollbackIndex = rollback.size() - 1;
 		data.RemoveAt(choiceIdx);
@@ -1338,6 +1183,37 @@ void CImgViewerView::OnContextLinecolor()
 	}
 }
 
+
+void CImgViewerView::OnContextLinewidth()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	SelectLineWidth dlg;
+	if (dlg.DoModal())
+	{
+		l_width = dlg.l_width;
+	}
+
+	if (choiceIdx != -1)
+	{
+		RollbackInfo info;
+		info.idx = choiceIdx;
+		info.undoShape = data[choiceIdx];
+		data[choiceIdx].penWidth = l_width;
+		info.redoShape = data[choiceIdx];
+		info.rollbackmode = RollBackMode::Update;
+		if (rollbackIndex != -1)
+			rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
+		else if (rollback.size() != 0) {
+			rollback.erase(rollback.begin(), rollback.end());
+		}
+		rollback.push_back(info);
+		rollbackIndex = rollback.size() - 1;
+		Invalidate();
+	}
+}
+
+
+
 BOOL CImgViewerView::PreTranslateMessage(MSG* pMsg)
 {
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
@@ -1347,23 +1223,23 @@ BOOL CImgViewerView::PreTranslateMessage(MSG* pMsg)
 		{
 			switch (pMsg->wParam)
 			{
-			case 99: case 67:	// ctrl - C
+			case 99: case 67:   // ctrl - C
 			{
 				OnContextCopy();
 				break;
 			}
-			case 118: case 86:	// ctrl - V
+			case 118: case 86:   // ctrl - V
 			{
 				ctrl = true;
 				OnContextPaste();
 				break;
 			}
-			case 89: case 121:	// ctrl - Y
+			case 89: case 121:   // ctrl - Y
 			{
 				redo();
 				break;
 			}
-			case 90: case 122:	//ctrl - Z
+			case 90: case 122:   //ctrl - Z
 			{
 				undo();
 				break;
@@ -1384,16 +1260,20 @@ void CImgViewerView::undo() {
 		{
 		case RollBackMode::Create: {
 			data.RemoveAt(rollback[rollbackIndex].idx);
-			for (int i = 0; i < zOrder.size(); i++) {
-				if (zOrder[i] == rollback[rollbackIndex].idx)
-					zOrder.erase(zOrder.begin() + i);
+			for (int i = 1; i < zOrder.size(); i++) {
+				if (zOrder[i] > zOrder[0])
+					zOrder[i]--;
 			}
+			shape.isClicked = false;
+			zOrder.erase(zOrder.begin());
 			rollbackIndex--;
 			choiceIdx = -1;
 			Invalidate();
 			break;
 		}
 		case RollBackMode::Delete: {
+			if (choiceIdx != -1)
+				data[choiceIdx].isClicked = false;
 			data.Add(rollback[rollbackIndex--].undoShape);
 			zOrder.insert(zOrder.begin(), data.GetSize() - 1);
 			choiceIdx = zOrder[0];
@@ -1423,6 +1303,8 @@ void CImgViewerView::redo() {
 		switch (rollback[++rollbackIndex].rollbackmode)
 		{
 		case RollBackMode::Create: {
+			if (choiceIdx != -1)
+				data[choiceIdx].isClicked = false;
 			data.Add(rollback[rollbackIndex].undoShape);
 			zOrder.insert(zOrder.begin(), data.GetSize() - 1);
 			choiceIdx = zOrder[0];
@@ -1526,3 +1408,5 @@ BOOL CImgViewerView::OnEraseBkgnd(CDC* pDC)
 
 	return false;
 }
+
+
