@@ -5,7 +5,7 @@
 #include "framework.h"
 #include "Fourthlohgic_Project.h"
 #include "ChildView.h"
-#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console");
+#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console")
 
 
 #ifdef _DEBUG
@@ -40,11 +40,10 @@ BEGIN_MESSAGE_MAP(CChildView, CWnd)
 	//ON_WM_KEYDOWN()
 	ON_COMMAND(ID_LINE, &CChildView::OnLine)
 	ON_COMMAND(ID_RECTANGLE, &CChildView::OnRectangle)
-	ON_COMMAND(ID_PointRect, &CChildView::OnEllipse)
+	ON_COMMAND(ID_PointRect, &CChildView::OnTriangle)
 	ON_COMMAND(ID_ELLPSE, &CChildView::OnEllipse)
+	ON_COMMAND(ID_CROSSHAIR, &CChildView::OnCrosshair)
 END_MESSAGE_MAP()
-
-
 
 // CChildView 메시지 처리기
 
@@ -84,12 +83,14 @@ void CChildView::OnPaint()
 
 	memDC.SelectObject(&m_background);   // 배경 그림을 선택하고
 
-	//if (drawID == TRUE)
-	//	draw(&memDC, CPoint(x, y));
+	//if (drawID == TRUE) {
+	//	//if (PrevPt.x != mov_x || PrevPt.y != mov_y)
+	//		draw();
+	//}
 	for (int i = 0; i < data.GetSize(); i++)
 		drawShape(data[i]);
 	if(chooseID==TRUE)
-		SelectDrawShape(data[chosenShape]);
+		SelectDrawShape(data[SelectIndex]);
 
 	mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
 	mdcOffScreen.StretchBlt(0, 0, viewWidth * (int)(rectWidth + 2), viewHeight * (int)(rectHeight +2), &memDC, z_pos.x, z_pos.y, rectWidth + 2, rectHeight + 2, SRCCOPY);
@@ -113,294 +114,6 @@ BOOL CChildView::OnEraseBkgnd(CDC* pDC)
 
 	// 클라 크기가 이미지보다 클때 검은화면으로 채워주기
 	return false;
-}
-
-// Zoom + Panning ------------------------------------------------------------------------------
-void CChildView::OnMouseMove(UINT nFlags, CPoint point)
-{
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-
-	CWnd::OnMouseMove(nFlags, point);
-	m_pos = point;
-	R_pos = point;
-	int i = 0;
-	if (nFlags & MK_MBUTTON)
-	{
-		//int width = m_bgRect.right - m_bgRect.left;
-		//int height = m_bgRect.bottom - m_bgRect.top;
-
-		// A영역의 사각형 그리기 //m_sPt는 기존 포인트, point는 이동
-		if (m_sPt.x < point.x) // 오른쪽으로 끌었을때
-		{
-			m_ePt.x -= point.x - m_sPt.x;
-
-			if (m_ePt.x <= 0)
-			{
-				if (z_pos.x > 0)
-				{
-					i = 1 + ((0 - m_ePt.x) / (int)viewWidth);
-					z_pos.x -= i;
-					m_ePt.x += i * viewWidth;
-				}
-			}
-		}
-		else // 왼쪽으로 끌었을때
-		{
-			m_ePt.x += m_sPt.x - point.x;
-
-			if (m_ePt.x + m_bgRect.right - (viewWidth * (int)(rectWidth + 2)) >= 0)
-			{
-				i = 1 + (m_ePt.x + m_bgRect.right - (viewWidth * (int)(rectWidth + 2))) / (int)viewWidth;
-				z_pos.x += i;
-				m_ePt.x -= i * viewWidth;
-			}
-		}
-
-
-
-		// B영역의 사각형 그리기
-		if (m_sPt.y > point.y) // 위로 올렸을때
-		{
-			m_ePt.y += m_sPt.y - point.y;
-
-			if (m_ePt.y + m_bgRect.bottom - (viewHeight * (int)(rectHeight + 2)) >= 0)
-			{
-				//m_ePt.y = 0;
-				//z_pos.y += 1;
-				//m_ePt.y -= viewHeight;
-
-				i = 1 + (m_ePt.y + m_bgRect.bottom - (viewHeight * (int)(rectHeight + 2))) / (int)viewHeight;
-				z_pos.y += i;
-				m_ePt.y -= i * viewHeight;
-			}
-
-		}
-		else // 아래로 내렸을때
-		{
-			m_ePt.y -= point.y - m_sPt.y;
-			if (m_ePt.y < 0)
-			{
-				//z_pos.y -= 1;
-				//m_ePt.y += viewHeight;
-
-				i = 1 + ((0 - m_ePt.y) / (int)viewHeight);
-				z_pos.y -= i;
-				m_ePt.y += i * viewHeight;
-			}
-		}
-
-		//---------------------------
-		if (m_ePt.x + m_bgRect.right > viewWidth * (int)(rectWidth + 2))
-		{
-			z_pos.x += 1;
-			m_ePt.x -= viewWidth;
-		}
-
-		if (m_ePt.y + m_bgRect.bottom > viewHeight * (int)(rectHeight + 2))
-		{
-			z_pos.y += 1;
-			m_ePt.y -= viewHeight;
-		}
-		//----------------------------
-
-		if (m_ePt.x < 0)
-			m_ePt.x = 0;
-		if (m_ePt.y < 0)
-			m_ePt.y = 0;
-
-		m_sPt = point;
-		Invalidate(FALSE);
-		UpdateWindow();
-	}
-
-	// 그림
-	if (MK_LBUTTON && drawID == TRUE) // 마우스를 클릭하여 드래그일 동안만 
-	{
-		//draw(&memDC, point); // 뷰에서 도형 그리기(draw) 함수 호출		
-		// 마우스 드래그시의 좌표 값을 도형 끝 값에 다시 저장	
-		draw(&memDC);
-		mov_x = z_pos.x + (m_ePt.x + point.x) / viewWidth;
-		mov_y = z_pos.y + (m_ePt.y + point.y) / viewHeight;
-
-		Invalidate(FALSE);
-	}
-
-	// 크기 조정
-	if (MK_LBUTTON && (EdgeChosen == TRUE) && rotateClick == FALSE)
-	{
-		int o, p;
-		int xx, yy;
-		//CPoint TLX;
-		xx = x, yy = y;
-		x = z_pos.x + (m_ePt.x + point.x) / viewWidth;
-		y = z_pos.y + (m_ePt.y + point.y) / viewHeight;
-
-		o = (x - xx);
-		p = (y - yy);
-
-		RectCount = data[chosenShape].pts.size();
-		if (RectCount == 4) {
-			if (chosenEdge == 0)
-			{
-				data[chosenShape].pts[0].x += o;
-				data[chosenShape].pts[0].y += p;
-				data[chosenShape].pts[1].y += p;
-				data[chosenShape].pts[3].x += o;
-			}
-			else if (chosenEdge == 1)
-			{
-				data[chosenShape].pts[1].x += o;
-				data[chosenShape].pts[1].y += p;
-				data[chosenShape].pts[0].y += p;
-				data[chosenShape].pts[2].x += o;
-			}
-			else if (chosenEdge == 2)
-			{
-				data[chosenShape].pts[2].x += o;
-				data[chosenShape].pts[2].y += p;
-				data[chosenShape].pts[3].y += p;
-				data[chosenShape].pts[1].x += o;
-			}
-			else if (chosenEdge == 3)
-			{
-				data[chosenShape].pts[3].x += o;
-				data[chosenShape].pts[3].y += p;
-				data[chosenShape].pts[2].y += p;
-				data[chosenShape].pts[0].x += o;
-			}
-		}
-		else
-		{
-			if (chosenEdge == 0)
-			{
-				data[chosenShape].pts[0].x += o;
-				data[chosenShape].pts[0].y += p;
-			}
-			else if (chosenEdge == 1)
-			{
-				data[chosenShape].pts[1].x += o;
-				data[chosenShape].pts[1].y += p;
-			}
-		}
-
-		Point pt(0, 0);
-		for (int i = 0; i < RectCount; i++)
-		{
-			pt.x += data[chosenShape].pts[i].x;
-			pt.y += data[chosenShape].pts[i].y;
-		}
-
-		Center.x = data[chosenShape].Center.x = pt.x / RectCount;
-		Center.y = data[chosenShape].Center.y = pt.y / RectCount;
-		Rotate.x = data[chosenShape].Rotate.x = pt.x / RectCount;
-		Rotate.y = data[chosenShape].Rotate.y = pt.y / RectCount - 15;
-
-		for (int i = 0; i < RectCount; i++)
-		{
-			pt.x = data[chosenShape].pts[i].x;
-			pt.y = data[chosenShape].pts[i].y;
-			rRect[i].SetRect(pt.x - 5, pt.y - 5, pt.x + 5, pt.y + 5);
-		}
-		Invalidate(FALSE);
-	}
-	
-	// 이동
-	if (MK_LBUTTON && (panID == TRUE) && (rotateClick==FALSE))
-	{
-		int o, p;
-		int xx, yy;
-		//CPoint TLX;
-		xx = x, yy = y;
-		x = z_pos.x + (m_ePt.x + point.x) / viewWidth;
-		y = z_pos.y + (m_ePt.y + point.y) / viewHeight;
-
-		o = (x - xx);
-		p = (y - yy);
-
-		CPoint pt;
-		RectCount = data[chosenShape].pts.size();
-		for (int i = 0; i < RectCount; i++)
-		{
-			pt.x = data[chosenShape].pts[i].x += o;
-			pt.y = data[chosenShape].pts[i].y += p;
-			rRect[i].SetRect(pt.x - 5, pt.y - 5, pt.x + 5, pt.y + 5);
-		}
-		pt.x = 0; pt.y = 0;
-		for (int i = 0; i < RectCount; i++)
-		{
-			pt.x += data[chosenShape].pts[i].x;
-			pt.y += data[chosenShape].pts[i].y;
-		}
-		data[chosenShape].Center.x += o;
-		data[chosenShape].Center.y += p;
-		//data[chosenShape].Center = CPoint(pt.x / RectCount, pt.y / RectCount);
-		data[chosenShape].Rotate = CPoint(data[chosenShape].Center.x, data[chosenShape].Center.y - 15);
-
-		Center = data[chosenShape].Center;
-		Rotate = data[chosenShape].Rotate;
-
-		Invalidate(FALSE);
-		UpdateWindow();
-	}
-
-	// 회전 클릭
-	if (MK_LBUTTON && (rotateClick == TRUE))
-	{
-		x = z_pos.x + (m_ePt.x + point.x) / viewWidth;
-		y = z_pos.y + (m_ePt.y + point.y) / viewHeight;
-		CPoint &cneter = data[chosenShape].Center;
-		CPoint &Rotate = data[chosenShape].Rotate;
-		vector<CPoint> pts = data[chosenShape].pts; // 복사 -> 이동 -> R복사
-		CPoint pt;
-		double theta;
-
-		if ((y - cneter.y) == 0)
-			theta = CV_PI/2 - atan((((float)Rotate.x - cneter.x) / ((float)Rotate.y - cneter.y)));
-		else if ((Rotate.y - cneter.y) == 0)
-			theta = atan(((float)x - cneter.x) / ((float)y - cneter.y)) - CV_PI / 2;
-		else
-			theta = atan((((float)x - cneter.x) / ((float)y - cneter.y))) - atan((((float)Rotate.x - cneter.x) / (float)(Rotate.y - cneter.y)));
-		
-
-		if (data[chosenShape].shapeType == DrawMode::DLine)
-		{
-			for (int i = 0; i < 2; i++)
-			{
-				pt.x = cvRound((pts[i].x - cneter.x) * cos(theta) + (pts[i].y - cneter.y) * sin(theta) + cneter.x);
-				pt.y = cvRound(-(pts[i].x - cneter.x) * sin(theta) + (pts[i].y - cneter.y) * cos(theta) + cneter.y);
-				pts[i] = pt;
-			}
-			data[chosenShape].RotatePts = pts;
-			//data[chosenShape].theta = theta;
-		}
-		else if(data[chosenShape].shapeType == DrawMode::DEllipse)
-		{
-			// 원본이 R 
-			// 원본에 추가 이동 만큼 회전 == 이유 4각점 찍을 라고 
-			vector<CPoint> pts = data[chosenShape].pts;
-			for (int i = 0; i < 4; i++)
-			{
-				pt.x = cvRound((pts[i].x - cneter.x) * cos(theta) + (pts[i].y - cneter.y) * sin(theta) + cneter.x);
-				pt.y = cvRound(-(pts[i].x - cneter.x) * sin(theta) + (pts[i].y - cneter.y) * cos(theta) + cneter.y);
-				pts[i] = pt;
-			}
-			data[chosenShape].RotatePts = pts;
-			data[chosenShape].R_theta = theta + data[chosenShape].theta;
-		}
-		else if (data[chosenShape].shapeType == DrawMode::DRectangle)
-		{
-			for (int i = 0; i < 4; i++)
-			{
-				pt.x = cvRound((pts[i].x - cneter.x) * cos(theta) + (pts[i].y - cneter.y) * sin(theta) + cneter.x);
-				pt.y = cvRound(-(pts[i].x - cneter.x) * sin(theta) + (pts[i].y - cneter.y) * cos(theta) + cneter.y);
-				pts[i] = pt;
-			}
-			data[chosenShape].RotatePts = pts;
-			//data[chosenShape].theta = theta;
-		}
-		Invalidate(FALSE);
-	}
-	//Invalidate(FALSE);
 }
 
 void CChildView::OnSize(UINT nType, int cx, int cy)
@@ -676,11 +389,324 @@ void CChildView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	CWnd::OnKeyDown(nChar, nRepCnt, nFlags);
 }
 
+// Zoom + Panning ------------------------------------------------------------------------------
+void CChildView::OnMouseMove(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	CWnd::OnMouseMove(nFlags, point);
+	int i = 0;
+	m_pos = point;
+	
+	if (nFlags == MK_MBUTTON)
+	{
+		//int width = m_bgRect.right - m_bgRect.left;
+		//int height = m_bgRect.bottom - m_bgRect.top;
+
+		// A영역의 사각형 그리기 //m_sPt는 기존 포인트, point는 이동
+		if (m_sPt.x < point.x) // 오른쪽으로 끌었을때
+		{
+			m_ePt.x -= point.x - m_sPt.x;
+
+			if (m_ePt.x <= 0)
+			{
+				if (z_pos.x > 0)
+				{
+					i = 1 + ((0 - m_ePt.x) / (int)viewWidth);
+					z_pos.x -= i;
+					m_ePt.x += i * viewWidth;
+				}
+			}
+		}
+		else // 왼쪽으로 끌었을때
+		{
+			m_ePt.x += m_sPt.x - point.x;
+
+			if (m_ePt.x + m_bgRect.right - (viewWidth * (int)(rectWidth + 2)) >= 0)
+			{
+				i = 1 + (m_ePt.x + m_bgRect.right - (viewWidth * (int)(rectWidth + 2))) / (int)viewWidth;
+				z_pos.x += i;
+				m_ePt.x -= i * viewWidth;
+			}
+		}
+
+
+
+		// B영역의 사각형 그리기
+		if (m_sPt.y > point.y) // 위로 올렸을때
+		{
+			m_ePt.y += m_sPt.y - point.y;
+
+			if (m_ePt.y + m_bgRect.bottom - (viewHeight * (int)(rectHeight + 2)) >= 0)
+			{
+				//m_ePt.y = 0;
+				//z_pos.y += 1;
+				//m_ePt.y -= viewHeight;
+
+				i = 1 + (m_ePt.y + m_bgRect.bottom - (viewHeight * (int)(rectHeight + 2))) / (int)viewHeight;
+				z_pos.y += i;
+				m_ePt.y -= i * viewHeight;
+			}
+
+		}
+		else // 아래로 내렸을때
+		{
+			m_ePt.y -= point.y - m_sPt.y;
+			if (m_ePt.y < 0)
+			{
+				//z_pos.y -= 1;
+				//m_ePt.y += viewHeight;
+
+				i = 1 + ((0 - m_ePt.y) / (int)viewHeight);
+				z_pos.y -= i;
+				m_ePt.y += i * viewHeight;
+			}
+		}
+
+		//---------------------------
+		if (m_ePt.x + m_bgRect.right > viewWidth * (int)(rectWidth + 2))
+		{
+			z_pos.x += 1;
+			m_ePt.x -= viewWidth;
+		}
+
+		if (m_ePt.y + m_bgRect.bottom > viewHeight * (int)(rectHeight + 2))
+		{
+			z_pos.y += 1;
+			m_ePt.y -= viewHeight;
+		}
+		//----------------------------
+
+		if (m_ePt.x < 0)
+			m_ePt.x = 0;
+		if (m_ePt.y < 0)
+			m_ePt.y = 0;
+
+		m_sPt = point;
+		Invalidate(FALSE);
+		UpdateWindow();
+	}
+	// 그림
+	if (MK_LBUTTON == nFlags && drawID == TRUE) // 마우스를 클릭하여 드래그일 동안만 
+		draw();
+	// 이동
+	else if (MK_LBUTTON == nFlags && (panID == TRUE) && (rotateClick == FALSE))
+	{
+		int o, p;
+		int xx, yy;
+
+		xx = x, yy = y;
+		x = z_pos.x + (m_ePt.x + point.x) / viewWidth;
+		y = z_pos.y + (m_ePt.y + point.y) / viewHeight;
+
+		o = (x - xx);
+		p = (y - yy);
+
+		CPoint pt;
+		RectCount = data[SelectIndex].pts.size();
+		if (data[SelectIndex].shapeType != DrawMode::DTriangle)
+		{
+			// 이동
+			for (int i = 0; i < RectCount; i++)
+			{
+				pt.x = data[SelectIndex].RotatePts[i].x += o;
+				pt.y = data[SelectIndex].RotatePts[i].y += p;
+			}
+		}
+		else
+		{
+			// 이동
+			for (int i = 0; i < RectCount; i++)
+			{
+				pt.x = data[SelectIndex].RotatePts[i].x += o;
+				pt.y = data[SelectIndex].RotatePts[i].y += p;
+			}
+		}
+
+		//SelectShapeUpdate();
+		UpdateWindow();
+		Invalidate(FALSE);
+	}
+	// 크기 조정
+	else if (MK_LBUTTON == nFlags && (EdgeSelect == TRUE) && rotateClick == FALSE)
+	{
+		int o, p;
+		int xx, yy;
+		//CPoint TLX;
+		xx = x, yy = y;
+		x = z_pos.x + (m_ePt.x + point.x) / viewWidth;
+		y = z_pos.y + (m_ePt.y + point.y) / viewHeight;
+		o = (x - xx);
+		p = (y - yy);
+		double theta = data[SelectIndex].theta;
+
+		RectCount = data[SelectIndex].pts.size();
+
+		// 길이
+		if (data[SelectIndex].shapeType == DrawMode::DLine)
+		{
+			data[SelectIndex].pts[EdgeIndex].x += o;
+			data[SelectIndex].pts[EdgeIndex].y += p;
+		}
+		// 삼각형
+		else if(data[SelectIndex].shapeType == DrawMode::DTriangle)
+		{
+			data[SelectIndex].pts[EdgeIndex].x += o;
+			data[SelectIndex].pts[EdgeIndex].y += p;
+		}
+		// 크로스 헤어
+		else if (data[SelectIndex].shapeType == DrawMode::DCrossHair)
+		{
+			if (EdgeIndex / 2 == 0)
+			{
+				data[SelectIndex].pts[EdgeIndex].x += o;
+				data[SelectIndex].pts[EdgeIndex].y += p;
+				data[SelectIndex].pts[EdgeIndex + 1].x -= o;
+				data[SelectIndex].pts[EdgeIndex + 1].y -= p;
+			}
+			else
+			{
+				data[SelectIndex].pts[EdgeIndex].x += o;
+				data[SelectIndex].pts[EdgeIndex].y += p;
+				data[SelectIndex].pts[EdgeIndex - 1].x -= o;
+				data[SelectIndex].pts[EdgeIndex - 1].y -= p;
+			}
+
+		}
+		//사각형 원
+		else
+		{
+			data[SelectIndex].pts[EdgeIndex].x += o;
+			data[SelectIndex].pts[EdgeIndex].y += p;
+
+			if (data[SelectIndex].theta == 0)
+			{
+				if (EdgeIndex == 0)
+				{
+					data[SelectIndex].pts[3].x += o;
+					data[SelectIndex].pts[1].y += p;
+				}
+				else if (EdgeIndex == 1)
+				{
+
+					data[SelectIndex].pts[2].x += o;
+					data[SelectIndex].pts[0].y += p;
+				}
+				else if (EdgeIndex == 2)
+				{
+					data[SelectIndex].pts[1].x += o;
+					data[SelectIndex].pts[3].y += p;
+				}
+				else if (EdgeIndex == 3)
+				{
+					data[SelectIndex].pts[0].x += o;
+					data[SelectIndex].pts[2].y += p;
+				}
+			}
+			else
+			{
+				if (EdgeIndex == 0)
+				{
+					data[SelectIndex].pts[1] = Intersection(data[SelectIndex].pts[0], data[SelectIndex].pts[1], data[SelectIndex].pts[2]);
+					data[SelectIndex].pts[3] = Intersection(data[SelectIndex].pts[0], data[SelectIndex].pts[3], data[SelectIndex].pts[2]);
+				}
+				else if (EdgeIndex == 1)
+				{
+					data[SelectIndex].pts[0] = Intersection(data[SelectIndex].pts[1], data[SelectIndex].pts[0], data[SelectIndex].pts[3]);
+					data[SelectIndex].pts[2] = Intersection(data[SelectIndex].pts[1], data[SelectIndex].pts[2], data[SelectIndex].pts[3]);
+				}
+				else if (EdgeIndex == 2)
+				{
+					data[SelectIndex].pts[1] = Intersection(data[SelectIndex].pts[2], data[SelectIndex].pts[1], data[SelectIndex].pts[0]);
+					data[SelectIndex].pts[3] = Intersection(data[SelectIndex].pts[2], data[SelectIndex].pts[3], data[SelectIndex].pts[0]);
+				}
+				else if (EdgeIndex == 3)
+				{
+					data[SelectIndex].pts[0] = Intersection(data[SelectIndex].pts[3], data[SelectIndex].pts[0], data[SelectIndex].pts[1]);
+					data[SelectIndex].pts[2] = Intersection(data[SelectIndex].pts[3], data[SelectIndex].pts[2], data[SelectIndex].pts[1]);
+				}
+			}
+		}
+
+		// 꼭지점 업데이트
+		SelectShapeUpdate();
+		Invalidate(FALSE);
+	}
+	// 회전 클릭
+	else if (MK_LBUTTON == nFlags && (rotateClick == TRUE))
+	{
+		Point2d center = data[SelectIndex].Center;
+		Point2d Rotate = data[SelectIndex].Rotate;
+		vector<Point2d> pts = data[SelectIndex].pts; // 복사 -> 이동 -> R복사
+		Point2d pt;
+		x = z_pos.x + (m_ePt.x + point.x) / viewWidth;
+		y = z_pos.y + (m_ePt.y + point.y) / viewHeight;
+
+		double theta = atan2((Rotate.x - center.x), (Rotate.y - center.y)) - atan2((x - center.x), (y - center.y));
+		for (int i = 0; i < pts.size(); i++)
+		{
+
+			pt.x = cvRound((pts[i].x - center.x) * cos(theta) - (pts[i].y - center.y) * sin(theta) + center.x);
+			pt.y = cvRound((pts[i].x - center.x) * sin(theta) + (pts[i].y - center.y) * cos(theta) + center.y);
+			pts[i] = pt;
+		}
+		data[SelectIndex].RotatePts = pts;
+		data[SelectIndex].R_theta = theta + data[SelectIndex].theta;
+
+		//if (data[SelectIndex].shapeType == DrawMode::DLine)
+		//{
+		//	for (int i = 0; i < 2; i++)
+		//	{
+		//
+		//		pt.x = cvRound((pts[i].x - center.x) * cos(theta) - (pts[i].y - center.y) * sin(theta) + center.x);
+		//		pt.y = cvRound((pts[i].x - center.x) * sin(theta) + (pts[i].y - center.y) * cos(theta) + center.y);
+		//		pts[i] = pt;
+		//	}
+		//	data[SelectIndex].RotatePts = pts;
+		//	data[SelectIndex].R_theta = theta + data[SelectIndex].theta;
+		//}
+		//else if (data[SelectIndex].shapeType == DrawMode::DEllipse)
+		//{
+		//	for (int i = 0; i < 4; i++)
+		//	{
+		//		pt.x = cvRound((pts[i].x - center.x) * cos(theta) - (pts[i].y - center.y) * sin(theta) + center.x);
+		//		pt.y = cvRound((pts[i].x - center.x) * sin(theta) + (pts[i].y - center.y) * cos(theta) + center.y);
+		//		pts[i] = pt;
+		//	}
+		//	data[SelectIndex].RotatePts = pts;
+		//	data[SelectIndex].R_theta = theta + data[SelectIndex].theta;
+		//}
+		//else if (data[SelectIndex].shapeType == DrawMode::DRectangle)
+		//{
+		//	for (int i = 0; i < 4; i++)
+		//	{
+		//		pt.x = cvRound((pts[i].x - center.x) * cos(theta) - (pts[i].y - center.y) * sin(theta) + center.x);
+		//		pt.y = cvRound((pts[i].x - center.x) * sin(theta) + (pts[i].y - center.y) * cos(theta) + center.y);
+		//		pts[i] = pt;
+		//	}
+		//	data[SelectIndex].RotatePts = pts;
+		//	data[SelectIndex].R_theta = theta + data[SelectIndex].theta;
+		//}
+		//else if (data[SelectIndex].shapeType == DrawMode::DTriangle)
+		//{
+		//	for (int i = 0; i < 4; i++)
+		//	{
+		//		pt.x = cvRound((pts[i].x - center.x) * cos(theta) - (pts[i].y - center.y) * sin(theta) + center.x);
+		//		pt.y = cvRound((pts[i].x - center.x) * sin(theta) + (pts[i].y - center.y) * cos(theta) + center.y);
+		//		pts[i] = pt;
+		//	}
+		//	data[SelectIndex].RotatePts = pts;
+		//	data[SelectIndex].R_theta = theta + data[SelectIndex].theta;
+		//}
+		Invalidate(FALSE);
+	}
+}
+
 // 그리기-------------------------------------------------------------------------------
 void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	chooseID = FALSE; // 채크해제후 검사
+	//chooseID = FALSE; // 채크해제후 검사
 	SetCapture();
 	x = z_pos.x + (m_ePt.x + point.x) / viewWidth;
 	y = z_pos.y + (m_ePt.y + point.y) / viewHeight;
@@ -689,25 +715,32 @@ void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 	mov_y = y;
 	//printf("도형 개수 : %d\n", data.GetSize());
 	
-	// 엣지 클릭 검사
-	for (int i = 0; i < RectCount; i++)
-	{
-		if (x >= rRect[i].left && x <= rRect[i].right && y >= rRect[i].top && y <= rRect[i].bottom)
+	// 엣지 클릭 검사 // 회전 선 클릭 검사
+	if (chooseID == TRUE) {
+		
+		//엣지 클릭 검사
+		for (int i = 0; i < RectCount; i++)
 		{
-			EdgeChosen = TRUE;
-			chosenEdge = i;
-			break;
+			if (x >= rRect[i].left && x <= rRect[i].right && y >= rRect[i].top && y <= rRect[i].bottom)
+			{
+				EdgeSelect = TRUE;
+				EdgeIndex = i;
+				Invalidate(FALSE);
+				return;
+			}
 		}
-	}
-	// 회전 선 클릭 검사
-	CRect centRC;
-	centRC.left = min(Rotate.x, Center.x) - 10;
-	centRC.right = max(Rotate.x, Center.x) + 10;
-	centRC.top = min(Rotate.y, Center.y) - 10;
-	centRC.bottom = max(Rotate.y, Center.y) + 10;
-	if (x >= centRC.left && x <= centRC.right && y >= centRC.top && y <= centRC.bottom) {
-		rotateClick = TRUE;
-		Invalidate(FALSE);
+
+		// 회전 선 클릭 검사
+		CRect centRC;
+		centRC.left = min(Rotate.x, Center.x) - 10;
+		centRC.right = max(Rotate.x, Center.x) + 10;
+		centRC.top = min(Rotate.y, Center.y) - 10;
+		centRC.bottom = max(Rotate.y, Center.y) + 10;
+		if (x >= centRC.left && x <= centRC.right && y >= centRC.top && y <= centRC.bottom) {
+			rotateClick = TRUE;
+			Invalidate(FALSE);
+			return;
+		}
 	}
 
 	// 이미지 객체 클릭 검사
@@ -726,33 +759,34 @@ void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 				}
 
 				// !추가 객체 선택 정보 전달
-				Center = data[i].Center;
+				Center.x = data[i].Center.x;
+				Center.y = data[i].Center.y;
 				Rotate = data[i].Rotate;
 
 				panID = TRUE;
 				chooseID = TRUE;
-				chosenShape = i;
+				SelectIndex = i;
 				Invalidate(FALSE);
-				break;
+				return;
 			}
 		}
 		else if(data[i].shapeType == DrawMode::DLine)
 		{
-			vector<CPoint> linePts;
+			vector<Point2d> linePts;
 			int Pt1, Pt2;
 			Pt1 = pow(data[i].pts[0].x, 2) + pow(data[i].pts[0].y, 2);
 			Pt2 = pow(data[i].pts[1].x, 2) + pow(data[i].pts[1].y, 2);
 			if (Pt1 > Pt2)
 			{
-				CPoint temp = data[i].pts[0];
+				Point2d temp = data[i].pts[0];
 				data[i].pts[0] = data[i].pts[1];
 				data[i].pts[1] = temp;
 			}
 			linePts.clear();
-			linePts.push_back(CPoint(data[i].pts[0].x-5, data[i].pts[0].y-5));
-			linePts.push_back(CPoint(data[i].pts[0].x+5, data[i].pts[0].y-5));
-			linePts.push_back(CPoint(data[i].pts[1].x+5, data[i].pts[1].y+5));
-			linePts.push_back(CPoint(data[i].pts[1].x-5, data[i].pts[1].y+5));
+			linePts.push_back(Point2d(data[i].pts[0].x-5, data[i].pts[0].y-5));
+			linePts.push_back(Point2d(data[i].pts[0].x+5, data[i].pts[0].y-5));
+			linePts.push_back(Point2d(data[i].pts[1].x+5, data[i].pts[1].y+5));
+			linePts.push_back(Point2d(data[i].pts[1].x-5, data[i].pts[1].y+5));
 			if (isInside(CPoint(x, y), linePts))
 			{
 				CPoint pt;
@@ -764,19 +798,20 @@ void CChildView::OnLButtonDown(UINT nFlags, CPoint point)
 					rRect[j].SetRect(pt.x - 5, pt.y - 5, pt.x + 5, pt.y + 5);
 				}
 				// !추가 객체 선택 정보 전달
-				Center = data[i].Center;
+				Center.x = data[i].Center.x;
+				Center.y = data[i].Center.y;
 				Rotate = data[i].Rotate;
 
 				panID = TRUE;
 				chooseID = TRUE;
-				chosenShape = i;
+				SelectIndex = i;
 				Invalidate(FALSE);
-				break;
+				return;
 			}
 		}
-
 	}
 
+	chooseID = FALSE;
 	CWnd::OnLButtonDown(nFlags, point);
 }
 
@@ -796,102 +831,131 @@ void CChildView::OnLButtonUp(UINT nFlags, CPoint point)
 
 		if (shape.shapeType == DrawMode::DLine)
 		{
-			shape.pts.push_back(CPoint(x, y));
-			shape.pts.push_back(CPoint(mov_x, mov_y));
+			shape.pts.push_back(Point2d(x, y));
+			shape.pts.push_back(Point2d(mov_x, mov_y));
 			shape.radin[0] = 0;
 			shape.radin[1] = 0;
 		}
 		else if (shape.shapeType == DrawMode::DEllipse)
 		{
-			shape.pts.push_back(CPoint(x, y));
-			shape.pts.push_back(CPoint(mov_x, y));
-			shape.pts.push_back(CPoint(mov_x, mov_y));
-			shape.pts.push_back(CPoint(x, mov_y));
+			shape.pts.push_back(Point2d(x, y));
+			shape.pts.push_back(Point2d(mov_x, y));
+			shape.pts.push_back(Point2d(mov_x, mov_y));
+			shape.pts.push_back(Point2d(x, mov_y));
 			shape.radin[0] = abs(x - mov_x) / 2;
 			shape.radin[1] = abs(y - mov_y) / 2;
 		}
 		else if (shape.shapeType == DrawMode::DRectangle)
 		{
-			shape.pts.push_back(CPoint(x, y));
-			shape.pts.push_back(CPoint(mov_x, y));
-			shape.pts.push_back(CPoint(mov_x, mov_y));
-			shape.pts.push_back(CPoint(x, mov_y));
-			shape.radin[0] = 0;
-			shape.radin[1] = 0;
+			shape.pts.push_back(Point2d(x, y));
+			shape.pts.push_back(Point2d(mov_x, y));
+			shape.pts.push_back(Point2d(mov_x, mov_y));
+			shape.pts.push_back(Point2d(x, mov_y));
+			shape.radin[0] = abs(x - mov_x) / 2;
+			shape.radin[1] = abs(y - mov_y) / 2;
 		}
-		shape.Center = CPoint((x + mov_x) / 2, (y + mov_y) / 2);
-		shape.Rotate = CPoint((x + mov_x) / 2, (y + mov_y) / 2 - 15);
+		else if (shape.shapeType == DrawMode::DTriangle)
+		{
+			shape.pts.push_back(Point2d((x + mov_x) / 2, y));
+			shape.pts.push_back(Point2d(mov_x, mov_y));
+			shape.pts.push_back(Point2d(x, mov_y));
+			//shape.pts.push_back(Point2d(x, mov_y));
+			shape.radin[0] = abs(x - mov_x) / 2;
+			shape.radin[1] = abs(y - mov_y) / 2;
+			//shape.RotatePts=shape.T_Pts = shape.pts;
+		}
+		else if (shape.shapeType == DrawMode::DCrossHair)
+		{
+			shape.pts.push_back(Point2d((x + mov_x) / 2, y));
+			shape.pts.push_back(Point2d((x + mov_x) / 2, mov_y));
+			shape.pts.push_back(Point2d(x, (y + mov_y) / 2));
+			shape.pts.push_back(Point2d(mov_x, (y + mov_y) / 2));
+			shape.radin[0] = abs(x - mov_x) / 2;
+			shape.radin[1] = abs(y - mov_y) / 2;
+		}
+		Point2d pt(0, 0);
+		for (int i = 0; i < shape.pts.size(); i++)
+			pt += shape.pts[i];
+		int Count = shape.pts.size();
+		shape.RotatePts = shape.pts;
+		shape.Center = pt / Count;
+		shape.Rotate = shape.Center;
+		shape.Rotate.y -= 15;
 		shape.theta = 0;
 		shape.R_theta = 0;
-		shape.shapeColor = RGB(0, 255, 255);
+		shape.shapeColor = RGB(0, 255, 255); // 색상값
+		shape.thickness = 1; // 굵기 
 		data.Add(shape);
 	}
 
 	if (rotateClick == TRUE)
 	{
-		if (drawStyle == DrawMode::DLine) // 직선 선택시
-			data[chosenShape].pts = data[chosenShape].RotatePts;
-		else if (drawStyle == DrawMode::DEllipse) { // 원 선택시
-			data[chosenShape].theta = data[chosenShape].R_theta;
-			data[chosenShape].pts = data[chosenShape].RotatePts;
+		if (data[SelectIndex].R_theta >= (CV_PI * 2))
+			data[SelectIndex].R_theta = data[SelectIndex].R_theta - (CV_PI * 2);
+
+		if (drawStyle == DrawMode::DLine) {// 직선 선택시
+			data[SelectIndex].pts = data[SelectIndex].RotatePts;
+			data[SelectIndex].theta = data[SelectIndex].R_theta;
 		}
-		else if (drawStyle == DrawMode::DRectangle) // 사각형 선택시
-			data[chosenShape].pts = data[chosenShape].RotatePts;
+		else if (drawStyle == DrawMode::DEllipse) { // 원 선택시
+			data[SelectIndex].theta = data[SelectIndex].R_theta;
+			data[SelectIndex].pts = data[SelectIndex].RotatePts;
+		}
+		else if (drawStyle == DrawMode::DRectangle) { // 사각형 선택시
+			data[SelectIndex].pts = data[SelectIndex].RotatePts;
+			data[SelectIndex].theta = data[SelectIndex].R_theta;
+		}
+		else if (drawStyle == DrawMode::DTriangle) { // 사각형 선택시
+			data[SelectIndex].pts = data[SelectIndex].RotatePts;
+			data[SelectIndex].theta = data[SelectIndex].R_theta;
+		}
+		else if (drawStyle == DrawMode::DCrossHair) { // 사각형 선택시
+			data[SelectIndex].pts = data[SelectIndex].RotatePts;
+			data[SelectIndex].theta = data[SelectIndex].R_theta;
+		}
 	}
 
-	ReleaseCapture();
+	if (panID == TRUE)
+		data[SelectIndex].pts = data[SelectIndex].RotatePts;
+
+
 	drawID = FALSE;
 	panID = FALSE;
-	EdgeChosen = FALSE;
+	EdgeSelect = FALSE;
 	rotateClick = FALSE; 
+	ReleaseCapture();
+	SelectShapeRectUpdate();
+	SelectShpaeCenterUpdate();
 	Invalidate(FALSE);
 
 	CWnd::OnLButtonUp(nFlags, point);
 }
 
-// 움직일때 계속 그리기
-int CChildView::draw(CDC* pDC)
+// 처음 그리기
+void CChildView::draw()
 {
 	CDC* dc = GetDC();
-	CMainFrame* cmr = (CMainFrame*)AfxGetMainWnd();
-
-	CPen myPen(PS_SOLID, viewWidth, RGB(0, 0, 255));
+	CPen myPen(PS_DOT, viewWidth, drawPenColor);
 	CPen* oldPen;
-
 	oldPen = dc->SelectObject(&myPen);
-	//if (mov_x == m_pos.x && mov_y == m_pos.y) {
-	//	dc->SelectObject(oldPen); // 이전 팬 선택		
-	//	myPen.DeleteObject();  // 생성한 펜 메모리에서 제거	
-	//	return 0;
-	//}
 
 	if (drawStyle == DrawMode::DLine) // 콤보상자에서 직선 선택시
 	{
-		//printf("%d, %d\n", x, y);
-		//dc->SetROP2(R2_XORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
-
-		//dc->MoveTo(x, y); dc->LineTo(mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬
-		//mov_x = m_pos.x;
-		//mov_y = m_pos.y;
+		dc->SetROP2(R2_NOTXORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+		dc->MoveTo(x, y); dc->LineTo(mov_x, mov_y); //전단계를 다시 그려서 흰색으로 만듬
+		mov_x = m_pos.x;
+		mov_y = m_pos.y;
+		//mov_x = z_pos.x + (m_ePt.x + m_pos.x) / viewWidth;
+		//mov_y = z_pos.y + (m_ePt.y + m_pos.y) / viewHeight;
 		dc->MoveTo(x, y); dc->LineTo(mov_x, mov_y);
 	}
 	else if (drawStyle == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
 	{
 		dc->SetROP2(R2_NOTXORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
-		dc->MoveTo(x, y);
-		dc->LineTo(mov_x, y);
-		dc->LineTo(mov_x, mov_y);
-		dc->LineTo(x, mov_y);
-		dc->LineTo(x, y);
-
+		dc->Rectangle(x, y, mov_x, mov_y);
 		mov_x = m_pos.x;
 		mov_y = m_pos.y;
-
-		dc->MoveTo(x, y);
-		dc->LineTo(mov_x, y);
-		dc->LineTo(mov_x, mov_y);
-		dc->LineTo(x, mov_y);
-		dc->LineTo(x, y);
+		dc->Rectangle(x, y, mov_x, mov_y);
 	}
 	else if (drawStyle == DrawMode::DEllipse) // 콤보상자에서 원 선택시
 	{
@@ -901,10 +965,43 @@ int CChildView::draw(CDC* pDC)
 		mov_y = m_pos.y;
 		dc->Ellipse(x, y, mov_x, mov_y);                        
 	}
+	else if (drawStyle == DrawMode::DTriangle) // 콤보상자에서 사각형 선택시
+	{
+		dc->SetROP2(R2_NOTXORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
 
+		dc->MoveTo((x + mov_x)/2, y);
+		dc->LineTo(mov_x, mov_y);
+		dc->LineTo(x, mov_y);
+		dc->LineTo((x + mov_x) / 2, y);
+
+		mov_x = m_pos.x;
+		mov_y = m_pos.y;
+
+		dc->MoveTo((x + mov_x) / 2, y);
+		dc->LineTo(mov_x, mov_y);
+		dc->LineTo(x, mov_y);
+		dc->LineTo((x + mov_x) / 2, y);
+	}
+	else if (drawStyle == DrawMode::DCrossHair) // 콤보상자에서 사각형 선택시
+	{
+		dc->SetROP2(R2_NOTXORPEN); // 픽셀인 펜 색 조합 및 반전 화면 색상 
+
+		dc->MoveTo((x + mov_x) / 2, y);
+		dc->LineTo((x + mov_x) / 2, mov_y);
+		dc->MoveTo(x , (y + mov_y) / 2);
+		dc->LineTo(mov_x, (y + mov_y) / 2);
+
+
+		mov_x = m_pos.x;
+		mov_y = m_pos.y;
+
+		dc->MoveTo((x + mov_x) / 2, y);
+		dc->LineTo((x + mov_x) / 2, mov_y);
+		dc->MoveTo(x, (y + mov_y) / 2);
+		dc->LineTo(mov_x, (y + mov_y) / 2);
+	}
 	dc->SelectObject(oldPen); // 이전 팬 선택		
 	myPen.DeleteObject();  // 생성한 펜 메모리에서 제거			
-	return 0;
 }
 
 // 그림 복구
@@ -912,10 +1009,7 @@ void CChildView::drawShape(MyShape& shape)
 {
 	CDC* dc= GetDC();
 	int shapeNum = shape.shapeType;
-	//CBrush brush;
-	//brush.CreateStockObject(NULL_BRUSH);
-	//CBrush* pOldBrush = memDC.SelectObject(&brush);
-	CPen myPen(PS_SOLID, viewWidth, shape.shapeColor);
+	CPen myPen(PS_SOLID, shape.thickness, shape.shapeColor);
 	CPen* oldPen;
 	oldPen = memDC.SelectObject(&myPen);
 
@@ -926,19 +1020,7 @@ void CChildView::drawShape(MyShape& shape)
 	}
 	else if (shapeNum == DrawMode::DEllipse) // 원 그리기
 	{
-		vector<CPoint>& pts = shape.pts;
-		//int rad[2];
-		//int a = (shape.pts[0].x - shape.pts[1].x)/2;
-		//int b = (shape.pts[0].y - shape.pts[2].y)/2;
-		//Circle(&memDC, shape.Center.x, shape.Center.y,(int)abs(a));
-		//MyEllipse(&memDC, shape.Center.x, shape.Center.y,abs(a), abs(b), RGB(255, 0, 0));
-		//MyEllipseR(&memDC, shape.Center, abs(a), abs(b), shape.theta, shape.shapeColor);
-
-		//int rad[2];
-		//rad[0] = sqrt(pow((pts[0].x - pts[1].x), 2) + pow((pts[0].y - pts[1].y), 2)) / 2;
-		//rad[1] = sqrt(pow((pts[0].x - pts[2].x), 2) + pow((pts[0].y - pts[2].y), 2)) / 2;
-		MyEllipseR(&memDC, shape.Center, shape.radin[0], shape.radin[1], shape.R_theta, shape.shapeColor);
-
+		MyEllipseR(&memDC, shape.Center, shape.radin[0], shape.radin[1], shape.theta, shape.shapeColor);
 	}
 	else if (shapeNum == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
 	{
@@ -949,11 +1031,26 @@ void CChildView::drawShape(MyShape& shape)
 		memDC.LineTo(shape.pts[3].x, shape.pts[3].y);
 		memDC.LineTo(shape.pts[0].x, shape.pts[0].y);
 	}
-
+	else if (shapeNum == DrawMode::DTriangle) // 콤보상자에서 사각형 선택시
+	{
+		// 화면에 사각형을 그린다.
+		memDC.MoveTo(shape.pts[0].x, shape.pts[0].y);
+		memDC.LineTo(shape.pts[1].x, shape.pts[1].y);
+		memDC.LineTo(shape.pts[2].x, shape.pts[2].y);
+		//memDC.LineTo(shape.pts[3].x, shape.pts[3].y);
+		memDC.LineTo(shape.pts[0].x, shape.pts[0].y);
+	}
+	else if (shapeNum == DrawMode::DCrossHair) // 콤보상자에서 사각형 선택시
+	{
+		// 화면에 사각형을 그린다.
+		memDC.MoveTo(shape.pts[0].x, shape.pts[0].y);
+		memDC.LineTo(shape.pts[1].x, shape.pts[1].y);
+		memDC.MoveTo(shape.pts[2].x, shape.pts[2].y);
+		memDC.LineTo(shape.pts[3].x, shape.pts[3].y);
+	}
 	memDC.SelectObject(oldPen); // 이전 팬 선택		
 	myPen.DeleteObject();  // 생성한 펜 메모리에서 제거		
-	//memDC.SelectObject(pOldBrush);
-	//DeleteObject(brush);
+	DeleteObject(oldPen);
 }
 
 // 선택 그리기
@@ -961,9 +1058,9 @@ void CChildView::SelectDrawShape(MyShape& shape)
 {
 	CDC* dc = GetDC();
 	int shapeNum = shape.shapeType;
-
+	double thickness = shape.thickness;
 	// 선택 실선
-	CPen* pen = new CPen(PS_DOT, 1, BLACK_PEN);
+	CPen* pen = new CPen(PS_DOT, thickness, BLACK_PEN);
 	CPen* oldPen;
 	oldPen = memDC.SelectObject(pen);
 	memDC.SelectStockObject(NULL_BRUSH);
@@ -974,7 +1071,6 @@ void CChildView::SelectDrawShape(MyShape& shape)
 	}
 	else if (shape.shapeType == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
 	{
-		// 화면에 사각형을 그린다.
 		memDC.MoveTo(shape.pts[0].x, shape.pts[0].y);
 		memDC.LineTo(shape.pts[1].x, shape.pts[1].y);
 		memDC.LineTo(shape.pts[2].x, shape.pts[2].y);
@@ -983,24 +1079,22 @@ void CChildView::SelectDrawShape(MyShape& shape)
 	}
 	else if (shape.shapeType == DrawMode::DEllipse)
 	{
-		pen = new CPen(PS_DOT, 1, RGB(0, 0, 0));
-		oldPen = memDC.SelectObject(pen);
-		memDC.SelectStockObject(WHITE_BRUSH);
-		vector<CPoint>& pts = shape.pts;
-		//int a = (data[chosenShape].pts[0].x - data[chosenShape].pts[1].x) / 2;
-		//int b = (data[chosenShape].pts[0].y - data[chosenShape].pts[2].y) / 2;
-		//MyEllipseR(&memDC, CPoint(shape.Center.x, shape.Center.y), a, b, data[chosenShape].theta, data[chosenShape].shapeColor);
-
-		//int rad[2];
-		//rad[0] = sqrt(pow((pts[0].x - pts[1].x), 2) + pow((pts[0].y - pts[1].y), 2))/2;
-		//rad[1] = sqrt(pow((pts[0].x - pts[2].x), 2) + pow((pts[0].y - pts[2].y), 2))/2;
-		//MyEllipseR(&memDC, data[chosenShape].Center, rad[0], rad[1], data[chosenShape].theta, data[chosenShape].shapeColor);
-		//int rad[2];
-		//rad[0] = ((EllipseShape*)(shape.This))->radin[0];
-		//rad[1] = ((EllipseShape*)(shape.This))->radin[1];
-		//MyEllipseR(&memDC, shape.Center, shape.radin[0], shape.radin[1], shape.R_theta, shape.shapeColor);
 		MyEllipsePS_DOT(&memDC, shape.Center, shape.radin[0], shape.radin[1], shape.R_theta);
-	
+	}
+	else if (shape.shapeType == DrawMode::DTriangle) // 콤보상자에서 사각형 선택시
+	{
+		memDC.MoveTo(shape.pts[0].x, shape.pts[0].y);
+		memDC.LineTo(shape.pts[1].x, shape.pts[1].y);
+		memDC.LineTo(shape.pts[2].x, shape.pts[2].y);
+		//memDC.LineTo(shape.pts[3].x, shape.pts[3].y);
+		memDC.LineTo(shape.pts[0].x, shape.pts[0].y);
+	}
+	else if (shape.shapeType == DrawMode::DCrossHair) // 콤보상자에서 사각형 선택시
+	{
+		memDC.MoveTo(shape.pts[0].x, shape.pts[0].y);
+		memDC.LineTo(shape.pts[1].x, shape.pts[1].y);
+		memDC.MoveTo(shape.pts[2].x, shape.pts[2].y);
+		memDC.LineTo(shape.pts[3].x, shape.pts[3].y);
 	}
 	memDC.SelectObject(&oldPen);
 
@@ -1022,43 +1116,69 @@ void CChildView::SelectDrawShape(MyShape& shape)
 
 	// 회전 선택
 	if (rotateClick == TRUE) {
-		pen = new CPen(PS_SOLID, 1, RGB(0, 255, 0));
+		pen = new CPen(PS_SOLID, thickness, RGB(0, 255, 0));
 		memDC.SelectObject(pen);
-		//memDC.SelectStockObject(PS_SOLID);
+		// 시작
+		RectCount = shape.pts.size();
+		if (shape.RotatePts.size() > 0)
+		{
+
+			// 사각형 OR 직선
+			if (shape.shapeType == DrawMode::DCrossHair)
+			{
+				memDC.MoveTo(shape.RotatePts[0].x, shape.RotatePts[0].y);
+				memDC.LineTo(shape.RotatePts[1].x, shape.RotatePts[1].y);
+				memDC.MoveTo(shape.RotatePts[2].x, shape.RotatePts[2].y);
+				memDC.LineTo(shape.RotatePts[3].x, shape.RotatePts[3].y);
+			}
+			else if (shape.shapeType == DrawMode::DEllipse)
+			{
+				MyEllipseR(&memDC, shape.Center, shape.radin[0], shape.radin[1], shape.R_theta, shape.shapeColor);
+			}
+			//else if (shape.shapeType != DrawMode::DEllipse) 
+			else
+			{
+				memDC.MoveTo(data[SelectIndex].RotatePts[0].x, data[SelectIndex].RotatePts[0].y);
+				for (int i = 1; i < data[SelectIndex].RotatePts.size(); i++)
+					memDC.LineTo(data[SelectIndex].RotatePts[i].x, data[SelectIndex].RotatePts[i].y);
+				memDC.LineTo(data[SelectIndex].RotatePts[0].x, data[SelectIndex].RotatePts[0].y);
+			}
+			Rotate.x = x;
+			Rotate.y = y;
+		}
+		memDC.SelectObject(&oldPen);
+	}
+	if (panID == TRUE) {
+		pen = new CPen(PS_SOLID, thickness, RGB(0, 255, 0));
+		memDC.SelectObject(pen);
 		// 시작
 		RectCount = shape.pts.size();
 		if (shape.RotatePts.size() > 0)
 		{
 			// 사각형 OR 직선
-			if (shape.shapeType != DrawMode::DEllipse) {
-				memDC.MoveTo(data[chosenShape].RotatePts[0].x, data[chosenShape].RotatePts[0].y);
-				for (int i = 1; i < data[chosenShape].RotatePts.size(); i++)
-					memDC.LineTo(data[chosenShape].RotatePts[i].x, data[chosenShape].RotatePts[i].y);
-				memDC.LineTo(data[chosenShape].RotatePts[0].x, data[chosenShape].RotatePts[0].y);
-			}
-			// 원
-			else if(shape.shapeType == DrawMode::DEllipse)
+			if (shape.shapeType == DrawMode::DCrossHair)
 			{
-				vector<CPoint>& pts = data[chosenShape].pts;
-				//int a = (data[chosenShape].pts[0].x - data[chosenShape].pts[1].x) / 2;
-				//int b = (data[chosenShape].pts[0].y - data[chosenShape].pts[2].y) / 2;
-				//MyEllipseR(&memDC, CPoint(shape.Center.x, shape.Center.y), a, b, data[chosenShape].theta, data[chosenShape].shapeColor);
-
-				//int rad[2];
-				//rad[0] = sqrt(pow((pts[0].x - pts[1].x), 2) + pow((pts[0].y - pts[1].y), 2)) / 2;
-				//rad[1] = sqrt(pow((pts[0].x - pts[2].x), 2) + pow((pts[0].y - pts[2].y), 2)) / 2;
-				//MyEllipseR(&memDC, data[chosenShape].Center, rad[0], rad[1], data[chosenShape].theta, data[chosenShape].shapeColor);
-				//int rad[2];
-				//rad[0] = ((EllipseShape*)(shape.This))->radin[0];
-				//rad[1] = ((EllipseShape*)(shape.This))->radin[1];
-				MyEllipseR(&memDC, shape.Center, shape.radin[0], shape.radin[1], shape.R_theta, shape.shapeColor);
+				memDC.MoveTo(shape.RotatePts[0].x, shape.RotatePts[0].y);
+				memDC.LineTo(shape.RotatePts[1].x, shape.RotatePts[1].y);
+				memDC.MoveTo(shape.RotatePts[2].x, shape.RotatePts[2].y);
+				memDC.LineTo(shape.RotatePts[3].x, shape.RotatePts[3].y);
+			}
+			else if (shape.shapeType == DrawMode::DEllipse)
+			{
+				MyEllipseR(&memDC, shape.Center, shape.radin[0], shape.radin[1], shape.R_theta, RGB(0, 255, 0));
+			}
+			//else if (shape.shapeType != DrawMode::DEllipse) 
+			else
+			{
+				memDC.MoveTo(data[SelectIndex].RotatePts[0].x, data[SelectIndex].RotatePts[0].y);
+				for (int i = 1; i < data[SelectIndex].RotatePts.size(); i++)
+					memDC.LineTo(data[SelectIndex].RotatePts[i].x, data[SelectIndex].RotatePts[i].y);
+				memDC.LineTo(data[SelectIndex].RotatePts[0].x, data[SelectIndex].RotatePts[0].y);
 			}
 
-			Rotate.x = x;
-			Rotate.y = y;
 		}
+		memDC.SelectObject(&oldPen);
 	}
-	memDC.SelectObject(&oldPen);
 	DeleteObject(pen);
 	DeleteObject(oldPen);
 }
@@ -1077,6 +1197,13 @@ void CChildView::OnRectangle()
 	drawID = TRUE;
 }
 
+void CChildView::OnTriangle()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	drawStyle = DrawMode::DTriangle;
+	drawID = TRUE;
+}
+
 void CChildView::OnEllipse()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
@@ -1084,9 +1211,17 @@ void CChildView::OnEllipse()
 	drawID = TRUE;
 }
 
-bool CChildView::isInside(CPoint& pt, vector<CPoint>& pts) 
+void CChildView::OnCrosshair()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	drawStyle = DrawMode::DCrossHair;
+	drawID = TRUE;
+}
+
+bool CChildView::isInside(CPoint& pt, vector<Point2d>& pts) 
 {
 	//crosses는 점q와 오른쪽 반직선과 다각형과의 교점의 개수
+	Point temp;
 	int crosses = 0;
 	for (int i = 0; i < pts.size(); i++) {
 		int j = (i + 1) % pts.size();
@@ -1102,120 +1237,63 @@ bool CChildView::isInside(CPoint& pt, vector<CPoint>& pts)
 	return crosses % 2 > 0;
 }
 
-void CChildView::plot_circle_points(CDC* pDC, int cx, int cy, int x, int y)
-{
-	pDC->SetPixel(cx + x, cy + y, RGB(0, 0, 0));
-	pDC->SetPixel(cx - x, cy + y, RGB(0, 0, 0));
-	pDC->SetPixel(cx + x, cy - y, RGB(0, 0, 0));
-	pDC->SetPixel(cx - x, cy - y, RGB(0, 0, 0));
-	pDC->SetPixel(cx + y, cy + x, RGB(0, 0, 0));
-	pDC->SetPixel(cx - y, cy + x, RGB(0, 0, 0));
-	pDC->SetPixel(cx + y, cy - x, RGB(0, 0, 0));
-	pDC->SetPixel(cx - y, cy - x, RGB(0, 0, 0));
-}
-
-void CChildView::Circle(CDC* pDC, int cx, int cy, int rad)
-{
-	int p, x, y;
-
-	x = 0;
-	y = rad;
-	p = 3 - 2 * rad;
-
-	while (x < y)
-	{
-		plot_circle_points(pDC, cx, cy, x, y);
-		if (p < 0)
-			p = p + 4 * x + 6;
-		else
-			p = p + 4 * (x - y) + 10, y--;
-		x++;
-	}
-
-	if (x == y)
-		plot_circle_points(pDC, cx, cy, x, y);
-
-}
-
-void CChildView::MyEllipse(CDC* parm_dc, int parm_x, int parm_y, int parm_rx, int parm_ry, COLORREF parm_color)
-{
-	// 직선 알고리즘 추가
-	CPoint pt;
-	pt.x = parm_x + int(sin(0 * CV_PI / 180) * parm_rx);
-	pt.y = parm_y + int(cos(0 * CV_PI / 180) * parm_ry);
-	parm_dc->SetPixel(pt.x, pt.y, parm_color);
-	for (int i = 1; i < 360; i++) {
-		parm_dc->MoveTo(pt);
-		pt.x = parm_x + int(sin(i * CV_PI / 180) * parm_rx),
-		pt.y = parm_y + int(cos(i * CV_PI / 180) * parm_ry),
-		parm_dc->LineTo(pt);
-		parm_dc->SetPixel(pt.x, pt.y, parm_color);
-	}
-
-	// 기본 점
-	//for (int i = 0; i < 360; i++) {
-	//	parm_dc->SetPixel(
-	//		parm_x + int(sin(i * CV_PI / 180) * parm_rx),
-	//		parm_y + int(cos(i * CV_PI / 180) * parm_ry),
-	//		parm_color
-	//	);
-	//}
-}
-
-void CChildView::MyEllipseR(CDC* parm_dc, CPoint Center, int radinX, int radinY,double theta ,COLORREF parm_color)
+void CChildView::MyEllipseR(CDC* parm_dc, Point2d Center, int radinX, int radinY,double theta ,COLORREF parm_color)
 {
 	// 직선 알고리즘 추가
 	CPoint pt;
 	CPoint Rotatept;
 	pt.x = Center.x + int(sin(0 * CV_PI / 180) * radinX);
 	pt.y = Center.y + int(cos(0 * CV_PI / 180) * radinY);
-	Rotatept.x = cvRound((pt.x - Center.x) * cos(theta) + (pt.y - Center.y) * sin(theta) + Center.x);
-	Rotatept.y = cvRound(-(pt.x - Center.x) * sin(theta) + (pt.y - Center.y) * cos(theta) + Center.y);
+	Rotatept.x = cvRound((pt.x - Center.x) * cos(theta) - (pt.y - Center.y) * sin(theta) + Center.x);
+	Rotatept.y = cvRound((pt.x - Center.x) * sin(theta) + (pt.y - Center.y) * cos(theta) + Center.y);
 	parm_dc->SetPixel(Rotatept, parm_color);
 	for (int i = 1; i < 360; i++) {
 		parm_dc->MoveTo(Rotatept);
 		pt.x = Center.x + int(sin(i * CV_PI / 180) * radinX);
 		pt.y = Center.y + int(cos(i * CV_PI / 180) * radinY);
 
-		Rotatept.x = cvRound((pt.x - Center.x) * cos(theta) + (pt.y - Center.y) * sin(theta) + Center.x);
-		Rotatept.y = cvRound(-(pt.x - Center.x) * sin(theta) + (pt.y - Center.y) * cos(theta) + Center.y);
+		Rotatept.x = cvRound((pt.x - Center.x) * cos(theta) - (pt.y - Center.y) * sin(theta) + Center.x);
+		Rotatept.y = cvRound((pt.x - Center.x) * sin(theta) + (pt.y - Center.y) * cos(theta) + Center.y);
 
 		parm_dc->LineTo(Rotatept);
 		parm_dc->SetPixel(Rotatept, parm_color);
 	}
-
-	// 기본 점
-	//for (int i = 0; i < 360; i++) {
-	//	parm_dc->SetPixel(
-	//		parm_x + int(sin(i * CV_PI / 180) * parm_rx),
-	//		parm_y + int(cos(i * CV_PI / 180) * parm_ry),
-	//		parm_color
-	//	);
-	//}
 }
 
-
-
-void CChildView::MyEllipsePS_DOT(CDC* parm_dc, CPoint Center, int radinX, int radinY, double theta)
+void CChildView::MyEllipsePS_DOT(CDC* parm_dc, Point2d Center, int radinX, int radinY, double theta)
 {
 	// 직선 알고리즘 추가
+	int cnt = 0;
 	CPoint pt;
 	CPoint Rotatept;
+	CPen* pen1 = new CPen(PS_SOLID, 1, RGB(0, 0, 0));
+	CPen* pen2 = new CPen(PS_SOLID, 1, RGB(255, 255, 255));
+	CPen* oldPen;
+	oldPen = memDC.SelectObject(pen1);
+	memDC.SelectStockObject(NULL_BRUSH);
+	memDC.SelectObject(&oldPen);
+
+
 	pt.x = Center.x + int(sin(0 * CV_PI / 180) * radinX);
 	pt.y = Center.y + int(cos(0 * CV_PI / 180) * radinY);
-	Rotatept.x = cvRound((pt.x - Center.x) * cos(theta) + (pt.y - Center.y) * sin(theta) + Center.x);
-	Rotatept.y = cvRound(-(pt.x - Center.x) * sin(theta) + (pt.y - Center.y) * cos(theta) + Center.y);
+	Rotatept.x = cvRound((pt.x - Center.x) * cos(theta) - (pt.y - Center.y) * sin(theta) + Center.x);
+	Rotatept.y = cvRound((pt.x - Center.x) * sin(theta) + (pt.y - Center.y) * cos(theta) + Center.y);
 	parm_dc->SetPixel(Rotatept, RGB(0,0,0));
 	for (int i = 1; i < 360; i++) {
-		if (i / 2 == 0) {
+		if (i % 5 == 0)
+			cnt++;
+		if (cnt % 2 == 0) {
 			parm_dc->MoveTo(Rotatept);
 			pt.x = Center.x + int(sin(i * CV_PI / 180) * radinX);
 			pt.y = Center.y + int(cos(i * CV_PI / 180) * radinY);
 
-			Rotatept.x = cvRound((pt.x - Center.x) * cos(theta) + (pt.y - Center.y) * sin(theta) + Center.x);
-			Rotatept.y = cvRound(-(pt.x - Center.x) * sin(theta) + (pt.y - Center.y) * cos(theta) + Center.y);
+			Rotatept.x = cvRound((pt.x - Center.x) * cos(theta) - (pt.y - Center.y) * sin(theta) + Center.x);
+			Rotatept.y = cvRound((pt.x - Center.x) * sin(theta) + (pt.y - Center.y) * cos(theta) + Center.y);
 
+			oldPen = memDC.SelectObject(pen1);
+			memDC.SelectStockObject(NULL_BRUSH);
 			parm_dc->LineTo(Rotatept);
+			memDC.SelectObject(&oldPen);
 			parm_dc->SetPixel(Rotatept, RGB(0, 0, 0));
 		}
 		else
@@ -1224,11 +1302,115 @@ void CChildView::MyEllipsePS_DOT(CDC* parm_dc, CPoint Center, int radinX, int ra
 			pt.x = Center.x + int(sin(i * CV_PI / 180) * radinX);
 			pt.y = Center.y + int(cos(i * CV_PI / 180) * radinY);
 
-			Rotatept.x = cvRound((pt.x - Center.x) * cos(theta) + (pt.y - Center.y) * sin(theta) + Center.x);
-			Rotatept.y = cvRound(-(pt.x - Center.x) * sin(theta) + (pt.y - Center.y) * cos(theta) + Center.y);
+			Rotatept.x = cvRound((pt.x - Center.x) * cos(theta) - (pt.y - Center.y) * sin(theta) + Center.x);
+			Rotatept.y = cvRound((pt.x - Center.x) * sin(theta) + (pt.y - Center.y) * cos(theta) + Center.y);
 
+			oldPen = memDC.SelectObject(pen2);
+			memDC.SelectStockObject(NULL_BRUSH);
 			parm_dc->LineTo(Rotatept);
+			memDC.SelectObject(&oldPen);
 			parm_dc->SetPixel(Rotatept, RGB(255, 255, 255));
 		}
 	}
+	DeleteObject(pen1);
+	DeleteObject(pen2);
+	DeleteObject(oldPen);
+}
+
+Point2d CChildView::Intersection(Point2d& pt, Point2d& LinePt1, Point2d& LinePt2)
+{
+	Point2d result_2d;
+	Point2d result;
+	double A, B, t_A, t_B;
+	if ((LinePt1.x - LinePt2.x) != 0 && LinePt1.y - LinePt2.y != 0) {
+		A = (LinePt1.y - LinePt2.y) / (LinePt1.x - LinePt2.x);
+		B = LinePt1.y - A * LinePt1.x;
+		t_A = -1 / A;
+		t_B = pt.y - t_A * pt.x;
+
+		result_2d.x = (t_B - B) / (A - t_A);
+		result_2d.y = result_2d.x * A + B;
+		result.x = result_2d.x;
+		result.y = result_2d.y;
+		return result;
+	}
+	else if(LinePt1.x - LinePt2.x == 0){
+		result.x = LinePt1.x;
+		result.y = pt.y;
+		return result;
+	}
+	else if (LinePt1.y - LinePt2.y == 0) {
+		result.x = pt.x;
+		result.y = LinePt1.y;
+		return result;
+	}
+}
+
+void CChildView:: SelectShapeRectUpdate()
+{
+	if (chooseID == FALSE)
+		return;
+	Point2d pt;
+	RectCount = data[SelectIndex].pts.size();
+	for (int i = 0; i < RectCount; i++)
+	{
+		pt = data[SelectIndex].pts[i];
+		rRect[i].SetRect(pt.x - 5, pt.y - 5, pt.x + 5, pt.y + 5);
+	}
+}
+
+void CChildView::SelectShapeUpdate()
+{
+	if (chooseID == FALSE)
+		return;
+
+	//  중심 업데이트
+	Point2d pt(0,0);
+	RectCount = data[SelectIndex].pts.size();
+	for (int i = 0; i < RectCount; i++)
+		pt += data[SelectIndex].pts[i];
+
+	data[SelectIndex].Center = pt / RectCount;
+	data[SelectIndex].Rotate = data[SelectIndex].Center;
+	data[SelectIndex].Rotate.y -= 15;
+	this->Center = data[SelectIndex].Center;
+	this->Rotate = data[SelectIndex].Rotate;
+
+	// 사각 업데이트
+	for (int i = 0; i < RectCount; i++)
+	{
+		pt = data[SelectIndex].pts[i];
+		rRect[i].SetRect(pt.x - 5, pt.y - 5, pt.x + 5, pt.y + 5);
+	}
+
+	// 각도 업데이트
+	data[SelectIndex].RotatePts = data[SelectIndex].pts;
+	data[SelectIndex].R_theta = data[SelectIndex].theta;
+
+	if (data[SelectIndex].shapeType == DrawMode::DEllipse)
+	{
+		pt = data[SelectIndex].pts[0] - data[SelectIndex].pts[1];
+		data[SelectIndex].radin[0] = sqrt(pow(pt.x, 2) + pow(pt.y, 2))/2;
+		pt = data[SelectIndex].pts[1] - data[SelectIndex].pts[2];
+		data[SelectIndex].radin[1] = sqrt(pow(pt.x, 2) + pow(pt.y, 2))/2;
+	}
+
+}
+
+void CChildView::SelectShpaeCenterUpdate()
+{
+	if (chooseID == FALSE)
+		return;
+
+	Point2d pt(0, 0);
+	RectCount = data[SelectIndex].pts.size();
+	for (int i = 0; i < data[SelectIndex].pts.size(); i++)
+		pt += data[SelectIndex].pts[i];
+
+	data[SelectIndex].Center = pt / RectCount;
+	data[SelectIndex].Rotate = data[SelectIndex].Center;
+	data[SelectIndex].Rotate.y -= 15;
+	this->Center = data[SelectIndex].Center;
+	this->Rotate = data[SelectIndex].Rotate;
+
 }
