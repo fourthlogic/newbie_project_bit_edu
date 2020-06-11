@@ -1,8 +1,7 @@
 ﻿#pragma once
 #include "MainFrm.h"
-#include "CImgViewerDoc.h"
 #include "CircleDection.h"
-
+#include <ctime>
 // COptionFormView 폼 보기
 
 class COptionFormView : public CFormView
@@ -47,6 +46,8 @@ public:
 	afx_msg void OnAppExit();					// 끝내기
 	afx_msg void OnBnClickedButtonDo();			// 실행버튼
 	afx_msg void OnBnClickedButtonOptionSave();	// 설정파일 저장버튼
+	int m_nRuntime;
+	afx_msg void OnEnChangeEditOptionDist();
 };
 
 

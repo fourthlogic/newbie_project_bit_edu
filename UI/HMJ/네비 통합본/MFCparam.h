@@ -8,11 +8,11 @@
 #endif
 
 #include "resource.h"       // 주 기호입니다.
+#include "MainFrm.h"
+
 #include "CImgViewerFrame.h"
 #include "CImgViewerDoc.h"
 #include "CImgViewerView.h"
-
-#include "MainFrm.h"
 
 #include "COptionFrame.h"
 #include "COptionDoc.h"
@@ -41,12 +41,28 @@ public:
 	afx_msg void OnAppAbout();
 	DECLARE_MESSAGE_MAP()
 public:
+	CMultiDocTemplate* pDocTemplate1; // 파라미터 템플릿
+	CMultiDocTemplate* pDocTemplate2; // 이미지뷰어 템플릿
+	CMultiDocTemplate* pDocTemplate3; // 네비게이터 템플릿
+	// 설정 창
+	COptionDoc* pOptionDoc = NULL;
+	COptionFormView* pOptionView = NULL;
+	COptionFrame* pOptionFrame = NULL;
+	// 이미지뷰어 창
+	CImgViewerDoc* pImgViewerDoc = NULL;
+	CImgViewerView* pImgViewerView = NULL;
+	CImgViewerFrame* pImgViewerFrame = NULL;
+	// 네비게이터 창
+	CNavigatorDoc* pNavigatorDoc = NULL;
+	CNavigatorView* pNavigatorView = NULL;
+	CNavigatorFrame* pNavigatorFrame = NULL;
+
 	afx_msg void OnFileOpen();
-	CMultiDocTemplate* pDocTemplate1;
-	CMultiDocTemplate* pDocTemplate2;
-	CMultiDocTemplate* pDocTemplate3;
+	afx_msg void OnFileSaveWithshape();
+	afx_msg void OnFileSaveOnlyimg();
 	afx_msg void OnAppExit();
 	afx_msg void OnOptionOpen();
+	afx_msg void OnOptionSave();
 };
 
 extern CMFCparamApp theApp;

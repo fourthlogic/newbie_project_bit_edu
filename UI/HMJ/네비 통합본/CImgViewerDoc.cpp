@@ -23,7 +23,7 @@
 IMPLEMENT_DYNCREATE(CImgViewerDoc, CDocument)
 
 BEGIN_MESSAGE_MAP(CImgViewerDoc, CDocument)
-	ON_COMMAND(ID_FILE_OPEN, &CImgViewerDoc::OnFileOpen)
+
 END_MESSAGE_MAP()
 
 
@@ -138,20 +138,3 @@ void CImgViewerDoc::Dump(CDumpContext& dc) const
 
 // CMFCparamDoc 명령
 
-
-void CImgViewerDoc::OnFileOpen()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	//m_Algorithm.SelectImage();
-	//result_mat = m_Algorithm.GetResultImage();
-	//result_bmp = m_Algorithm.MatToBitmap(result_mat);
-	//
-	//POSITION posImgViewerView = GetFirstViewPosition();
-	//CImgViewerView* pImgViewerView = (CImgViewerView*)GetNextView(posImgViewerView);
-	//pImgViewerView->m_background.Detach();
-	//pImgViewerView->m_background.Attach(result_bmp);
-	//pImgViewerView->m_background.GetBitmap(&pImgViewerView->m_Bitmap);
-
-	//pImgViewerView->m_hbackground = m_Algorithm.MatToBitmap(result_mat);
-
-}

@@ -27,7 +27,7 @@ COptionDoc::~COptionDoc()
 
 
 BEGIN_MESSAGE_MAP(COptionDoc, CDocument)
-	ON_COMMAND(ID_OPTION_OPEN, &COptionDoc::OnOptionOpen)
+	//ON_COMMAND(ID_OPTION_OPEN, &COptionDoc::OnOptionOpen)
 END_MESSAGE_MAP()
 
 

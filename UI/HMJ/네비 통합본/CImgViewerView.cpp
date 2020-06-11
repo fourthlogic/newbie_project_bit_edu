@@ -81,7 +81,7 @@ BEGIN_MESSAGE_MAP(CImgViewerView, CView)
 	ON_WM_MBUTTONDOWN()
 	ON_WM_MBUTTONUP()
 	ON_WM_PAINT()
-	ON_COMMAND(ID_FILE_OPEN, &CImgViewerView::OnFileOpen)
+	//ON_COMMAND(ID_FILE_OPEN, &CImgViewerView::OnFileOpen)
 	ON_WM_CONTEXTMENU()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
@@ -138,7 +138,7 @@ void CImgViewerView::OnDraw(CDC* /*pDC*/)
 	ASSERT_VALID(pDoc);
 	if (!pDoc)
 		return;
-	
+
 	// TODO: 여기에 원시 데이터에 대한 그리기 코드를 추가합니다.
 }
 
@@ -177,6 +177,7 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	CWnd::OnMouseMove(nFlags, point);
+
 	m_pos = point;
 	int i = 0;
 	//패닝
@@ -219,6 +220,15 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 			if (m_sPt.y > point.y) // 위로 올렸을때
 			{
 				m_ePt.y += m_sPt.y - point.y;
+
+				printf("m_ePt.y : %d ", m_ePt.y);
+				printf("m_bgRect.right : %d ", m_bgRect.right);
+				printf("m_bgRect.bottom : %d ", m_bgRect.bottom);
+				printf("PHeight : %f ", PHeight);
+				printf("zoomWidth : %f ", zoomWidth);
+				printf("zoomHeight : %f ", zoomHeight);
+				printf("z_pos.y : %d ", z_pos.y);
+				printf("\n");
 
 				if (m_ePt.y + m_bgRect.bottom - (PHeight * (int)(zoomHeight + 2)) >= 0)
 				{
@@ -265,6 +275,9 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 			m_ePt.y = 0;
 
 		m_sPt = point;
+		//----------------------------------------------------------------
+		imgViewer2Navigator();
+
 		Invalidate();
 		UpdateWindow();
 	}
@@ -357,8 +370,8 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 		ePt.x = point.x;
 		ePt.y = point.y;
 
-		mov_Pt.x = (z_pos.x + (m_ePt.x + pts.x) / PWidth);
-		mov_Pt.y = (z_pos.y + (m_ePt.y + pts.y) / PHeight);
+		mov_Pt.x = (z_pos.x + (m_ePt.x + point.x) / PWidth);
+		mov_Pt.y = (z_pos.y + (m_ePt.y + point.y) / PHeight);
 		shape.rect.right = mov_Pt.x;
 		shape.rect.bottom = mov_Pt.y;
 		shape.isClicked = true;
@@ -448,12 +461,24 @@ BOOL CImgViewerView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	zoomWidth = zoomWidth * zoomScale;
 	zoomHeight = zoomHeight * zoomScale;
 
+	printf("zoomWidth : %f ", zoomWidth);
+	printf("zoomHeight : %f ", zoomHeight);
+	printf("\n");
+
 	printWidth = zoomWidth * zoomView;
 	printHeight = zoomHeight * zoomView;
+
+	printf("printWidth : %f ", printWidth);
+	printf("printHeight : %f ", printHeight);
+	printf("\n");
 
 	//픽셀 크기
 	PWidth = (printWidth) / (zoomWidth);
 	PHeight = (printHeight) / (zoomHeight);
+
+	printf("PWidth : %f ", PWidth);
+	printf("PHeight : %f ", PHeight);
+	printf("\n");
 
 	after_Image_pos.x = z_pos.x + (m_ePt.x + m_pos.x) / PWidth;
 	after_Image_pos.y = z_pos.y + (m_ePt.y + m_pos.y) / PHeight;
@@ -550,6 +575,9 @@ BOOL CImgViewerView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	if (z_pos.y <= 0)
 		z_pos.y = 0;
 
+	//---------------------------------------------------------
+	imgViewer2Navigator();
+	//---------------------------------------------------------
 
 	Invalidate();
 	return CWnd::OnMouseWheel(nFlags, zDelta, pt);
@@ -558,7 +586,9 @@ BOOL CImgViewerView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 void CImgViewerView::OnMButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
 	CView::OnMButtonDown(nFlags, point);
+
 	SetCapture();
 	m_sPt = point;
 }
@@ -597,6 +627,10 @@ void CImgViewerView::OnMButtonUp(UINT nFlags, CPoint point)
 		m_ePt.y = PHeight * (int)(zoomHeight + 2) - m_bgRect.bottom;
 	}
 
+	//-------------------------------------------------------
+	imgViewer2Navigator();
+	//---------------------------------------------------------
+
 	ReleaseCapture();
 	Invalidate();
 }
@@ -612,10 +646,8 @@ void CImgViewerView::OnPaint()
 	m_background.Detach();
 	if (!m_background.Attach(::CopyImage(result_bmp, IMAGE_BITMAP, 0, 0, 0)))
 	{
-		isAttach = FALSE;
 		return;
 	}
-	isAttach = TRUE;
 
 	memDC.CreateCompatibleDC(pDC);
 	mdcOffScreen.CreateCompatibleDC(pDC);
@@ -704,9 +736,9 @@ void CImgViewerView::OnPaint()
 void CImgViewerView::OnFileOpen()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
-	COptionFormView* pView = pMain->pOptionView; // 설정 창 View 포인터
-	CNavigatorView* pView1 = pMain->pNavigatorView;
+	//CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
+	//COptionFormView* pView = pMain->pOptionView; // 설정 창 View 포인터
+	//CNavigatorView* pView1 = pMain->pNavigatorView;
 
 	if (!m_Algorithm.SelectImage())
 		return;
@@ -721,30 +753,33 @@ void CImgViewerView::OnFileOpen()
 	m_background.Attach(result_bmp);
 	m_background.GetBitmap(&m_Bitmap);
 
-	zoomWidth = m_Bitmap.bmWidth;
-	zoomHeight = m_Bitmap.bmHeight;
+	//zoomWidth = m_bgRect.right;
+	//zoomHeight = m_bgRect.bottom;
+
+	zoomWidth = m_bgRect.right;
+	zoomHeight = m_bgRect.bottom;
 
 	m_ePt.x = 0;
 	m_ePt.y = 0;
 
-	z_pos.x = 1;
-	z_pos.y = 1;
+	z_pos.x = 0;
+	z_pos.y = 0;
 
 	PWidth = 1;
 	PHeight = 1;
 
 	zoomView = 1;
 	rectScale = 1;
-	printWidth = zoomWidth;
-	printHeight = zoomHeight;
+	printWidth = m_Bitmap.bmWidth;
+	printHeight = m_Bitmap.bmHeight;
 
 	start_pos.x = 0;
 	start_pos.y = 0;
 
-	PWidth = m_Bitmap.bmWidth / zoomWidth;
-	PHeight = m_Bitmap.bmHeight / zoomHeight;
+	PWidth = 1;
+	PHeight = 1;
 
-	pView1->OnFileOpen();
+	//pView1->OnFileOpen();
 
 	Invalidate(FALSE);
 }
@@ -1538,6 +1573,7 @@ int CImgViewerView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;
 
 	// TODO:  여기에 특수화된 작성 코드를 추가합니다.
+
 	drawID = true;
 	panID = false;
 	l_width = 1;
@@ -1549,7 +1585,6 @@ int CImgViewerView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	ctrl = false;
 	iscopy = false;
 	drawStyle = DrawMode::None;
-	isAttach = false;
 	return 0;
 }
 
@@ -1557,7 +1592,7 @@ int CImgViewerView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 BOOL CImgViewerView::OnEraseBkgnd(CDC* pDC)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-	if (!isAttach)
+	if (!m_Algorithm.isReady())
 	{
 		CBrush backBrush(RGB(255, 255, 255));
 
@@ -1570,4 +1605,17 @@ BOOL CImgViewerView::OnEraseBkgnd(CDC* pDC)
 	}
 
 	return FALSE;
+}
+
+void CImgViewerView::imgViewer2Navigator()
+{
+	//CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
+	//CNavigatorView* pView1 = pMain->pNavigatorView;
+
+	float a = z_pos.x + (m_ePt.x) / PWidth;
+	float b = z_pos.y + (m_ePt.y) / PHeight;
+	float c = z_pos.x + (m_ePt.x + m_bgRect.right) / PWidth - a;
+	float d = z_pos.y + (m_ePt.y + m_bgRect.bottom) / PHeight - b;
+
+	theApp.pNavigatorView->GetMouseMove(a, b, c, d);
 }

@@ -128,5 +128,11 @@
     <Image Include="res\icon1.ico">
       <Filter>리소스 파일</Filter>
     </Image>
+    <Image Include="res\포스로직 로고.ico">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="res\FourthLogic.ico">
+      <Filter>리소스 파일</Filter>
+    </Image>
   </ItemGroup>
 </Project>

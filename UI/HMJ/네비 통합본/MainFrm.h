@@ -76,24 +76,23 @@ public:
 	CircleDection Cir;
 
 	CRect m_rect;
-	POSITION posTemplate = NULL, posDocument = NULL, posView = NULL, posFrame = NULL;
-	CMultiDocTemplate* pDocTemplate = NULL;
-	COptionDoc* pOptionDoc = NULL;
-	COptionFormView* pOptionView = NULL;
-	COptionFrame* pOptionFrame = NULL;
-	CImgViewerDoc* pImgViewerDoc = NULL;
-	CImgViewerView* pImgViewerView = NULL;
-	CImgViewerFrame* pImgViewerFrame = NULL;
-	CNavigatorDoc* pNavigatorDoc = NULL;
-	CNavigatorView* pNavigatorView = NULL;
-	CNavigatorFrame* pNavigatorFrame = NULL;
+	//POSITION posTemplate = NULL, posDocument = NULL, posView = NULL, posFrame = NULL;
+	//CMultiDocTemplate* pDocTemplate = NULL;
+	//COptionDoc* pOptionDoc = NULL;
+	//COptionFormView* pOptionView = NULL;
+	//COptionFrame* pOptionFrame = NULL;
+	//CImgViewerDoc* pImgViewerDoc = NULL;
+	//CImgViewerView* pImgViewerView = NULL;
+	//CImgViewerFrame* pImgViewerFrame = NULL;
+	//CNavigatorDoc* pNavigatorDoc = NULL;
+	//CNavigatorView* pNavigatorView = NULL;
+	//CNavigatorFrame* pNavigatorFrame = NULL;
 
 	vector<imageData> imageList;
 	COLORREF color;
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 	afx_msg void OnClose();
 	afx_msg void OnOptionSave();
-	afx_msg void OnFileOpen();
 };
 
 

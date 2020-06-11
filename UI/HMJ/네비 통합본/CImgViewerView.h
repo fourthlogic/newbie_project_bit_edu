@@ -129,9 +129,6 @@ public:
 	MyShape temp;		// 변환 전 도형
 	vector<RollbackInfo> rollback;	//롤백 리스트
 
-	// 이미지 정보 유무
-	bool isAttach = false;
-
 	//사용자 설정 함수
 	void PrintText(CDC* pDC);	//RGB, Pixel 값 출력
 	void DrawTextEx(CDC* pDC, const CString& str, CRect rect, UINT nFormat);	//RGB 센터 출력
@@ -174,6 +171,8 @@ public:
 	afx_msg void OnFileSaveOnlyimg();
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+
+	void CImgViewerView::imgViewer2Navigator();
 };
 
 #ifndef _DEBUG  // MFCparamView.cpp의 디버그 버전

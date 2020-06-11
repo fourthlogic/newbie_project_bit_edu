@@ -32,11 +32,24 @@ public:
 
 	int clientWidth, clientHeight;
 	int bmpWidth, bmpHeight;
-	bool asd = false;
-	
+
 	afx_msg void OnPaint();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnFileOpen();
+
+	void GetMouseMove(float x, float y, float Width, float Height);
+	float Rect_x;
+	float Rect_y;
+	float Rect_Width;
+	float Rect_Height;
+	CRect rect;
+
+	float imgViewer_x, imgViewer_y, imgViewer_Width, imgViewer_Height;
+
+	void CNavigatorView::DrawNavigatorRect();
+	bool isNavigator_Paint = false;
+
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 };
 
 
