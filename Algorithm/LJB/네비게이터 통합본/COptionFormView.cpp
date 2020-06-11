@@ -35,12 +35,12 @@ void COptionFormView::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(COptionFormView, CFormView)
 	ON_BN_CLICKED(IDC_BUTTON_OPTION_SAVE, &COptionFormView::OnBnClickedButtonOptionSave)
-//	ON_WM_CREATE()
 	ON_COMMAND(ID_APP_EXIT, &COptionFormView::OnAppExit)
 	ON_COMMAND(ID_OPTION_OPEN, &COptionFormView::OnOptionOpen)
 	ON_BN_CLICKED(IDC_BUTTON_DO, &COptionFormView::OnBnClickedButtonDo)
 	ON_COMMAND(ID_OPTION_SAVE, &COptionFormView::OnOptionSave)
-//	ON_UPDATE_COMMAND_UI(ID_OPTION_SAVE, &COptionFormView::OnUpdateOptionSave)
+	ON_EN_CHANGE(IDC_EDIT_OPTION_DIST, &COptionFormView::OnEnChangeEditOptionDist)
+	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 
@@ -70,6 +70,7 @@ void COptionFormView::OnInitialUpdate()
 	CFormView::OnInitialUpdate();
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
 	GetParent()->SetWindowText(_T("설정 창"));
+	
 	// 읽기모드 파일 열기
 	CFile saveFile;
 	if (saveFile.Open(_T("saveFile.dat"), CFile::modeRead))
@@ -80,6 +81,7 @@ void COptionFormView::OnInitialUpdate()
 		saveFile.Close();
 	}
 	UpdateData(FALSE);
+
 }
 
 void COptionFormView::OnBnClickedButtonOptionSave() // 설정 창 -> 저장버튼
@@ -110,10 +112,12 @@ void COptionFormView::OnAppExit()
 void COptionFormView::OnBnClickedButtonDo()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	clock_t startTime, endTime;
+	startTime = clock();
 	UpdateData();
 
 	CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
-	CImgViewerView* pView = pMain->pImgViewerView;
+	CImgViewerView* pView = theApp.pImgViewerView;
 	m_nDist = _ttoi(m_strDist);
 	m_nRadMax = _ttoi(m_strRadMax);
 	m_nRadMin = _ttoi(m_strRadMin);
@@ -122,6 +126,9 @@ void COptionFormView::OnBnClickedButtonDo()
 	pView->m_Algorithm.SetDistance(m_nDist);
 	pView->m_Algorithm.SetCircleValue(m_nRadMin, m_nRadMax, m_nBGV);
 	pView->paraChanged();
+	endTime = clock();
+	m_nRuntime = endTime - startTime;
+	UpdateData(FALSE);
 }
 
 void COptionFormView::OnOptionOpen() // 설정파일 열기
@@ -262,4 +269,23 @@ void COptionFormView::OnOptionSave()
 		m_pConnection->Close();
 		m_pConnection = NULL;
 	}
+}
+
+void COptionFormView::OnEnChangeEditOptionDist()
+{
+	// TODO:  RICHEDIT 컨트롤인 경우, 이 컨트롤은
+	// CFormView::OnInitDialog() 함수를 재지정 
+	//하고 마스크에 OR 연산하여 설정된 ENM_CHANGE 플래그를 지정하여 CRichEditCtrl().SetEventMask()를 호출하지 않으면
+	// 이 알림 메시지를 보내지 않습니다.
+
+	// TODO:  여기에 컨트롤 알림 처리기 코드를 추가합니다.
+}
+
+
+void COptionFormView::OnSize(UINT nType, int cx, int cy)
+{
+	CFormView::OnSize(nType, cx, cy);
+
+	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+	Invalidate(FALSE);
 }

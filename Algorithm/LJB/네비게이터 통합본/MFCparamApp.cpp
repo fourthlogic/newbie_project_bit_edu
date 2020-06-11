@@ -19,16 +19,13 @@
 // CMFCparamApp
 
 BEGIN_MESSAGE_MAP(CMFCparamApp, CWinApp)
-	ON_COMMAND(ID_APP_ABOUT, &CMFCparamApp::OnAppAbout)
-	// 표준 파일을 기초로 하는 문서 명령입니다.
-	//ON_COMMAND(ID_FILE_NEW, &CWinApp::OnFileNew)
-	//ON_COMMAND(ID_FILE_OPEN, &CWinApp::OnFileOpen)
-	// 표준 인쇄 설정 명령입니다.
-	ON_COMMAND(ID_FILE_PRINT_SETUP, &CWinApp::OnFilePrintSetup)
-	//ON_COMMAND(ID_FILE_NEW, &CMFCparamApp::OnFileNew)
 	ON_COMMAND(ID_FILE_OPEN, &CMFCparamApp::OnFileOpen)
+	ON_COMMAND(ID_FILE_SAVE_WITHSHAPE, &CMFCparamApp::OnFileSaveWithshape)
+	ON_COMMAND(ID_FILE_SAVE_ONLYIMG, &CMFCparamApp::OnFileSaveOnlyimg)
 	ON_COMMAND(ID_APP_EXIT, &CMFCparamApp::OnAppExit)
 	ON_COMMAND(ID_OPTION_OPEN, &CMFCparamApp::OnOptionOpen)
+	ON_COMMAND(ID_APP_ABOUT, &CMFCparamApp::OnAppAbout)
+	ON_COMMAND(ID_OPTION_SAVE, &CMFCparamApp::OnOptionSave)
 END_MESSAGE_MAP()
 
 
@@ -149,15 +146,31 @@ BOOL CMFCparamApp::InitInstance()
 
 	// Child 프레임 창들을 미리 띄우기 위함
 	pDocTemplate1->OpenDocumentFile(NULL); // 파라미터 창
-	pDocTemplate2->OpenDocumentFile(NULL); // 이미지 뷰 창
 	pDocTemplate3->OpenDocumentFile(NULL); // 네비게이터 창
+	pDocTemplate2->OpenDocumentFile(NULL); // 이미지 뷰 창
 
+	// 윈도우들의 포인터 저장
+	POSITION posDocument = pDocTemplate1->GetFirstDocPosition(); // 도큐먼트 포지션 얻기
+	pOptionDoc = (COptionDoc*)pDocTemplate1->GetNextDoc(posDocument); // 설정창 Doc 포인터
+	POSITION posView = pOptionDoc->GetFirstViewPosition(); // 뷰 포지션 얻기
+	pOptionView = (COptionFormView*)pOptionDoc->GetNextView(posView); // 설정창 View 포인터
+	pOptionFrame = (COptionFrame*)pOptionView->GetParentFrame(); // 설정창 Frame 포인터
+
+	posDocument = pDocTemplate2->GetFirstDocPosition();
+	pImgViewerDoc = (CImgViewerDoc*)pDocTemplate2->GetNextDoc(posDocument); // 이미지뷰 창 Doc 포인터
+	posView = pImgViewerDoc->GetFirstViewPosition();
+	pImgViewerView = (CImgViewerView*)pImgViewerDoc->GetNextView(posView); // 이미지뷰 창 View 포인터
+	pImgViewerFrame = (CImgViewerFrame*)pImgViewerView->GetParentFrame(); // 이미지뷰 창 Frame 포인터
+
+	posDocument = pDocTemplate3->GetFirstDocPosition();
+	pNavigatorDoc = (CNavigatorDoc*)pDocTemplate3->GetNextDoc(posDocument); // 네비게이터 창 Doc 포인터
+	posView = pNavigatorDoc->GetFirstViewPosition();
+	pNavigatorView = (CNavigatorView*)pNavigatorDoc->GetNextView(posView); // 네비게이터 창 View 포인터
+	pNavigatorFrame = (CNavigatorFrame*)pNavigatorView->GetParentFrame(); // 네비게이터 창 Frame 포인터
+	
 	// 주 창이 초기화되었으므로 이를 표시하고 업데이트합니다.
 	pMainFrame->ShowWindow(m_nCmdShow);
 	pMainFrame->UpdateWindow();
-
-
-
 
 	return TRUE;
 }
@@ -214,28 +227,40 @@ void CMFCparamApp::OnAppAbout()
 
 // CMFCparamApp 메시지 처리기
 
-void CMFCparamApp::OnFileOpen()
+void CMFCparamApp::OnFileOpen() // 파일 열기
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	//CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
-	//POSITION posImgViewerDoc = pDocTemplate2->GetFirstDocPosition();
-	//CImgViewerDoc* pImgViewerDoc = (CImgViewerDoc*)pDocTemplate2->GetNextDoc(posImgViewerDoc);
-	//pImgViewerDoc->OnFileOpen();
+	pImgViewerView->OnFileOpen();
+	pNavigatorView->OnFileOpen();
+	pImgViewerView->imgViewer2Navigator();
 }
 
-void CMFCparamApp::OnAppExit()
+void CMFCparamApp::OnFileSaveWithshape() // 파일 저장 - 도형 포함
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
-	COptionFormView* pView = (COptionFormView*)pFrame->pOptionView;
-	pFrame->pOptionView->OnAppExit();
+	pImgViewerView->OnFileSaveWithshape();
 }
 
-void CMFCparamApp::OnOptionOpen()
+void CMFCparamApp::OnFileSaveOnlyimg() // 파일 저장 - 도형 제외
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
-	COptionFormView* pView = (COptionFormView*)pFrame->pOptionView;
-	pFrame->pOptionView->OnOptionOpen();
+	pImgViewerView->OnFileSaveOnlyimg();
 }
 
+void CMFCparamApp::OnAppExit() // 프로그램 종료
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	pOptionView->OnAppExit();
+}
+
+void CMFCparamApp::OnOptionOpen() // 설정파일 열기
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	pOptionView->OnOptionOpen();
+}
+
+void CMFCparamApp::OnOptionSave() // 설정파일 저장
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	pOptionView->OnOptionSave();
+}

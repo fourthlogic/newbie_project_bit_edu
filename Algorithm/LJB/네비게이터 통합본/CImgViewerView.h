@@ -171,6 +171,8 @@ public:
 	afx_msg void OnFileSaveOnlyimg();
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+
+	void CImgViewerView::imgViewer2Navigator();
 };
 
 #ifndef _DEBUG  // MFCparamView.cpp의 디버그 버전
