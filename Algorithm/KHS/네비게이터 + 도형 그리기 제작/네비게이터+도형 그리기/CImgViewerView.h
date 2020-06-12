@@ -22,7 +22,6 @@ struct MyShape
 	COLORREF shapeColor; // 색상
 	vector<Point2d> pts; // 좌표
 	vector<Point2d> RotatePts; // 회전 좌표
-	vector<Point2d> OutlinePts; // 회전 좌표
 	Point2d Center; // 센터
 	Point2d Rotate; // 회전
 	double theta;  // 각
