@@ -37,7 +37,7 @@ public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnFileOpen();
 
-	void GetMouseMove(float x, float y, float Width, float Height);
+	void GetRectPos(float x, float y, float Width, float Height);
 	float Rect_x;
 	float Rect_y;
 	float Rect_Width;
@@ -45,11 +45,17 @@ public:
 	CRect rect;
 
 	float imgViewer_x, imgViewer_y, imgViewer_Width, imgViewer_Height;
+	CPoint m_sPt;
+	float client_x, client_y;
 
 	void CNavigatorView::DrawNavigatorRect();
 	bool isNavigator_Paint = false;
 
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	void CNavigatorView::Navigator2imgViewer();
 };
 
 

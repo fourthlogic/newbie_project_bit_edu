@@ -25,6 +25,9 @@ BEGIN_MESSAGE_MAP(CNavigatorView, CView)
 	ON_WM_SIZE()
 	//ON_COMMAND(ID_FILE_OPEN, &CNavigatorView::OnFileOpen)
 	ON_WM_ERASEBKGND()
+	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONUP()
+	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
 
@@ -79,12 +82,11 @@ void CNavigatorView::OnPaint()
 
 		oldbitmap = mdcOffScreen.SelectObject(&bmpOffScreen);
 		oldbitmap2 = memDC.SelectObject(&m_background);
-
-
-		mdcOffScreen.SetStretchBltMode(HALFTONE);
+		
 
 		if ((bmpWidth * ((float)clientHeight / (float)bmpHeight)) <= clientWidth)
 		{
+			mdcOffScreen.SetStretchBltMode(HALFTONE);
 			mdcOffScreen.StretchBlt(clientWidth / 2 - (bmpWidth * ((float)clientHeight / (float)bmpHeight)) / 2, 0, bmpWidth * ((float)clientHeight / (float)bmpHeight), clientHeight, &memDC,
 				0, 0, bmpWidth, bmpHeight, SRCCOPY);
 
@@ -94,6 +96,7 @@ void CNavigatorView::OnPaint()
 		}
 		else
 		{
+			mdcOffScreen.SetStretchBltMode(HALFTONE);
 			mdcOffScreen.StretchBlt(0, clientHeight / 2 - (bmpHeight * ((float)clientWidth / (float)bmpWidth)) / 2, clientWidth, bmpHeight * ((float)clientWidth / (float)bmpWidth), &memDC,
 				0, 0, bmpWidth, bmpHeight, SRCCOPY);
 
@@ -103,13 +106,12 @@ void CNavigatorView::OnPaint()
 		}
 
 		CBrush brush;
-		CPen hpen(PS_SOLID, 1, RGB(255, 0, 0));
+		CPen hpen(PS_SOLID, 1, RGB(255, 255, 0));
 		CPen* p = pDC->SelectObject(&hpen);
 		brush.CreateStockObject(NULL_BRUSH);
 		CBrush* pOldBrush = pDC->SelectObject(&brush);
 		pDC->Rectangle(rect);
 		pDC->SelectObject(pOldBrush);
-
 
 		memDC.SelectObject(oldbitmap2);
 		memDC.DeleteDC();
@@ -152,7 +154,7 @@ void CNavigatorView::OnFileOpen()
 	Invalidate();
 }
 
-void CNavigatorView::GetMouseMove(float x, float y, float Width, float Height)
+void CNavigatorView::GetRectPos(float x, float y, float Width, float Height)
 {
 	imgViewer_x = x;
 	imgViewer_y = y;
@@ -213,15 +215,69 @@ BOOL CNavigatorView::OnEraseBkgnd(CDC* pDC)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
-	CBrush backBrush(RGB(0, 0, 0));
+	if (isNavigator_Paint != true)
+	{
+		CBrush backBrush(RGB(255, 255, 255));
 
-	CBrush* pOldBrush = pDC->SelectObject(&backBrush);
-	CRect rect; pDC->GetClipBox(&rect);
-	pDC->PatBlt(rect.left, rect.top, rect.Width(), rect.Height(), PATCOPY);
-	pDC->SelectObject(pOldBrush);
+		CBrush* pOldBrush = pDC->SelectObject(&backBrush);
+		CRect rect; pDC->GetClipBox(&rect);
+		pDC->PatBlt(rect.left, rect.top, rect.Width(), rect.Height(), PATCOPY);
+		pDC->SelectObject(pOldBrush);
+	}
 
 	Invalidate(false);
 	UpdateWindow();
 
 	return false;
+}
+
+
+void CNavigatorView::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	m_sPt = point;
+	Navigator2imgViewer();
+
+	SetCapture();
+
+	CView::OnLButtonDown(nFlags, point);
+}
+
+void CNavigatorView::OnMouseMove(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	if (nFlags & MK_LBUTTON)
+	{
+		m_sPt = point;
+		Navigator2imgViewer();
+	}
+
+	CView::OnMouseMove(nFlags, point);
+}
+
+void CNavigatorView::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	m_sPt = point;
+	Navigator2imgViewer();
+
+	ReleaseCapture();
+
+	CView::OnLButtonUp(nFlags, point);
+}
+
+void CNavigatorView::Navigator2imgViewer()
+{
+	if ((bmpWidth * ((float)clientHeight / (float)bmpHeight)) <= clientWidth)
+	{
+		client_x = (m_sPt.x - ((float)clientWidth / 2 - (bmpWidth * ((float)clientHeight / (float)bmpHeight)) / 2)) / ((float)clientWidth - 2 * ((float)clientWidth / 2 - (bmpWidth * ((float)clientHeight / (float)bmpHeight)) / 2));
+		client_y = m_sPt.y / (float)clientHeight;
+	}
+	else
+	{
+		client_x = m_sPt.x / (float)clientWidth;
+		client_y = (m_sPt.y - ((float)clientHeight / 2 - (bmpHeight * ((float)clientWidth / (float)bmpWidth)) / 2)) / ((float)clientHeight - 2 * ((float)clientHeight / 2 - (bmpHeight * ((float)clientWidth / (float)bmpWidth)) / 2));
+	}
+
+	theApp.pImgViewerView->GetImgPos(client_x, client_y);
 }

@@ -192,12 +192,16 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 
 				if (m_ePt.x <= 0)
 				{
-					if (z_pos.x > 0)
+					i = 1 + ((0 - m_ePt.x) / PWidth);
+					z_pos.x -= i;
+					m_ePt.x += i * PWidth;
+
+					/*if (z_pos.x > 0)
 					{
 						i = 1 + ((0 - m_ePt.x) / PWidth);
 						z_pos.x -= i;
 						m_ePt.x += i * PWidth;
-					}
+					}*/
 				}
 			}
 			else // 왼쪽으로 끌었을때
@@ -221,15 +225,6 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 			{
 				m_ePt.y += m_sPt.y - point.y;
 
-				printf("m_ePt.y : %d ", m_ePt.y);
-				printf("m_bgRect.right : %d ", m_bgRect.right);
-				printf("m_bgRect.bottom : %d ", m_bgRect.bottom);
-				printf("PHeight : %f ", PHeight);
-				printf("zoomWidth : %f ", zoomWidth);
-				printf("zoomHeight : %f ", zoomHeight);
-				printf("z_pos.y : %d ", z_pos.y);
-				printf("\n");
-
 				if (m_ePt.y + m_bgRect.bottom - (PHeight * (int)(zoomHeight + 2)) >= 0)
 				{
 					i = 1 + (m_ePt.y + m_bgRect.bottom - (PHeight * (int)(zoomHeight + 2))) / PHeight;
@@ -243,12 +238,16 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 				m_ePt.y -= point.y - m_sPt.y;
 				if (m_ePt.y < 0)
 				{
-					if (z_pos.y > 0)
+					i = 1 + ((0 - m_ePt.y) / PHeight);
+					z_pos.y -= i;
+					m_ePt.y += i * PHeight;
+
+					/*if (z_pos.y > 0)
 					{
 						i = 1 + ((0 - m_ePt.y) / PHeight);
 						z_pos.y -= i;
 						m_ePt.y += i * PHeight;
-					}
+					}*/
 				}
 			}
 		}
@@ -423,6 +422,11 @@ void CImgViewerView::OnSize(UINT nType, int cx, int cy)
 	{
 		z_pos.y = m_Bitmap.bmHeight - zoomHeight - 1;
 		m_ePt.y = PHeight * (int)(zoomHeight + 2) - m_bgRect.bottom;
+	}
+
+	if (m_Algorithm.isReady())
+	{
+		imgViewer2Navigator();
 	}
 
 	Invalidate();
@@ -1612,10 +1616,41 @@ void CImgViewerView::imgViewer2Navigator()
 	//CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
 	//CNavigatorView* pView1 = pMain->pNavigatorView;
 
-	float a = z_pos.x + (m_ePt.x) / PWidth;
-	float b = z_pos.y + (m_ePt.y) / PHeight;
-	float c = z_pos.x + (m_ePt.x + m_bgRect.right) / PWidth - a;
-	float d = z_pos.y + (m_ePt.y + m_bgRect.bottom) / PHeight - b;
+	float x = z_pos.x + (m_ePt.x) / PWidth;
+	float y = z_pos.y + (m_ePt.y) / PHeight;
+	float Width = z_pos.x + (m_ePt.x + m_bgRect.right) / PWidth - x;
+	float Height = z_pos.y + (m_ePt.y + m_bgRect.bottom) / PHeight - y;
 
-	theApp.pNavigatorView->GetMouseMove(a, b, c, d);
+	theApp.pNavigatorView->GetRectPos(x, y, Width, Height);
+}
+
+void CImgViewerView::GetImgPos(float Navigator_x, float Navigator_y)
+{
+	CPoint Navigator_pos;
+	Navigator_pos.x = Navigator_x * m_Bitmap.bmWidth;
+	Navigator_pos.y = Navigator_y * m_Bitmap.bmHeight;
+
+	z_pos.x = Navigator_pos.x - zoomWidth / 2;
+	z_pos.y = Navigator_pos.y - zoomHeight / 2;
+
+	if (z_pos.x < 0)
+		z_pos.x = 0;
+	if (z_pos.y < 0)
+		z_pos.y = 0;
+
+	if (z_pos.x + zoomWidth + 5 >= m_Bitmap.bmWidth && zoomWidth <= m_Bitmap.bmWidth)
+	{
+		z_pos.x = m_Bitmap.bmWidth - zoomWidth - 5;
+		m_ePt.x = PWidth * (int)(zoomWidth + 2) - m_bgRect.right;
+	}
+
+	if (z_pos.y + zoomHeight + 1 >= m_Bitmap.bmHeight && zoomHeight <= m_Bitmap.bmHeight)
+	{
+		z_pos.y = m_Bitmap.bmHeight - zoomHeight - 1;
+		m_ePt.y = PHeight * (int)(zoomHeight + 2) - m_bgRect.bottom;
+	}
+
+	imgViewer2Navigator();
+	Invalidate();
+	UpdateWindow();
 }

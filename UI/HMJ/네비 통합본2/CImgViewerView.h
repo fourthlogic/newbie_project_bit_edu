@@ -173,6 +173,7 @@ public:
 	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
 
 	void CImgViewerView::imgViewer2Navigator();
+	void CImgViewerView::GetImgPos(float Navigator_x, float Navigator_y);
 };
 
 #ifndef _DEBUG  // MFCparamView.cpp의 디버그 버전
