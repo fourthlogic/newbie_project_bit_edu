@@ -48,13 +48,14 @@ BEGIN_MESSAGE_MAP(CImgViewerView, CView)
 	ON_COMMAND(ID_CONTEXT_PASTE, &CImgViewerView::OnContextPaste)
 	ON_COMMAND(ID_CONTEXT_DELETE, &CImgViewerView::OnContextDelete)
 	ON_COMMAND(ID_CONTEXT_LINECOLOR, &CImgViewerView::OnContextLinecolor)
+	ON_COMMAND(ID_CONTEXT_LINEWIDTH, &CImgViewerView::OnContextLinewidth)
 	ON_COMMAND(ID_FILE_SAVE_WITHSHAPE, &CImgViewerView::OnFileSaveWithshape)
 	ON_COMMAND(ID_FILE_SAVE_ONLYIMG, &CImgViewerView::OnFileSaveOnlyimg)
+	ON_COMMAND(ID_SELECT_LW, &CImgViewerView::OnSelectLw)
+	ON_COMMAND(ID_SELECT_COLOR, &CImgViewerView::OnSelectColor)
 	ON_WM_CREATE()
 	ON_WM_ERASEBKGND()
 	ON_WM_CLOSE()
-	ON_COMMAND(ID_SELECT_LW, &CImgViewerView::OnSelectLw)
-	ON_COMMAND(ID_SELECT_COLOR, &CImgViewerView::OnSelectColor)
 END_MESSAGE_MAP()
 
 // CMFCparamView 생성/소멸
@@ -1203,6 +1204,17 @@ void CImgViewerView::OnModeSelect()
 	penID = TRUE;
 }
 
+
+void CImgViewerView::OnContextCopy()
+{
+	if (selectID)
+	{
+		copyShape = data[SelectIndex];
+		iscopy = true;
+		OnModeSelect();
+	}
+}
+
 void CImgViewerView::OnContextPaste()
 {
 	if (iscopy)
@@ -1244,17 +1256,6 @@ void CImgViewerView::OnContextPaste()
 		rollbackIndex = rollback.size() - 1;
 		Invalidate(FALSE);
 		ctrl = false;
-	}
-}
-
-
-void CImgViewerView::OnContextCopy()
-{
-	if (selectID)
-	{
-		copyShape = data[SelectIndex];
-		iscopy = true;
-		OnModeSelect();
 	}
 }
 
@@ -1311,6 +1312,33 @@ void CImgViewerView::OnContextLinecolor()
 		}
 	}
 }
+
+void CImgViewerView::OnContextLinewidth()
+{
+	if (SelectIndex != -1)
+	{
+		CSelectLineWidth lwDlg;
+
+		if (lwDlg.DoModal() == IDOK)
+		{
+			RollbackInfo info;
+			info.idx = SelectIndex;
+			info.undoShape = data[SelectIndex];
+			data[SelectIndex].penWidth = lwDlg.l_width;
+			info.redoShape = data[SelectIndex];
+			info.rollbackmode = RollBackMode::Update;
+			if (rollbackIndex != -1)
+				rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
+			else if (rollback.size() != 0) {
+				rollback.erase(rollback.begin(), rollback.end());
+			}
+			rollback.push_back(info);
+			rollbackIndex = rollback.size() - 1;
+			Invalidate(FALSE);
+		}
+	}
+}
+
 
 BOOL CImgViewerView::PreTranslateMessage(MSG* pMsg)
 {
@@ -1840,7 +1868,7 @@ void CImgViewerView::SelectDrawShape(CDC* pDC, MyShape& shape)
 void CImgViewerView::MyEllipseR(CDC* pDC, Point2d Center, int radinX, int radinY, double theta, COLORREF parm_color)
 {
 	// 직선 알고리즘 추가
-	CPen* pen = new CPen(PS_SOLID, 1, parm_color);
+	CPen* pen = new CPen(PS_SOLID, l_width, parm_color);
 	CPen* oldPen = pDC->SelectObject(pen);
 	CPoint pt;
 	CPoint Rotatept;
@@ -1871,8 +1899,8 @@ void CImgViewerView::MyEllipsePS_DOT(CDC* pDC, Point2d Center, int radinX, int r
 	CPoint pt;
 	CPoint Rotatept;
 
-	CPen* pen1 = new CPen(PS_SOLID, 1, RGB(0, 0, 0));
-	CPen* pen2 = new CPen(PS_SOLID, 1, RGB(255, 255, 255));
+	CPen* pen1 = new CPen(PS_SOLID, l_width, RGB(0, 0, 0));
+	CPen* pen2 = new CPen(PS_SOLID, l_width, RGB(255, 255, 255));
 	CPen* oldPen;
 
 	pt.x = Center.x + int(sin(0 * CV_PI / 180) * radinX);
@@ -1942,3 +1970,5 @@ void CImgViewerView::OnSelectColor()
 		color = cDlg.GetColor();
 	}
 }
+
+

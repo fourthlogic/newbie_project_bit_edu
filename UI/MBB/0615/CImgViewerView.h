@@ -195,6 +195,7 @@ public:
 	afx_msg void OnContextPaste();
 	afx_msg void OnContextDelete();
 	afx_msg void OnContextLinecolor();
+	afx_msg void OnContextLinewidth();
 	// 저장
 	afx_msg void OnFileSaveWithshape();
 	afx_msg void OnFileSaveOnlyimg();

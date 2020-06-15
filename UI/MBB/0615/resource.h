@@ -57,13 +57,15 @@
 #define ID_FILE_LOAD                    32827
 #define ID_SELECT_LW                    32830
 #define ID_SELECT_COLOR                 32831
+#define ID_CONTEXTMENU_32832            32832
+#define ID_CONTEXT_LINEWIDTH            32833
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        321
-#define _APS_NEXT_COMMAND_VALUE         32832
+#define _APS_NEXT_COMMAND_VALUE         32834
 #define _APS_NEXT_CONTROL_VALUE         1010
 #define _APS_NEXT_SYMED_VALUE           311
 #endif
