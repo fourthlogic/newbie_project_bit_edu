@@ -12,8 +12,10 @@ enum DrawMode	//도형 종류
 };
 
 enum RollBackMode {	//롤백 명령어
-	Create, Delete, Update
+	Create, Delete, Update,GroupStart,GroupEnd
 };
+
+
 
 struct MyShape
 {
@@ -110,16 +112,19 @@ public:
 	CPoint mov_Pt;		//그리기 끝값
 	MyShape shape;		// 도형 값을 저장하기 위한 구조체 변수 선언
 	CArray<MyShape, MyShape&> data;	//도형 리스트
+	UINT m_nFlags;
 	int l_width = 1;
 	COLORREF color = RGB(0, 0, 0);
-
 
 	//선택
 	CPoint p_pt;			//붙여넣기 좌표
 	bool ctrl;		//컨트롤 키 상태
 	bool iscopy;	//복사 상태
 	MyShape copyShape;	// 복사한 도형
-	vector<int> zOrder;		//zOrder 리스트
+	vector<int> zOrder;			//zOrder 리스트
+	vector<int> GroupList;		//Group 선택 리스트
+	vector<MyShape> copyList;	//복사 리스트
+
 
 	//되돌리기
 	int rollbackIndex;	//롤백 인덱스
@@ -134,11 +139,13 @@ public:
 	BOOL EdgeSelect = FALSE; // 엣지 선택
 	BOOL rotateID = FALSE; // 회전 선택
 
+
 	int RectCount = 0; // 좌표 개수
 	int SelectIndex; // 선택 이미지 인덱스
 	int EdgeIndex; // 엣지 선택 인덱스
-
-
+	BOOL Save_Shape;	// 도형 포함 저장
+	CString fileSave;			// 저장 파일경로 
+	int ctrlv;
 
 	//사용자 설정 함수
 	// ================================================================================
@@ -153,6 +160,7 @@ public:
 	void SelectDrawShape(CDC* pDC, MyShape& shape);
 	void MyEllipsePS_DOT(CDC* pDC, Point2d Center, int radinX, int radinY, double theta);
 	void MyEllipseR(CDC* pDC, Point2d Center, int radinX, int radinY, double theta, COLORREF parm_color);
+	//void SelectShapeUpdate(MyShape& shape); // 도형 정보 업데이트
 	void SelectShapeUpdate(); // 도형 정보 업데이트
 	Point2d Intersection(Point2d& pt, Point2d& LinePt1, Point2d& LinePt2); // 
 
@@ -190,7 +198,7 @@ public:
 	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
 
 	// 컨텍스트 메뉴
-	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint /*point*/);
+	afx_msg void OnContextMenu(CWnd* /*pWnd*/, CPoint point);
 	afx_msg void OnContextCopy();
 	afx_msg void OnContextPaste();
 	afx_msg void OnContextDelete();
@@ -204,8 +212,9 @@ public:
 	afx_msg void OnDrawLine();
 	afx_msg void OnDrawEllpse();
 	afx_msg void OnDrawRect();
+	afx_msg void OnDrawTri();
+	afx_msg void OnDrawCross();	
 	// 모드 선택
-	afx_msg void OnModeDraw();
 	afx_msg void OnModeSelect();
 	// 선 굵기 & 선 색 선택
 	afx_msg void OnSelectLw();

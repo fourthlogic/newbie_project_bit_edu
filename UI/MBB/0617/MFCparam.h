@@ -63,6 +63,15 @@ public:
 	afx_msg void OnAppExit();
 	afx_msg void OnOptionOpen();
 	afx_msg void OnOptionSave();
+	afx_msg void OnDrawPoint();
+	afx_msg void OnDrawLine();
+	afx_msg void OnDrawEllpse();
+	afx_msg void OnDrawRect();
+	afx_msg void OnModeSelect();
+	afx_msg void OnSelectLw();
+	afx_msg void OnSelectColor();
+	afx_msg void OnDrawTri();
+	afx_msg void OnDrawCross();
 };
 
 extern CMFCparamApp theApp;

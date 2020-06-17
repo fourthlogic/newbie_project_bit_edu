@@ -24,8 +24,17 @@ BEGIN_MESSAGE_MAP(CMFCparamApp, CWinApp)
 	ON_COMMAND(ID_FILE_SAVE_ONLYIMG, &CMFCparamApp::OnFileSaveOnlyimg)
 	ON_COMMAND(ID_APP_EXIT, &CMFCparamApp::OnAppExit)
 	ON_COMMAND(ID_OPTION_OPEN, &CMFCparamApp::OnOptionOpen)
-	ON_COMMAND(ID_APP_ABOUT, &CMFCparamApp::OnAppAbout)
 	ON_COMMAND(ID_OPTION_SAVE, &CMFCparamApp::OnOptionSave)
+	ON_COMMAND(ID_DRAW_POINT, &CMFCparamApp::OnDrawPoint)
+	ON_COMMAND(ID_DRAW_LINE, &CMFCparamApp::OnDrawLine)
+	ON_COMMAND(ID_DRAW_ELLPSE, &CMFCparamApp::OnDrawEllpse)
+	ON_COMMAND(ID_DRAW_RECT, &CMFCparamApp::OnDrawRect)
+	ON_COMMAND(ID_MODE_SELECT, &CMFCparamApp::OnModeSelect)
+	ON_COMMAND(ID_SELECT_LW, &CMFCparamApp::OnSelectLw)
+	ON_COMMAND(ID_SELECT_COLOR, &CMFCparamApp::OnSelectColor)
+	ON_COMMAND(ID_APP_ABOUT, &CMFCparamApp::OnAppAbout)
+	ON_COMMAND(ID_DRAW_TRI, &CMFCparamApp::OnDrawTri)
+	ON_COMMAND(ID_DRAW_CROSS, &CMFCparamApp::OnDrawCross)
 END_MESSAGE_MAP()
 
 
@@ -231,9 +240,6 @@ void CMFCparamApp::OnAppAbout()
 void CMFCparamApp::OnFileOpen() // 파일 열기
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	//CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
-	//CImgViewerView* pView = pMain->pImgViewerView;
-	//pView->OnFileOpen();
 	pImgViewerView->OnFileOpen();
 	pNavigatorView->OnFileOpen();
 	pImgViewerView->imgViewer2Navigator();
@@ -242,44 +248,87 @@ void CMFCparamApp::OnFileOpen() // 파일 열기
 void CMFCparamApp::OnFileSaveWithshape() // 파일 저장 - 도형 포함
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	//CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
-	//CImgViewerView* pView = pMain->pImgViewerView;
-	//pView->OnFileSaveWithshape();
 	pImgViewerView->OnFileSaveWithshape();
 }
 
 void CMFCparamApp::OnFileSaveOnlyimg() // 파일 저장 - 도형 제외
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	//CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
-	//CImgViewerView* pView = pMain->pImgViewerView;
-	//pView->OnFileSaveOnlyimg();
 	pImgViewerView->OnFileSaveOnlyimg();
 }
 
 void CMFCparamApp::OnAppExit() // 프로그램 종료
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	//CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
-	//COptionFormView* pView = (COptionFormView*)pFrame->pOptionView;
-	//pFrame->pOptionView->OnAppExit();
 	pOptionView->OnAppExit();
 }
 
 void CMFCparamApp::OnOptionOpen() // 설정파일 열기
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	//CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
-	//COptionFormView* pView = (COptionFormView*)pFrame->pOptionView;
-	//pFrame->pOptionView->OnOptionOpen();
 	pOptionView->OnOptionOpen();
 }
 
 void CMFCparamApp::OnOptionSave() // 설정파일 저장
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	//CMainFrame* pFrame = (CMainFrame*)AfxGetMainWnd();
-	//COptionFormView* pView = (COptionFormView*)pFrame->pOptionView;
-	//pFrame->pOptionView->OnOptionSave();
 	pOptionView->OnOptionSave();
+}
+
+void CMFCparamApp::OnDrawPoint()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	pImgViewerView->OnDrawPoint();
+}
+
+
+void CMFCparamApp::OnDrawLine()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	pImgViewerView->OnDrawLine();
+}
+
+
+void CMFCparamApp::OnDrawEllpse()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	pImgViewerView->OnDrawEllpse();
+}
+
+
+void CMFCparamApp::OnDrawRect()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	pImgViewerView->OnDrawRect();
+}
+
+void CMFCparamApp::OnDrawTri()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	pImgViewerView->OnDrawTri();
+}
+
+void CMFCparamApp::OnDrawCross()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	pImgViewerView->OnDrawCross();
+}
+void CMFCparamApp::OnModeSelect()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	pImgViewerView->OnModeSelect();
+}
+
+
+void CMFCparamApp::OnSelectLw()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	pImgViewerView->OnSelectLw();
+}
+
+
+void CMFCparamApp::OnSelectColor()
+{
+	// TODO: 여기에 명령 처리기 코드를 추가합니다.
+	pImgViewerView->OnSelectColor();
 }

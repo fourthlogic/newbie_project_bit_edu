@@ -15,87 +15,45 @@
 
 HBITMAP CircleDection::MatToBitmap(Mat & src)
 {
-    Mat mat_temp;
-    HDC hDC = ::CreateCompatibleDC(0);
-    HBITMAP hBmp;
+    HDC         hDC = ::CreateCompatibleDC(0);
+    BYTE        tmp[sizeof(BITMAPINFO) + 255 * sizeof(RGBQUAD)];
+    BITMAPINFO* bmi = (BITMAPINFO*)tmp;
+    HBITMAP     hBmp;
+    int i;
+    int w = src.cols, h = src.rows;
+    int bpp = src.channels() * 8;
 
-    //화면에 보여주기 위한 처리
-    //CString tmp;
-    //tmp.Format(_T("%d"), src.elemSize());
-    //MessageBox(tmp);
-    int bpp = 8 * src.elemSize(); // elemSize() 는 한화소에 데이터 개수 Color = 3개 Gray = 1개, 한 화소에 비트수 구하는거
-    assert((bpp == 8 || bpp == 24 || bpp == 32)); // 이 3개가 아니면 종료
+    memset(bmi, 0, sizeof(BITMAPINFO));
+    bmi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bmi->bmiHeader.biWidth = w;
+    bmi->bmiHeader.biHeight = h;
+    bmi->bmiHeader.biPlanes = 1;
+    bmi->bmiHeader.biBitCount = bpp;
+    bmi->bmiHeader.biCompression = BI_RGB;
+    bmi->bmiHeader.biSizeImage = w * h * 1;
+    bmi->bmiHeader.biClrImportant = 0;
 
-    int padding = 0;
-
-    if (bpp < 32)
-        padding = 4 - (src.cols % 4);
-
-    if (padding == 4)
-        padding = 0;
-
-    int border = 0;
-
-    if (bpp < 32)
+    switch (bpp)
     {
-        border = 4 - (src.cols % 4);
-    }
-
-    if (border > 0 || src.isContinuous() == false)
-    {
-        cv::copyMakeBorder(src, mat_temp, 0, 0, 0, border, cv::BORDER_CONSTANT, 0);
-    }
-    else
-    {
-        mat_temp = src;
-    }
-    BITMAPINFO* pBitmapInfo;
-    if (bpp == 8) 
-    {
-        pBitmapInfo = (BITMAPINFO*)malloc(sizeof(BITMAPINFO) + 4 * 256);
-    }
-    else
-    {
-        pBitmapInfo = (BITMAPINFO*)malloc(sizeof(BITMAPINFO));
-    }
-
-    pBitmapInfo->bmiHeader.biYPelsPerMeter = 0;
-    pBitmapInfo->bmiHeader.biBitCount = bpp;
-    pBitmapInfo->bmiHeader.biWidth = mat_temp.cols;
-    pBitmapInfo->bmiHeader.biHeight = -mat_temp.rows;
-    pBitmapInfo->bmiHeader.biPlanes = 1;
-    pBitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    pBitmapInfo->bmiHeader.biCompression = BI_RGB;
-    pBitmapInfo->bmiHeader.biClrImportant = 0;
-    if (bpp == 8) { //그레이스케일인경우 팔레트가 필요
-        pBitmapInfo->bmiHeader.biClrUsed = 4 * 256;
-        for (int i = 0; i < 256; i++)
+    case 8:
+        for (i = 0; i < 256; i++)
         {
-            pBitmapInfo->bmiColors[i].rgbBlue = (BYTE)i;
-            pBitmapInfo->bmiColors[i].rgbGreen = (BYTE)i;
-            pBitmapInfo->bmiColors[i].rgbRed = (BYTE)i;
-            pBitmapInfo->bmiColors[i].rgbReserved = (BYTE)0;
+            bmi->bmiColors[i].rgbBlue = i;
+            bmi->bmiColors[i].rgbGreen = i;
+            bmi->bmiColors[i].rgbRed = i;
         }
+        break;
+    case 32:
+    case 24:
+        ((DWORD*)bmi->bmiColors)[0] = 0x00FF0000; /* red mask  */
+        ((DWORD*)bmi->bmiColors)[1] = 0x0000FF00; /* green mask */
+        ((DWORD*)bmi->bmiColors)[2] = 0x000000FF; /* blue mask  */
+        break;
     }
-    else {
-        pBitmapInfo->bmiHeader.biClrUsed = 0;
-    }
-    pBitmapInfo->bmiHeader.biSizeImage = 0;
-    pBitmapInfo->bmiHeader.biXPelsPerMeter = 0;
 
-    hBmp = ::CreateDIBSection(hDC, pBitmapInfo, DIB_RGB_COLORS, NULL, 0, 0);
-    ::SetBitmapBits(hBmp, mat_temp.total() * mat_temp.channels(), mat_temp.data);
+    hBmp = ::CreateDIBSection(hDC, bmi, DIB_RGB_COLORS, NULL, 0, 0);
+    ::SetBitmapBits(hBmp, src.total() * src.channels(), src.data);
     ::DeleteDC(hDC);
-
-    BITMAP bmp_info;
-    // h_src_bmp 비트맵의 속성 정보를 얻는다.
-    GetObject(hBmp, sizeof(BITMAP), &bmp_info);
-    cout << " rows " << src.rows << " cols " << src.cols << endl;
-    cout << " elemSize " << src.elemSize() << " channels " << src.channels() << endl;
-    cout << " 상위 " << (src.type() >> 3) << " 하위 " << (src.type() & 0x0fff) << endl;
-    cout << " bmHeight " <<bmp_info.bmHeight << " bmWidth " << bmp_info.bmWidth << endl;
-    cout << " bmBits " << bmp_info.bmBits << " bmBitsPixel " << bmp_info.bmBitsPixel << endl;
-    cout << " bmPlanes " << bmp_info.bmPlanes << endl;
 
     return hBmp;
 }
