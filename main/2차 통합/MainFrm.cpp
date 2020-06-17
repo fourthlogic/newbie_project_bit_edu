@@ -7,10 +7,6 @@
 #include "MFCparam.h"
 #include "MainFrm.h"
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
 
 // CMainFrame
 
@@ -82,7 +78,8 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 	// TODO: CREATESTRUCT cs를 수정하여 여기에서
 	//  Window 클래스 또는 스타일을 수정합니다.
 	//cs.style = WS_MINIMIZEBOX | WS_SYSMENU | WS_THICKFRAME;
-	
+	cs.style &= ~(LONG)FWS_ADDTOTITLE;
+	cs.lpszName = _T("포스로직 프로젝트");
 
 	return TRUE;
 }
@@ -110,36 +107,9 @@ void CMainFrame::OnSize(UINT nType, int cx, int cy)
 	
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
 	int width = 205;
-	int height = 300;
+	int height = 270;
 	GetClientRect(m_rect);
-
-	//posTemplate = theApp.GetFirstDocTemplatePosition();
-
-	//pDocTemplate = (CMultiDocTemplate*)theApp.GetNextDocTemplate(posTemplate); // 첫번째 템플릿
-	//posDocument = pDocTemplate->GetFirstDocPosition(); // 도큐먼트 포지션 얻기
-	//pOptionDoc = (COptionDoc*)pDocTemplate->GetNextDoc(posDocument); // 첫번째 도큐먼트
-	//posView = pOptionDoc->GetFirstViewPosition(); // 뷰 포지션 얻기
-	//pOptionView = (COptionFormView*)pOptionDoc->GetNextView(posView); // 도큐먼트의 뷰
-	//pOptionFrame = (COptionFrame*)pOptionView->GetParentFrame(); // 프레임 포지션 얻기
-
-	//pDocTemplate = (CMultiDocTemplate*)theApp.GetNextDocTemplate(posTemplate); // 두번째 템플릿
-	//posDocument = pDocTemplate->GetFirstDocPosition();
-	//pImgViewerDoc = (CImgViewerDoc*)pDocTemplate->GetNextDoc(posDocument);
-	//posView = pImgViewerDoc->GetFirstViewPosition();
-	//pImgViewerView = (CImgViewerView*)pImgViewerDoc->GetNextView(posView);
-	//pImgViewerFrame = (CImgViewerFrame*)pImgViewerView->GetParentFrame();
-
-	//pDocTemplate = (CMultiDocTemplate*)theApp.GetNextDocTemplate(posTemplate); // 세번째 템플릿
-	//posDocument = pDocTemplate->GetFirstDocPosition();
-	//pNavigatorDoc = (CNavigatorDoc*)pDocTemplate->GetNextDoc(posDocument);
-	//posView = pNavigatorDoc->GetFirstViewPosition();
-	//pNavigatorView = (CNavigatorView*)pNavigatorDoc->GetNextView(posView);
-	//pNavigatorFrame = (CNavigatorFrame*)pNavigatorView->GetParentFrame();
-	
-	//pOptionFrame->MoveWindow(0, 0, width, m_rect.bottom / 2, 1);
-	//pImgViewerFrame->MoveWindow(width, 0, m_rect.right - width, m_rect.bottom, 1);
-	//pNavigatorFrame->MoveWindow(0, m_rect.bottom / 2, width, m_rect.bottom / 2, 1);
-	
+		
 	theApp.pOptionFrame->MoveWindow(0, 0, width, height, 1);
 	theApp.pImgViewerFrame->MoveWindow(width, 0, m_rect.right - width, m_rect.bottom, 1);
 	theApp.pNavigatorFrame->MoveWindow(0, height, width, m_rect.bottom-height, 1);

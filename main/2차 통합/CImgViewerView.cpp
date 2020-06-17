@@ -15,9 +15,11 @@
 #include "CSelectLineWidth.h"
 #define IsCTRLPressed()  ( 0x8000 ==(GetKeyState(VK_CONTROL) & 0x8000 ))
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
+//#ifdef _DEBUG
+//#define new DEBUG_NEW
+//#undef THIS_FILE
+//static char THIS_FILE[] = __FILE__;
+//#endif
 
 
 IMPLEMENT_DYNCREATE(CImgViewerView, CView)
@@ -370,90 +372,90 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 		else {
 			double theta = data[SelectIndex].theta;
 
-			RectCount = data[SelectIndex].pts.size();
+			RectCount = data[SelectIndex].RotatePts.size();
 
 			// 길이
 			if (data[SelectIndex].shapeType == DrawMode::DLine)
 			{
-				data[SelectIndex].pts[EdgeIndex].x += o;
-				data[SelectIndex].pts[EdgeIndex].y += p;
+				data[SelectIndex].RotatePts[EdgeIndex].x += o;
+				data[SelectIndex].RotatePts[EdgeIndex].y += p;
 			}
 			// 삼각형
 			else if (data[SelectIndex].shapeType == DrawMode::DTriangle)
 			{
-				data[SelectIndex].pts[EdgeIndex].x += o;
-				data[SelectIndex].pts[EdgeIndex].y += p;
+				data[SelectIndex].RotatePts[EdgeIndex].x += o;
+				data[SelectIndex].RotatePts[EdgeIndex].y += p;
 			}
 			// 크로스 헤어
 			else if (data[SelectIndex].shapeType == DrawMode::DCrossHair)
 			{
 				if (EdgeIndex / 2 == 0)
 				{
-					data[SelectIndex].pts[EdgeIndex].x += o;
-					data[SelectIndex].pts[EdgeIndex].y += p;
-					data[SelectIndex].pts[EdgeIndex + 1].x -= o;
-					data[SelectIndex].pts[EdgeIndex + 1].y -= p;
+					data[SelectIndex].RotatePts[EdgeIndex].x += o;
+					data[SelectIndex].RotatePts[EdgeIndex].y += p;
+					data[SelectIndex].RotatePts[EdgeIndex + 1].x -= o;
+					data[SelectIndex].RotatePts[EdgeIndex + 1].y -= p;
 				}
 				else
 				{
-					data[SelectIndex].pts[EdgeIndex].x += o;
-					data[SelectIndex].pts[EdgeIndex].y += p;
-					data[SelectIndex].pts[EdgeIndex - 1].x -= o;
-					data[SelectIndex].pts[EdgeIndex - 1].y -= p;
+					data[SelectIndex].RotatePts[EdgeIndex].x += o;
+					data[SelectIndex].RotatePts[EdgeIndex].y += p;
+					data[SelectIndex].RotatePts[EdgeIndex - 1].x -= o;
+					data[SelectIndex].RotatePts[EdgeIndex - 1].y -= p;
 				}
 
 			}
 			//사각형 원
 			else
 			{
-				data[SelectIndex].pts[EdgeIndex].x += o;
-				data[SelectIndex].pts[EdgeIndex].y += p;
+				data[SelectIndex].RotatePts[EdgeIndex].x += o;
+				data[SelectIndex].RotatePts[EdgeIndex].y += p;
 
 				if (data[SelectIndex].theta == 0)
 				{
 					if (EdgeIndex == 0)
 					{
-						data[SelectIndex].pts[3].x += o;
-						data[SelectIndex].pts[1].y += p;
+						data[SelectIndex].RotatePts[3].x += o;
+						data[SelectIndex].RotatePts[1].y += p;
 					}
 					else if (EdgeIndex == 1)
 					{
 
-						data[SelectIndex].pts[2].x += o;
-						data[SelectIndex].pts[0].y += p;
+						data[SelectIndex].RotatePts[2].x += o;
+						data[SelectIndex].RotatePts[0].y += p;
 					}
 					else if (EdgeIndex == 2)
 					{
-						data[SelectIndex].pts[1].x += o;
-						data[SelectIndex].pts[3].y += p;
+						data[SelectIndex].RotatePts[1].x += o;
+						data[SelectIndex].RotatePts[3].y += p;
 					}
 					else if (EdgeIndex == 3)
 					{
-						data[SelectIndex].pts[0].x += o;
-						data[SelectIndex].pts[2].y += p;
+						data[SelectIndex].RotatePts[0].x += o;
+						data[SelectIndex].RotatePts[2].y += p;
 					}
 				}
 				else
 				{
 					if (EdgeIndex == 0)
 					{
-						data[SelectIndex].pts[1] = Intersection(data[SelectIndex].pts[0], data[SelectIndex].pts[1], data[SelectIndex].pts[2]);
-						data[SelectIndex].pts[3] = Intersection(data[SelectIndex].pts[0], data[SelectIndex].pts[3], data[SelectIndex].pts[2]);
+						data[SelectIndex].RotatePts[1] = Intersection(data[SelectIndex].RotatePts[0], data[SelectIndex].RotatePts[1], data[SelectIndex].RotatePts[2]);
+						data[SelectIndex].RotatePts[3] = Intersection(data[SelectIndex].RotatePts[0], data[SelectIndex].RotatePts[3], data[SelectIndex].RotatePts[2]);
 					}
 					else if (EdgeIndex == 1)
 					{
-						data[SelectIndex].pts[0] = Intersection(data[SelectIndex].pts[1], data[SelectIndex].pts[0], data[SelectIndex].pts[3]);
-						data[SelectIndex].pts[2] = Intersection(data[SelectIndex].pts[1], data[SelectIndex].pts[2], data[SelectIndex].pts[3]);
+						data[SelectIndex].RotatePts[0] = Intersection(data[SelectIndex].RotatePts[1], data[SelectIndex].RotatePts[0], data[SelectIndex].RotatePts[3]);
+						data[SelectIndex].RotatePts[2] = Intersection(data[SelectIndex].RotatePts[1], data[SelectIndex].RotatePts[2], data[SelectIndex].RotatePts[3]);
 					}
 					else if (EdgeIndex == 2)
 					{
-						data[SelectIndex].pts[1] = Intersection(data[SelectIndex].pts[2], data[SelectIndex].pts[1], data[SelectIndex].pts[0]);
-						data[SelectIndex].pts[3] = Intersection(data[SelectIndex].pts[2], data[SelectIndex].pts[3], data[SelectIndex].pts[0]);
+						data[SelectIndex].RotatePts[1] = Intersection(data[SelectIndex].RotatePts[2], data[SelectIndex].RotatePts[1], data[SelectIndex].RotatePts[0]);
+						data[SelectIndex].RotatePts[3] = Intersection(data[SelectIndex].RotatePts[2], data[SelectIndex].RotatePts[3], data[SelectIndex].RotatePts[0]);
 					}
 					else if (EdgeIndex == 3)
 					{
-						data[SelectIndex].pts[0] = Intersection(data[SelectIndex].pts[3], data[SelectIndex].pts[0], data[SelectIndex].pts[1]);
-						data[SelectIndex].pts[2] = Intersection(data[SelectIndex].pts[3], data[SelectIndex].pts[2], data[SelectIndex].pts[1]);
+						data[SelectIndex].RotatePts[0] = Intersection(data[SelectIndex].RotatePts[3], data[SelectIndex].RotatePts[0], data[SelectIndex].RotatePts[1]);
+						data[SelectIndex].RotatePts[2] = Intersection(data[SelectIndex].RotatePts[3], data[SelectIndex].RotatePts[2], data[SelectIndex].RotatePts[1]);
 					}
 				}
 			}
@@ -947,7 +949,7 @@ void CImgViewerView::OnFileOpen()
 	{
 		start_pos.y = 0;
 	}
-
+	theApp.pNavigatorView->OnFileOpen();
 	Invalidate(FALSE);
 }
 
@@ -1478,32 +1480,35 @@ void CImgViewerView::OnLButtonUp(UINT nFlags, CPoint point)
 		vertices.push_back(Point2d(d_sPt.x, mov_Pt.y));
 		if (IsCTRLPressed()) {
 
-			if (SelectIndex!=-1 && GroupList.empty()) {
+			if (SelectIndex != -1 && GroupList.empty()) {
 				GroupList.push_back(SelectIndex);
 				SelectIndex = -1;
 			}
-			else {
-				GroupList.clear();
-			}
+			/*   else {
+				  GroupList.clear();
+			   }*/
 		}
 		else {
 			GroupList.clear();
 		}
+		vector<int> te;
 		for (int i = 0; i < data.GetSize(); i++) {
 			for (int j = 0; j < data[i].pts.size(); j++) {
 				if (isContainPolygon(CPoint(data[i].pts[j].x, data[i].pts[j].y), vertices) != 0) {
-					GroupList.push_back(i);
+					te.push_back(i);
 					break;
 				}
 			}
 		}
+		if (!te.empty())
+			GroupList.assign(te.begin(), te.end());
 		if (!GroupList.empty()) {
 			EdgeSelect = FALSE;
 			Invalidate(FALSE);
 			ReleaseCapture();
 			shape.pts.clear();
-			/*SelectIndex = GroupList[0];
-			selectID = TRUE;*/
+			SelectIndex = GroupList[0];
+			selectID = TRUE;
 			SelectShapeUpdate();
 			return;
 		}
@@ -2143,6 +2148,8 @@ void CImgViewerView::OnFileSaveWithshape()
 	if (fsDlg.DoModal() == IDOK)
 	{
 		fileSave = fsDlg.GetPathName();  //파일경로 얻어와서
+		selectID = FALSE;
+		GroupList.clear();
 		Save_Shape = TRUE;
 		Invalidate(FALSE);
 	}
@@ -2412,6 +2419,7 @@ void CImgViewerView::draw(CDC* pDC)
 	}
 	pDC->SelectObject(oldPen); // 이전 팬 선택		
 	pen->DeleteObject();  // 생성한 펜 메모리에서 제거			
+	delete pen;
 }
 
 // 그림 복구
@@ -2455,6 +2463,7 @@ void CImgViewerView::drawShape(CDC* pDC, MyShape& shape)
 	}
 	pDC->SelectObject(oldPen); // 이전 팬 선택		
 	pen->DeleteObject();  // 생성한 펜 메모리에서 제거		
+	delete pen;
 }
 
 // 선택 그리기
@@ -2500,6 +2509,7 @@ void CImgViewerView::SelectDrawShape(CDC* pDC, MyShape& shape)
 
 	pDC->SelectObject(oldPen);
 	pen->DeleteObject();
+	delete pen;
 
 	// 확대 사각 박스 그리기
 	pDC->SelectStockObject(WHITE_BRUSH);
@@ -2515,6 +2525,7 @@ void CImgViewerView::SelectDrawShape(CDC* pDC, MyShape& shape)
 	pDC->LineTo(Rotate.x, Rotate.y);
 	pDC->SelectObject(oldPen);
 	pen->DeleteObject();
+	delete pen;
 
 	// 회전 선택
 	if (rotateID == TRUE) {
@@ -2544,6 +2555,8 @@ void CImgViewerView::SelectDrawShape(CDC* pDC, MyShape& shape)
 
 		pDC->SelectObject(oldPen);
 		pen->DeleteObject();
+		delete pen;
+
 	}
 	if (penID == TRUE) {
 		pen = new CPen(PS_SOLID, shape.penWidth, RGB(0, 255, 0));
@@ -2580,6 +2593,7 @@ void CImgViewerView::SelectDrawShape(CDC* pDC, MyShape& shape)
 		}
 		pDC->SelectObject(oldPen);
 		pen->DeleteObject();
+		delete pen;
 	}
 }
 
@@ -2608,6 +2622,7 @@ void CImgViewerView::MyEllipseR(CDC* pDC, Point2d Center, int radinX, int radinY
 	}
 	pDC->SelectObject(oldPen);
 	pen->DeleteObject();
+	delete pen;
 }
 
 void CImgViewerView::MyEllipsePS_DOT(CDC* pDC, Point2d Center, int radinX, int radinY, double theta)

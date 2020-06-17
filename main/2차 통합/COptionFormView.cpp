@@ -3,7 +3,11 @@
 #include "pch.h"
 #include "MFCparam.h"
 #include "COptionFormView.h"
-
+#ifdef _DEBUG
+#define new DEBUG_NEW
+#undef THIS_FILE
+static char THIS_FILE[] = __FILE__;
+#endif
 // COptionFormView
 
 IMPLEMENT_DYNCREATE(COptionFormView, CFormView)
@@ -34,12 +38,17 @@ void COptionFormView::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(COptionFormView, CFormView)
-	ON_BN_CLICKED(IDC_BUTTON_OPTION_SAVE, &COptionFormView::OnBnClickedButtonOptionSave)
-	ON_COMMAND(ID_APP_EXIT, &COptionFormView::OnAppExit)
 	ON_COMMAND(ID_OPTION_OPEN, &COptionFormView::OnOptionOpen)
-	ON_BN_CLICKED(IDC_BUTTON_DO, &COptionFormView::OnBnClickedButtonDo)
 	ON_COMMAND(ID_OPTION_SAVE, &COptionFormView::OnOptionSave)
-	ON_EN_CHANGE(IDC_EDIT_OPTION_DIST, &COptionFormView::OnEnChangeEditOptionDist)
+	ON_COMMAND(ID_APP_EXIT, &COptionFormView::OnAppExit)
+	ON_BN_CLICKED(IDC_BUTTON_DO, &COptionFormView::OnBnClickedButtonDo)
+	ON_BN_CLICKED(IDC_BUTTON_OPTION_SAVE, &COptionFormView::OnBnClickedButtonOptionSave)
+	ON_EN_UPDATE(IDC_EDIT_OPTION_DIST, &COptionFormView::OnEnUpdateEditOptionDist)
+	ON_EN_UPDATE(IDC_EDIT_OPTION_RMAX, &COptionFormView::OnEnUpdateEditOptionRmax)
+	ON_EN_UPDATE(IDC_EDIT_OPTION_RMIN, &COptionFormView::OnEnUpdateEditOptionRmin)
+	ON_EN_UPDATE(IDC_EDIT_OPTION_BGV, &COptionFormView::OnEnUpdateEditOptionBgv)
+	ON_WM_CTLCOLOR()
+	ON_WM_DRAWITEM()
 END_MESSAGE_MAP()
 
 
@@ -180,9 +189,6 @@ void COptionFormView::OnOptionOpen() // 설정파일 열기
 	UpdateData(FALSE);
 }
 
-
-
-
 void COptionFormView::OnOptionSave()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
@@ -270,12 +276,154 @@ void COptionFormView::OnOptionSave()
 	}
 }
 
-void COptionFormView::OnEnChangeEditOptionDist()
+void COptionFormView::OnEnUpdateEditOptionDist()
 {
-	// TODO:  RICHEDIT 컨트롤인 경우, 이 컨트롤은
-	// CFormView::OnInitDialog() 함수를 재지정 
-	//하고 마스크에 OR 연산하여 설정된 ENM_CHANGE 플래그를 지정하여 CRichEditCtrl().SetEventMask()를 호출하지 않으면
-	// 이 알림 메시지를 보내지 않습니다.
-
 	// TODO:  여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	UpdateData();
+	int dist;
+	dist = _ttoi(m_strDist);
+	if (dist > 50)
+	{
+		MessageBox(_T("Distance 범위(0~50)를 초과하였습니다."));
+		dist = 50;
+	}
+	else if (dist < 0)
+	{
+		MessageBox(_T("Distance 범위(0~50)를 초과하였습니다."));
+		dist = 0;
+	}
+	m_strDist.Format(_T("%d"), dist);
+	UpdateData(FALSE);
+}
+
+void COptionFormView::OnEnUpdateEditOptionRmax()
+{
+	// TODO:  여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	UpdateData();
+	int rmax, rmin;
+	rmax = _ttoi(m_strRadMax);
+	rmin = _ttoi(m_strRadMin);
+	if (rmax > 20)
+	{
+		MessageBox(_T("최대 반지름 범위(1~20)를 초과하였습니다."));
+		rmax = 20;
+	}
+	else if (rmax < 1)
+	{
+		MessageBox(_T("최대 반지름 범위(1~20)를 초과하였습니다."));
+		rmax = 1;
+	}
+
+	if (rmax < rmin)
+	{
+		MessageBox(_T("최대 반지름 값이 최소 반지름보다 작습니다."));
+		rmax = rmin;
+	}
+	m_strRadMax.Format(_T("%d"), rmax);
+	UpdateData(FALSE);
+}
+
+void COptionFormView::OnEnUpdateEditOptionRmin()
+{
+	// TODO:  여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	UpdateData();
+	int rmax, rmin;
+	rmax = _ttoi(m_strRadMax);
+	rmin = _ttoi(m_strRadMin);
+	if (rmin > 20)
+	{
+		MessageBox(_T("최소 반지름 범위(1~20)를 초과하였습니다."));
+		rmin = 20;
+	}
+	else if (rmin < 1)
+	{
+		MessageBox(_T("최소 반지름 범위(1~20)를 초과하였습니다."));
+		rmin = 1;
+	}
+
+	if (rmin > rmax)
+	{
+		MessageBox(_T("최소 반지름 값이 최대 반지름보다 큽니다."));
+		rmin = rmax;
+	}
+	m_strRadMin.Format(_T("%d"), rmin);
+	UpdateData(FALSE);
+}
+
+void COptionFormView::OnEnUpdateEditOptionBgv()
+{
+	// TODO:  여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	UpdateData();
+	int bgv;
+	bgv = _ttoi(m_strBGV);
+	if (bgv > 255)
+	{
+		MessageBox(_T("볼 GV 임계값 범위(0~255)를 초과하였습니다."));
+		bgv = 255;
+	}
+	else if (bgv < 0)
+	{
+		MessageBox(_T("볼 GV 임계값 범위(0~255)를 초과하였습니다."));
+		bgv = 0;
+	}
+	m_strBGV.Format(_T("%d"), bgv);
+	UpdateData(FALSE);
+}
+
+
+HBRUSH COptionFormView::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
+{
+	HBRUSH hbr = CFormView::OnCtlColor(pDC, pWnd, nCtlColor);
+	switch (nCtlColor) {
+	case CTLCOLOR_DLG:   /// 다이얼로그 배경색을 white로.
+	{
+		return (HBRUSH)GetStockObject(WHITE_BRUSH);
+		break;
+	}
+	case CTLCOLOR_STATIC:
+	{
+		pDC->SetBkMode(TRANSPARENT);   // static text 배경색 투명
+		hbr = (HBRUSH)RGB(255, 255, 255);
+		break;
+	default:
+		hbr = CFormView::OnCtlColor(pDC, pWnd, nCtlColor);
+		break;
+	}
+	}
+	return hbr;
+}
+
+void COptionFormView::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	if (nIDCtl == IDC_BUTTON_DO || nIDCtl == IDC_BUTTON_OPTION_SAVE)
+	{
+		UINT state;
+		CDC dc;
+		RECT rctBtn;
+		TCHAR buffer[MAX_PATH];           //To store the Caption of the button.
+		ZeroMemory(buffer, MAX_PATH);     //Intializing the buffer to zero
+
+		dc.Attach(lpDrawItemStruct->hDC);  // Get the Button DC to CDC
+		rctBtn = lpDrawItemStruct->rcItem;     //Store the Button rect to our local rect.
+		dc.Draw3dRect(&rctBtn, RGB(255, 255, 255), RGB(68, 114, 196));
+		dc.FillSolidRect(&rctBtn, RGB(255, 255, 255));  //Here you can define the required color to appear on the Button.
+		state = lpDrawItemStruct->itemState;   //This defines the state of the Push button either pressed or not.
+		if ((state & ODS_SELECTED))
+		{
+			dc.DrawEdge(&rctBtn, EDGE_SUNKEN, BF_RECT);
+		}
+		else
+		{
+			dc.DrawEdge(&rctBtn, EDGE_RAISED, BF_RECT);
+		}
+
+		dc.SetBkColor(RGB(255, 255, 255));   // 텍스트 배경 색
+		dc.SetTextColor(RGB(0, 0, 0));     // 텍스트 색
+
+		::GetWindowText(lpDrawItemStruct->hwndItem, buffer, MAX_PATH); //Get the Caption of Button Window
+		dc.DrawText(buffer, &rctBtn, DT_CENTER | DT_VCENTER | DT_SINGLELINE);//Redraw the  Caption of Button Window
+		dc.Detach();  // Detach the Button DC
+	}
+	CFormView::OnDrawItem(nIDCtl, lpDrawItemStruct);
 }

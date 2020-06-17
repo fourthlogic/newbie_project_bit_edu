@@ -5,7 +5,6 @@
 #include "MFCparam.h"
 #include "COptionFrame.h"
 
-
 // COptionFrame
 
 IMPLEMENT_DYNCREATE(COptionFrame, CMDIChildWnd)

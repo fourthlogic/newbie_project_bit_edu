@@ -106,17 +106,20 @@ void CNavigatorView::OnPaint()
 
 		CBrush brush;
 		CPen hpen(PS_SOLID, 1, RGB(255, 255, 0));
-		CPen* p = pDC->SelectObject(&hpen);
+		CPen* oldPen = pDC->SelectObject(&hpen);
 		brush.CreateStockObject(NULL_BRUSH);
 		CBrush* pOldBrush = pDC->SelectObject(&brush);
 		pDC->Rectangle(rect);
-		pDC->SelectObject(pOldBrush);
+		pDC->SelectObject(oldPen);
 
 		memDC.SelectObject(oldbitmap2);
 		memDC.DeleteDC();
 		mdcOffScreen.SelectObject(oldbitmap);
+
 		mdcOffScreen.DeleteDC();
 		bmpOffScreen.DeleteObject();
+		hpen.DeleteObject();
+
 		oldbitmap->DeleteObject();
 		oldbitmap2->DeleteObject();
 
@@ -222,6 +225,8 @@ BOOL CNavigatorView::OnEraseBkgnd(CDC* pDC)
 		CRect rect; pDC->GetClipBox(&rect);
 		pDC->PatBlt(rect.left, rect.top, rect.Width(), rect.Height(), PATCOPY);
 		pDC->SelectObject(pOldBrush);
+
+		backBrush.DeleteObject();
 	}
 
 	Invalidate(false);

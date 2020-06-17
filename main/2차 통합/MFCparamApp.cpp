@@ -9,13 +9,6 @@
 #include "MFCparam.h"
 #include "MainFrm.h"
 
-
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
-
 // CMFCparamApp
 
 BEGIN_MESSAGE_MAP(CMFCparamApp, CWinApp)
@@ -241,7 +234,7 @@ void CMFCparamApp::OnFileOpen() // 파일 열기
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.
 	pImgViewerView->OnFileOpen();
-	pNavigatorView->OnFileOpen();
+	//pNavigatorView->OnFileOpen();
 	pImgViewerView->imgViewer2Navigator();
 }
 

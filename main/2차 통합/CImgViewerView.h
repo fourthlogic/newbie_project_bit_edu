@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "CircleDection.h"
+#include "CircleDetection.h"
 using namespace cv;
 using namespace std;
 enum DrawMode	//도형 종류

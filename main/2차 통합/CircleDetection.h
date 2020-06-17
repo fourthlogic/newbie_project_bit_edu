@@ -16,22 +16,7 @@ typedef struct CirDetectionParam
     CircleDection* This;
     vector<vector<Point>>* contours;
     vector<Point>* cirCenters;
-    Mutex* mut;
-
 }cirDetectionParam;
-
-typedef struct CircleValue
-{
-    int *distance; // ROI 추출 범위
-    int *radMin; // 검출원 최소 반지름
-    int *radMax; // 검출원 최대 반지름
-    int *BGV; // 원 Value
-    int *thMinValue; // 외각 좌표 추출 th
-    int *thMaxValue; // 외각 좌표 추출 th
-    int *height; // 높이
-    int *width; // 넓이
-    int *size; // 전체 크기
-}cirValue;
 
 class CircleDection
 {
@@ -40,7 +25,6 @@ private:
     Mat result; // 결과 이미지
     HBITMAP resultBitmap;
     CirDetectionParam* threadParam; // thread용 구조체
-    CircleValue cirValue;
     vector<Point> cornerPts; // 외곽 3점 좌표 값
     vector<Point> vCirCenters; // Vertical의 중심 좌표들의 값 
     vector<Point> hCirCenters; // Horizontal의 중심 좌표들의 값 
@@ -66,16 +50,13 @@ public:
 
     // 초기화
     void Initialize();
-    void Init(); 
-    //void Init(Mat& src); 
 
     // 이미지 선택
-    //void SelectImage();
     bool SelectImage();
+    bool isReady(); // 소스 이미지 상태
 
     //실행
     void Run(); // 알고리즘 부분 실행
-    void ALLRun(); // 초기화 ~ 전체 실행
 
     // Image Data Type 변환
     HBITMAP MatToBitmap(Mat& src);
@@ -90,14 +71,8 @@ public:
     // get 함수
     Mat GetSourceImage();
     Mat GetResultImage();
-    CircleValue* GetCircleValue();
     
-
-    // show 함수
-    bool ShowSrcImage(); // 소스 이미지 출력
-    bool ShowResultImage(); // 결과 이미지 출력
-
-    bool isReady(); // 소스 이미지 준비 여부
+ 
 
 
     // 알고리즘 실행 부분

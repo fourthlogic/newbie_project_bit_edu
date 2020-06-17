@@ -9,7 +9,7 @@
 #include "COptionFormView.h"
 #include "COptionFrame.h"
 
-#include "CircleDection.h"
+#include "CircleDetection.h"
 
 #include "CNavigatorFrame.h"
 #include "CNavigatorDoc.h"

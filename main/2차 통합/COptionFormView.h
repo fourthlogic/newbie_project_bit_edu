@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "MainFrm.h"
-#include "CircleDection.h"
+#include "CircleDetection.h"
 #include <ctime>
 // COptionFormView 폼 보기
 
@@ -41,13 +41,23 @@ public:
 	int m_nRadMin;
 	int m_nBGV;
 
+	int m_nRuntime;
+
+	// 메시지 처리 
+	// 설정 메뉴
 	afx_msg void OnOptionOpen();				// 설정파일 열기
 	afx_msg void OnOptionSave();				// 설정파일 저장
 	afx_msg void OnAppExit();					// 끝내기
+	// 버튼
 	afx_msg void OnBnClickedButtonDo();			// 실행버튼
 	afx_msg void OnBnClickedButtonOptionSave();	// 설정파일 저장버튼
-	int m_nRuntime;
-	afx_msg void OnEnChangeEditOptionDist();
+	// Edit Control Update
+	afx_msg void OnEnUpdateEditOptionDist();	// 직교거리
+	afx_msg void OnEnUpdateEditOptionRmax();	// 검출 원 최대 반지름
+	afx_msg void OnEnUpdateEditOptionRmin();	// 검출 원 최소 반지름
+	afx_msg void OnEnUpdateEditOptionBgv();		// BGV 값
+	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
+	afx_msg void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
 };
 
 
