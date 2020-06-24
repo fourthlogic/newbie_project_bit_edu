@@ -14,6 +14,9 @@
 #define IDD_COptionFormView             310
 #define IDR_MENU_CONTEXT                315
 #define IDI_ICON1                       317
+#define IDR_MENU_IMAGEVIEW              321
+#define IDR_MENU_NAVI                   322
+#define IDR_MENU_OPTION                 323
 #define IDC_EDIT_TEST                   1000
 #define IDC_EDIT_OPTION_DIST            1000
 #define IDC_BUTTON_TEST                 1001
@@ -27,13 +30,14 @@
 #define IDC_EDIT_OPTION_RUNTIME         1006
 #define IDC_SLIDER_LW                   1008
 #define IDC_EDIT_LW                     1009
+#define IDC_STATIC1                     1010
+#define IDC_STATIC2                     1011
+#define IDC_STATIC3                     1012
+#define IDC_STATIC4                     1013
+#define IDC_STATIC5                     1014
 #define ID_OPTION_OPEN                  32773
 #define ID_OPTION_SAVE                  32774
 #define ID_CONTEXTMENU                  32777
-#define ID_CONTEXTMENU_32778            32778
-#define ID_CONTEXTMENU_32779            32779
-#define ID_CONTEXTMENU_32780            32780
-#define ID_CONTEXTMENU_32781            32781
 #define ID_CONTEXTMENU_COPY             32782
 #define ID_CONTEXTMENU_PASTE            32783
 #define ID_CONTEXTMENU_DELETE           32784
@@ -57,21 +61,17 @@
 #define ID_FILE_LOAD                    32827
 #define ID_SELECT_LW                    32830
 #define ID_SELECT_COLOR                 32831
-#define ID_CONTEXTMENU_32832            32832
 #define ID_CONTEXT_LINEWIDTH            32833
-#define ID_32834                        32834
-#define ID_32835                        32835
 #define ID_DRAW_TRI                     32836
-#define ID_32837                        32837
 #define ID_DRAW_CROSS                   32838
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        321
-#define _APS_NEXT_COMMAND_VALUE         32839
-#define _APS_NEXT_CONTROL_VALUE         1010
+#define _APS_NEXT_RESOURCE_VALUE        324
+#define _APS_NEXT_COMMAND_VALUE         32840
+#define _APS_NEXT_CONTROL_VALUE         1015
 #define _APS_NEXT_SYMED_VALUE           311
 #endif
 #endif

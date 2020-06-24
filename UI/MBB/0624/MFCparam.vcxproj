@@ -69,10 +69,11 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\11.OpenCV\example\OpenCV config\opencv4_debug.props" />
+    <Import Project="..\..\..\11.OpenCV\example\OpenCV config\opencv4_debug.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\11.OpenCV\example\OpenCV config\opencv4_release.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -80,12 +81,16 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>C:\Program Files (x86)\Visual Leak Detector\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files (x86)\Visual Leak Detector\lib\Win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\Program Files (x86)\Visual Leak Detector\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files (x86)\Visual Leak Detector\lib\Win64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -186,7 +191,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="CImgViewerFrame.h" />
-    <ClInclude Include="CircleDection.h" />
+    <ClInclude Include="CircleDetection.h" />
     <ClInclude Include="CNavigatorDoc.h" />
     <ClInclude Include="CNavigatorFrame.h" />
     <ClInclude Include="CNavigatorView.h" />
@@ -205,7 +210,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CImgViewerFrame.cpp" />
-    <ClCompile Include="CircleDection.cpp" />
+    <ClCompile Include="CircleDetection.cpp" />
     <ClCompile Include="CNavigatorDoc.cpp" />
     <ClCompile Include="CNavigatorFrame.cpp" />
     <ClCompile Include="CNavigatorView.cpp" />

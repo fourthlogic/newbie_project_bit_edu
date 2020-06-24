@@ -71,7 +71,7 @@ void CNavigatorView::OnPaint()
 	CBitmap* oldbitmap, * oldbitmap2;	//원본 오브젝트 저장
 
 	//
-	
+
 	if (theApp.pImgViewerView->m_Algorithm.isReady())
 	{
 		memDC.CreateCompatibleDC(pDC);
@@ -81,7 +81,7 @@ void CNavigatorView::OnPaint()
 
 		oldbitmap = mdcOffScreen.SelectObject(&bmpOffScreen);
 		oldbitmap2 = memDC.SelectObject(&m_background);
-		
+
 
 		if ((bmpWidth * ((float)clientHeight / (float)bmpHeight)) <= clientWidth)
 		{
@@ -106,17 +106,20 @@ void CNavigatorView::OnPaint()
 
 		CBrush brush;
 		CPen hpen(PS_SOLID, 1, RGB(255, 255, 0));
-		CPen* p = pDC->SelectObject(&hpen);
+		CPen* oldPen = pDC->SelectObject(&hpen);
 		brush.CreateStockObject(NULL_BRUSH);
 		CBrush* pOldBrush = pDC->SelectObject(&brush);
 		pDC->Rectangle(rect);
-		pDC->SelectObject(pOldBrush);
+		pDC->SelectObject(oldPen);
 
 		memDC.SelectObject(oldbitmap2);
 		memDC.DeleteDC();
 		mdcOffScreen.SelectObject(oldbitmap);
+
 		mdcOffScreen.DeleteDC();
 		bmpOffScreen.DeleteObject();
+		hpen.DeleteObject();
+
 		oldbitmap->DeleteObject();
 		oldbitmap2->DeleteObject();
 
@@ -165,6 +168,7 @@ void CNavigatorView::GetRectPos(float x, float y, float Width, float Height)
 
 void CNavigatorView::DrawNavigatorRect()
 {
+	//세로가 짧을때
 	if ((bmpWidth * ((float)clientHeight / (float)bmpHeight)) <= clientWidth)
 	{
 		Rect_x = (bmpWidth * ((float)clientHeight / (float)bmpHeight)) * (imgViewer_x / bmpWidth) + (clientWidth / 2 - (bmpWidth * ((float)clientHeight / (float)bmpHeight)) / 2);
@@ -172,7 +176,7 @@ void CNavigatorView::DrawNavigatorRect()
 		Rect_Width = (bmpWidth * ((float)clientHeight / (float)bmpHeight)) * (imgViewer_Width / bmpWidth);
 		Rect_Height = clientHeight * (imgViewer_Height / bmpHeight);
 
-		if (Rect_x + Rect_Width >= clientWidth - (clientWidth / 2 - (bmpWidth * ((float)clientHeight / (float)bmpHeight)) / 2))
+		/*if (Rect_x + Rect_Width >= clientWidth - (clientWidth / 2 - (bmpWidth * ((float)clientHeight / (float)bmpHeight)) / 2))
 		{
 			Rect_Width = clientWidth - Rect_x - (clientWidth / 2 - (bmpWidth * ((float)clientHeight / (float)bmpHeight)) / 2);
 		}
@@ -180,9 +184,10 @@ void CNavigatorView::DrawNavigatorRect()
 		if (Rect_y + Rect_Height >= clientHeight)
 		{
 			Rect_Height = clientHeight - Rect_y;
-		}
+		}*/
 	}
 
+	//가로가 짧을때
 	else
 	{
 		Rect_x = clientWidth * (imgViewer_x / bmpWidth);
@@ -190,7 +195,7 @@ void CNavigatorView::DrawNavigatorRect()
 		Rect_Width = clientWidth * (imgViewer_Width / bmpWidth);
 		Rect_Height = (bmpHeight * ((float)clientWidth / (float)bmpWidth)) * (imgViewer_Height / bmpHeight);
 
-		if (Rect_x + Rect_Width >= clientWidth)
+		/*if (Rect_x + Rect_Width >= clientWidth)
 		{
 			Rect_Width = clientWidth - Rect_x;
 		}
@@ -198,8 +203,9 @@ void CNavigatorView::DrawNavigatorRect()
 		if (Rect_y + Rect_Height >= clientHeight - (clientHeight / 2 - (bmpHeight * ((float)clientWidth / (float)bmpWidth)) / 2))
 		{
 			Rect_Height = clientHeight - Rect_y - (clientHeight / 2 - (bmpHeight * ((float)clientWidth / (float)bmpWidth)) / 2);
-		}
+		}*/
 	}
+
 
 	rect.left = Rect_x;
 	rect.top = Rect_y;
@@ -222,6 +228,8 @@ BOOL CNavigatorView::OnEraseBkgnd(CDC* pDC)
 		CRect rect; pDC->GetClipBox(&rect);
 		pDC->PatBlt(rect.left, rect.top, rect.Width(), rect.Height(), PATCOPY);
 		pDC->SelectObject(pOldBrush);
+
+		backBrush.DeleteObject();
 	}
 
 	Invalidate(false);

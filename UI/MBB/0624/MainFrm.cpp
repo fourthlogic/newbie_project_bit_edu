@@ -7,10 +7,6 @@
 #include "MFCparam.h"
 #include "MainFrm.h"
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
 
 // CMainFrame
 
@@ -19,7 +15,6 @@ IMPLEMENT_DYNAMIC(CMainFrame, CMDIFrameWnd)
 BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_WM_CREATE()
 	ON_WM_SIZE()
-	ON_WM_GETMINMAXINFO()
 	ON_WM_CLOSE()
 	ON_COMMAND(ID_OPTION_SAVE, &CMainFrame::OnOptionSave)
 END_MESSAGE_MAP()
@@ -72,6 +67,23 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//EnableDocking(CBRS_ALIGN_ANY);
 	//DockControlBar(&m_wndToolBar);
 
+	//this->GetClientRect(m_rect);
+	//c_Option.sx = 0;
+	//c_Option.sy = 0;
+	//c_Option.cx = m_rect.right * 0.15;
+	//c_Option.cy = m_rect.bottom * 0.4;
+
+	//c_Navi.sx = 0;
+	//c_Navi.sy = m_rect.bottom * 0.4;
+	//c_Navi.cx = m_rect.right * 0.15;
+	//c_Navi.cy = m_rect.bottom - c_Option.cy;
+
+	//c_ImgView.sx = m_rect.right * 0.15;
+	//c_ImgView.sy = 0;
+	//c_ImgView.cx = m_rect.right - c_Option.cx;
+	//c_ImgView.cy = m_rect.bottom;
+
+
 	return 0;
 }
 
@@ -82,7 +94,8 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 	// TODO: CREATESTRUCT cs를 수정하여 여기에서
 	//  Window 클래스 또는 스타일을 수정합니다.
 	//cs.style = WS_MINIMIZEBOX | WS_SYSMENU | WS_THICKFRAME;
-	
+	cs.style &= ~(LONG)FWS_ADDTOTITLE;
+	cs.lpszName = _T("포스로직 프로젝트");
 
 	return TRUE;
 }
@@ -109,55 +122,36 @@ void CMainFrame::OnSize(UINT nType, int cx, int cy)
 	CMDIFrameWnd::OnSize(nType, cx, cy);
 	
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
-	int width = 205;
-	int height = 300;
+//	c_Option.cy = cy*0.4;
+//	c_Option.cx = cx*0.15;
 	GetClientRect(m_rect);
 
-	//posTemplate = theApp.GetFirstDocTemplatePosition();
+	c_Option.sx = 0;
+	c_Option.sy = 0;
+	c_Option.cx = m_rect.right * 0.172;
+	c_Option.cy = m_rect.bottom * 0.48;
 
-	//pDocTemplate = (CMultiDocTemplate*)theApp.GetNextDocTemplate(posTemplate); // 첫번째 템플릿
-	//posDocument = pDocTemplate->GetFirstDocPosition(); // 도큐먼트 포지션 얻기
-	//pOptionDoc = (COptionDoc*)pDocTemplate->GetNextDoc(posDocument); // 첫번째 도큐먼트
-	//posView = pOptionDoc->GetFirstViewPosition(); // 뷰 포지션 얻기
-	//pOptionView = (COptionFormView*)pOptionDoc->GetNextView(posView); // 도큐먼트의 뷰
-	//pOptionFrame = (COptionFrame*)pOptionView->GetParentFrame(); // 프레임 포지션 얻기
+	c_Navi.sx = 0;
+	c_Navi.sy = c_Option.cy;
+	c_Navi.cx = c_Option.cx;
+	c_Navi.cy = m_rect.bottom - c_Option.cy;
 
-	//pDocTemplate = (CMultiDocTemplate*)theApp.GetNextDocTemplate(posTemplate); // 두번째 템플릿
-	//posDocument = pDocTemplate->GetFirstDocPosition();
-	//pImgViewerDoc = (CImgViewerDoc*)pDocTemplate->GetNextDoc(posDocument);
-	//posView = pImgViewerDoc->GetFirstViewPosition();
-	//pImgViewerView = (CImgViewerView*)pImgViewerDoc->GetNextView(posView);
-	//pImgViewerFrame = (CImgViewerFrame*)pImgViewerView->GetParentFrame();
+	c_ImgView.sx = c_Option.cx;
+	c_ImgView.sy = 0;
+	c_ImgView.cx = m_rect.right - c_Option.cx;
+	c_ImgView.cy = m_rect.bottom;
 
-	//pDocTemplate = (CMultiDocTemplate*)theApp.GetNextDocTemplate(posTemplate); // 세번째 템플릿
-	//posDocument = pDocTemplate->GetFirstDocPosition();
-	//pNavigatorDoc = (CNavigatorDoc*)pDocTemplate->GetNextDoc(posDocument);
-	//posView = pNavigatorDoc->GetFirstViewPosition();
-	//pNavigatorView = (CNavigatorView*)pNavigatorDoc->GetNextView(posView);
-	//pNavigatorFrame = (CNavigatorFrame*)pNavigatorView->GetParentFrame();
-	
-	//pOptionFrame->MoveWindow(0, 0, width, m_rect.bottom / 2, 1);
-	//pImgViewerFrame->MoveWindow(width, 0, m_rect.right - width, m_rect.bottom, 1);
-	//pNavigatorFrame->MoveWindow(0, m_rect.bottom / 2, width, m_rect.bottom / 2, 1);
-	
-	theApp.pOptionFrame->MoveWindow(0, 0, width, height, 1);
-	theApp.pImgViewerFrame->MoveWindow(width, 0, m_rect.right - width, m_rect.bottom, 1);
-	theApp.pNavigatorFrame->MoveWindow(0, height, width, m_rect.bottom-height, 1);
-	
-	Invalidate();
+	theApp.pOptionFrame->MoveWindow(c_Option.sx, c_Option.sy, c_Option.cx, c_Option.cy, 1);
+	theApp.pNavigatorFrame->MoveWindow(c_Navi.sx, c_Navi.sy, c_Navi.cx, c_Navi.cy, 1);
+	theApp.pImgViewerFrame->MoveWindow(c_ImgView.sx, c_ImgView.sy, c_ImgView.cx, c_ImgView.cy, 1);
+
+	//s_Option = TRUE;
+	//s_Navi = TRUE;
+	//s_Viewer = TRUE;
+	start = TRUE;
 }
 
 
-void CMainFrame::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
-{
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-
-	// Min size
-	lpMMI->ptMinTrackSize.x = 800;
-	lpMMI->ptMinTrackSize.y = 540;
-
-	CMDIFrameWnd::OnGetMinMaxInfo(lpMMI);
-}
 
 void CMainFrame::OnClose()
 {

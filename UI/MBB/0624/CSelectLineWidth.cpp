@@ -6,7 +6,6 @@
 #include "CSelectLineWidth.h"
 #include "afxdialogex.h"
 
-
 // CSelectLineWidth 대화 상자
 
 IMPLEMENT_DYNAMIC(CSelectLineWidth, CDialogEx)

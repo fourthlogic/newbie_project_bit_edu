@@ -5,7 +5,6 @@
 #include "MFCparam.h"
 #include "COptionDoc.h"
 
-
 // COptionDoc
 
 IMPLEMENT_DYNCREATE(COptionDoc, CDocument)

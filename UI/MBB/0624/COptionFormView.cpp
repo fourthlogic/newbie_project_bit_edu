@@ -1,5 +1,10 @@
 ﻿// COptionFormView.cpp: 구현 파일
 //
+#ifdef _DEBUG
+#define new DEBUG_NEW
+#undef THIS_FILE
+static char THIS_FILE[] = __FILE__;
+#endif
 #include "pch.h"
 #include "MFCparam.h"
 #include "COptionFormView.h"
@@ -31,15 +36,26 @@ void COptionFormView::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_OPTION_RMIN, m_strRadMin);
 	DDX_Text(pDX, IDC_EDIT_OPTION_BGV, m_strBGV);
 	DDX_Text(pDX, IDC_EDIT_OPTION_RUNTIME, m_nRuntime);
+	DDX_Control(pDX, IDC_EDIT_OPTION_DIST, m_edit1);
+	DDX_Control(pDX, IDC_EDIT_OPTION_RMAX, m_edit2);
+	DDX_Control(pDX, IDC_EDIT_OPTION_RMIN, m_edit3);
+	DDX_Control(pDX, IDC_EDIT_OPTION_BGV, m_edit4);
+	DDX_Control(pDX, IDC_EDIT_OPTION_RUNTIME, m_edit5);
 }
 
 BEGIN_MESSAGE_MAP(COptionFormView, CFormView)
-	ON_BN_CLICKED(IDC_BUTTON_OPTION_SAVE, &COptionFormView::OnBnClickedButtonOptionSave)
-	ON_COMMAND(ID_APP_EXIT, &COptionFormView::OnAppExit)
 	ON_COMMAND(ID_OPTION_OPEN, &COptionFormView::OnOptionOpen)
-	ON_BN_CLICKED(IDC_BUTTON_DO, &COptionFormView::OnBnClickedButtonDo)
 	ON_COMMAND(ID_OPTION_SAVE, &COptionFormView::OnOptionSave)
-	ON_EN_CHANGE(IDC_EDIT_OPTION_DIST, &COptionFormView::OnEnChangeEditOptionDist)
+	ON_COMMAND(ID_APP_EXIT, &COptionFormView::OnAppExit)
+	ON_BN_CLICKED(IDC_BUTTON_DO, &COptionFormView::OnBnClickedButtonDo)
+	ON_BN_CLICKED(IDC_BUTTON_OPTION_SAVE, &COptionFormView::OnBnClickedButtonOptionSave)
+	ON_EN_UPDATE(IDC_EDIT_OPTION_DIST, &COptionFormView::OnEnUpdateEditOptionDist)
+	ON_EN_UPDATE(IDC_EDIT_OPTION_RMAX, &COptionFormView::OnEnUpdateEditOptionRmax)
+	ON_EN_UPDATE(IDC_EDIT_OPTION_RMIN, &COptionFormView::OnEnUpdateEditOptionRmin)
+	ON_EN_UPDATE(IDC_EDIT_OPTION_BGV, &COptionFormView::OnEnUpdateEditOptionBgv)
+	ON_WM_CTLCOLOR()
+	ON_WM_DRAWITEM()
+	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 
@@ -69,7 +85,8 @@ void COptionFormView::OnInitialUpdate()
 	CFormView::OnInitialUpdate();
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
 	GetParent()->SetWindowText(_T("설정 창"));
-	
+	HICON hIcon = LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_MAINFRAME)); //icon 변경
+	GetParent()->SetIcon(hIcon, FALSE); //icon 셋팅
 	// 읽기모드 파일 열기
 	CFile saveFile;
 	if (saveFile.Open(_T("saveFile.dat"), CFile::modeRead))
@@ -79,6 +96,8 @@ void COptionFormView::OnInitialUpdate()
 		ar.Close();
 		saveFile.Close();
 	}
+
+
 	UpdateData(FALSE);
 
 }
@@ -128,6 +147,9 @@ void COptionFormView::OnBnClickedButtonDo()
 	endTime = clock();
 	m_nRuntime = endTime - startTime;
 	UpdateData(FALSE);
+	pMain = NULL;
+	pView = NULL;
+
 }
 
 void COptionFormView::OnOptionOpen() // 설정파일 열기
@@ -167,6 +189,7 @@ void COptionFormView::OnOptionOpen() // 설정파일 열기
 
 				record->Close();
 				record = NULL;
+
 				::CoUninitialize();
 			}
 		}
@@ -179,9 +202,6 @@ void COptionFormView::OnOptionOpen() // 설정파일 열기
 	}
 	UpdateData(FALSE);
 }
-
-
-
 
 void COptionFormView::OnOptionSave()
 {
@@ -270,12 +290,205 @@ void COptionFormView::OnOptionSave()
 	}
 }
 
-void COptionFormView::OnEnChangeEditOptionDist()
+void COptionFormView::OnEnUpdateEditOptionDist()
 {
-	// TODO:  RICHEDIT 컨트롤인 경우, 이 컨트롤은
-	// CFormView::OnInitDialog() 함수를 재지정 
-	//하고 마스크에 OR 연산하여 설정된 ENM_CHANGE 플래그를 지정하여 CRichEditCtrl().SetEventMask()를 호출하지 않으면
-	// 이 알림 메시지를 보내지 않습니다.
-
 	// TODO:  여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	UpdateData();
+	int dist;
+	dist = _ttoi(m_strDist);
+	if (dist > 50)
+	{
+		MessageBox(_T("Distance 범위(0~50)를 초과하였습니다."));
+		dist = 50;
+	}
+	else if (dist < 0)
+	{
+		MessageBox(_T("Distance 범위(0~50)를 초과하였습니다."));
+		dist = 0;
+	}
+	m_strDist.Format(_T("%d"), dist);
+	UpdateData(FALSE);
+}
+
+void COptionFormView::OnEnUpdateEditOptionRmax()
+{
+	// TODO:  여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	UpdateData();
+	int rmax, rmin;
+	rmax = _ttoi(m_strRadMax);
+	rmin = _ttoi(m_strRadMin);
+	if (rmax > 20)
+	{
+		MessageBox(_T("최대 반지름 범위(1~20)를 초과하였습니다."));
+		rmax = 20;
+	}
+	else if (rmax < 1)
+	{
+		MessageBox(_T("최대 반지름 범위(1~20)를 초과하였습니다."));
+		rmax = 1;
+	}
+
+	if (rmax < rmin)
+	{
+		MessageBox(_T("최대 반지름 값이 최소 반지름보다 작습니다."));
+		rmax = rmin;
+	}
+	m_strRadMax.Format(_T("%d"), rmax);
+	UpdateData(FALSE);
+}
+
+void COptionFormView::OnEnUpdateEditOptionRmin()
+{
+	// TODO:  여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	UpdateData();
+	int rmax, rmin;
+	rmax = _ttoi(m_strRadMax);
+	rmin = _ttoi(m_strRadMin);
+	if (rmin > 20)
+	{
+		MessageBox(_T("최소 반지름 범위(1~20)를 초과하였습니다."));
+		rmin = 20;
+	}
+	else if (rmin < 1)
+	{
+		MessageBox(_T("최소 반지름 범위(1~20)를 초과하였습니다."));
+		rmin = 1;
+	}
+
+	if (rmin > rmax)
+	{
+		MessageBox(_T("최소 반지름 값이 최대 반지름보다 큽니다."));
+		rmin = rmax;
+	}
+	m_strRadMin.Format(_T("%d"), rmin);
+	UpdateData(FALSE);
+}
+
+void COptionFormView::OnEnUpdateEditOptionBgv()
+{
+	// TODO:  여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	UpdateData();
+	int bgv;
+	bgv = _ttoi(m_strBGV);
+	if (bgv > 255)
+	{
+		MessageBox(_T("볼 GV 임계값 범위(0~255)를 초과하였습니다."));
+		bgv = 255;
+	}
+	else if (bgv < 0)
+	{
+		MessageBox(_T("볼 GV 임계값 범위(0~255)를 초과하였습니다."));
+		bgv = 0;
+	}
+	m_strBGV.Format(_T("%d"), bgv);
+	UpdateData(FALSE);
+}
+
+
+HBRUSH COptionFormView::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
+{
+	HBRUSH hbr = CFormView::OnCtlColor(pDC, pWnd, nCtlColor);
+	switch (nCtlColor) {
+	case CTLCOLOR_DLG:   /// 다이얼로그 배경색을 white로.
+	{
+		return (HBRUSH)GetStockObject(WHITE_BRUSH);
+		break;
+	}
+	case CTLCOLOR_STATIC:
+	{
+		pDC->SetBkMode(TRANSPARENT);   // static text 배경색 투명
+		hbr = (HBRUSH)RGB(255, 255, 255);
+		break;
+	default:
+		hbr = CFormView::OnCtlColor(pDC, pWnd, nCtlColor);
+		break;
+	}
+	}
+	return hbr;
+}
+
+void COptionFormView::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
+{
+	if (nIDCtl == IDC_BUTTON_DO || nIDCtl == IDC_BUTTON_OPTION_SAVE)
+	{
+		UINT state;
+		CDC dc;
+		RECT rctBtn;
+		TCHAR buffer[MAX_PATH];           //To store the Caption of the button.
+		ZeroMemory(buffer, MAX_PATH);     //Intializing the buffer to zero
+
+		dc.Attach(lpDrawItemStruct->hDC);  // Get the Button DC to CDC
+		rctBtn = lpDrawItemStruct->rcItem;     //Store the Button rect to our local rect.
+		dc.Draw3dRect(&rctBtn, RGB(255, 255, 255), RGB(68, 114, 196));
+		dc.FillSolidRect(&rctBtn, RGB(255, 255, 255));  //Here you can define the required color to appear on the Button.
+		state = lpDrawItemStruct->itemState;   //This defines the state of the Push button either pressed or not.
+		if ((state & ODS_SELECTED))
+		{
+			dc.DrawEdge(&rctBtn, EDGE_SUNKEN, BF_RECT);
+		}
+		else
+		{
+			dc.DrawEdge(&rctBtn, EDGE_RAISED, BF_RECT);
+		}
+
+		dc.SetBkColor(RGB(255, 255, 255));   // 텍스트 배경 색
+		dc.SetTextColor(RGB(0, 0, 0));     // 텍스트 색
+
+		::GetWindowText(lpDrawItemStruct->hwndItem, buffer, MAX_PATH); //Get the Caption of Button Window
+		dc.DrawText(buffer, &rctBtn, DT_CENTER | DT_VCENTER | DT_SINGLELINE);//Redraw the  Caption of Button Window
+		dc.Detach();  // Detach the Button DC
+	}
+	CFormView::OnDrawItem(nIDCtl, lpDrawItemStruct);
+}
+
+void COptionFormView::OnSize(UINT nType, int cx, int cy)
+{
+	CFormView::OnSize(nType, cx, cy);
+
+	CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
+	if (pMain->start)
+	{
+		CRect rect;
+
+		//CStatic* c_static1 = (CStatic*)GetDlgItem(IDC_STATIC1);
+		//CStatic* c_static2 = (CStatic*)GetDlgItem(IDC_STATIC2);
+		//CStatic* c_static3 = (CStatic*)GetDlgItem(IDC_STATIC3);
+		//CStatic* c_static4 = (CStatic*)GetDlgItem(IDC_STATIC4);
+		//CStatic* c_static5 = (CStatic*)GetDlgItem(IDC_STATIC5);
+		CEdit* c_edit1 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_DIST);
+		CEdit* c_edit2 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_RMAX);
+		CEdit* c_edit3 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_RMIN);
+		CEdit* c_edit4 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_BGV);
+		CEdit* c_edit5 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_RUNTIME);
+
+		c_edit1->GetWindowRect(&rect);
+		ScreenToClient(&rect);
+		CFont font;
+		font.CreateFontW(rect.Height() * 0.8, rect.Width()*0.15, 0,                            // 출력각도
+			0,                            // 기준 선에서의각도
+			FW_LIGHT,                    // 글자굵기
+			FALSE,                        // Italic 적용여부
+			FALSE,                        // 밑줄적용여부
+			0,                        // 취소선적용여부
+			ANSI_CHARSET,            // 문자셋종류
+			OUT_DEFAULT_PRECIS,            // 출력정밀도
+			CLIP_DEFAULT_PRECIS,        // 클리핑정밀도
+			DEFAULT_QUALITY,                // 출력문자품질
+			DEFAULT_PITCH | FF_SWISS,                // 글꼴Pitch
+			_T("Arial")                // 글꼴
+		);
+		
+		c_edit1->SetFont(&font);
+		c_edit2->SetFont(&font);
+		c_edit3->SetFont(&font);
+		c_edit4->SetFont(&font);
+		c_edit5->SetFont(&font);
+
+		//c_static1->SetFont(&font);
+		//c_static2->SetFont(&font);
+		//c_static3->SetFont(&font);
+		//c_static4->SetFont(&font);
+		//c_static5->SetFont(&font);
+	}
+	
 }

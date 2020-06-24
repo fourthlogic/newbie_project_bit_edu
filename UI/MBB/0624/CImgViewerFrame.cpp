@@ -8,9 +8,6 @@
 
 #include "CImgViewerFrame.h"
 
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
 
 // CChildFrame
 
@@ -18,6 +15,7 @@ IMPLEMENT_DYNCREATE(CImgViewerFrame, CMDIChildWnd)
 
 BEGIN_MESSAGE_MAP(CImgViewerFrame, CMDIChildWnd)
 	ON_WM_CREATE()
+	//ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 // CChildFrame 생성/소멸
@@ -37,7 +35,6 @@ BOOL CImgViewerFrame::PreCreateWindow(CREATESTRUCT& cs)
 	// TODO: CREATESTRUCT cs를 수정하여 여기에서 Window 클래스 또는 스타일을 수정합니다.
 	if( !CMDIChildWnd::PreCreateWindow(cs) )
 		return FALSE;
-
 	cs.style &= ~(LONG)FWS_ADDTOTITLE;
 
 	return TRUE;
@@ -71,3 +68,31 @@ int CImgViewerFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	return 0;
 }
+
+
+//void CImgViewerFrame::OnSize(UINT nType, int cx, int cy)
+//{
+//	CMDIChildWnd::OnSize(nType, cx, cy);
+//
+//	CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
+//
+//	pMain->c_ImgView.sx = pMain->m_rect.right - cx;
+//	pMain->c_ImgView.sy = 0;
+//	pMain->c_ImgView.cx = cx;
+//	pMain->c_ImgView.cy = cy;
+//
+//
+//	pMain->c_Option.sx = 0;
+//	pMain->c_Option.sy = 0;
+//	pMain->c_Option.cx = pMain->m_rect.right - cx;
+//	pMain->c_Option.cy = pMain->c_Option.cy;
+//
+//	pMain->c_Navi.sx = 0;
+//	pMain->c_Navi.sy = 0;
+//	pMain->c_Navi.cx = pMain->m_rect.right - cx;
+//	pMain->c_Navi.cy = pMain->c_Navi.cy;
+//	
+//	if (pMain->start)
+//		pMain->OnSize(1,pMain->m_rect.right, pMain->m_rect.bottom);
+//}
+

@@ -1,7 +1,11 @@
 #pragma once
+//#ifdef _DEBUG
+//#define new DEBUG_NEW
+//#undef THIS_FILE
+//static char THIS_FILE[] = __FILE__;
+//#endif
 #include "pch.h"
-#include "CircleDection.h"
-
+#include "CircleDetection.h"
 
 //void main()
 //{
@@ -89,28 +93,19 @@ CircleDection::CircleDection()
     this->width = 0; // 넓이
     this->size = 0; // 전체 크기
 
-
+    // 파라미터 값 초기화
+    SetThreshValue(100, 158);
     // 주소 연결
 
     threadParam = new CirDetectionParam();
     threadParam->This = this;
     threadParam->cirCenters = &vCirCenters;
-    threadParam->mut = new Mutex;
 
-    this->cirValue.BGV = &this->BGV;
-    this->cirValue.distance = &this->distance;
-    this->cirValue.height = &this->height;
-    this->cirValue.radMax = &this->radMax;
-    this->cirValue.radMin = &this->radMin;
-    this->cirValue.size = &this->size;
-    this->cirValue.thMinValue = &this->thMinValue;
-    this->cirValue.thMaxValue = &this->thMaxValue;
-    this->cirValue.width = &this->width;
 }
 
 CircleDection::~CircleDection()
 {
-
+    delete threadParam;
 }
 
 // 연결 
@@ -127,58 +122,7 @@ void CircleDection::Initialize()
     }
 }
 
-// 초기화 initialize
-void CircleDection::Init()
-{
-    if (!this->src.data)
-        return;
-    else 
-    {
-        this->height = this->src.rows;
-        this->width = this->src.cols;
-        this->size = height * width;
-    }
-    // 파라미터 값 초기화
-    SetThreshValue(100, 158);
-    SetDistance(20);
-    SetCircleValue(2, 4, 80);
 
-    // threadParam 초기화
-    threadParam = new CirDetectionParam();
-    threadParam->This = this;
-    threadParam->cirCenters = &vCirCenters;
-    threadParam->mut = new Mutex;
-
-
-    this->cirValue.BGV = &this->BGV;
-    this->cirValue.distance = &this->distance;
-    this->cirValue.height = &this->height;
-    this->cirValue.radMax = &this->radMax;
-    this->cirValue.radMin = &this->radMin;
-    this->cirValue.size = &this->size;
-    this->cirValue.thMinValue = &this->thMinValue;
-    this->cirValue.thMaxValue = &this->thMaxValue;
-    this->cirValue.width = &this->width;
-
-}
-
-// 이미지 선택
-//void CircleDection::SelectImage()
-//{
-//    char szFilter[] = "Image(*.BMP, *.GOF, *.JPG, *.PNG)|*.BMP; *.GIF; *.JPG; *.bmp; *.gif; *.jpg; *.png; | All Files(*.*) | *.* ||";
-//    CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, CA2CT(szFilter), AfxGetMainWnd());
-//    if (dlg.DoModal() == IDOK)
-//    {
-//        CString cstrImgPath = dlg.GetPathName();
-//        CT2CA pszConvertedAnsiString(cstrImgPath);
-//        std::string strStd(pszConvertedAnsiString);
-//
-//        this->SetImage(imread(strStd, IMREAD_GRAYSCALE));
-//        this->Init();
-//        //this->Run();
-//        //this->ShowResultImage();
-//    }
-//}
 bool CircleDection::SelectImage()
 {
     char szFilter[] = "Image(*.BMP, *.GOF, *.JPG, *.PNG)|*.BMP; *.GIF; *.JPG; *.bmp; *.gif; *.jpg; *.png; | All Files(*.*) | *.* ||";
@@ -190,9 +134,7 @@ bool CircleDection::SelectImage()
         std::string strStd(pszConvertedAnsiString);
 
         this->SetImage(imread(strStd, IMREAD_GRAYSCALE));
-        this->Init();
-        //this->Run();
-        //this->ShowResultImage();
+        this->Initialize();
         return TRUE;
     }
     else
@@ -213,16 +155,6 @@ void CircleDection::Run()
     vCirCenters.clear(); // Vertical의 중심 좌표들의 값 
     hCirCenters.clear(); // Horizontal의 중심 좌표들의 값 
     vertexPts.clear();   // 최외곽 ROI Vertex Points
-    GetCornerPoints(); // 3점 좌표 추출
-    GetVertexPoints(); // 최외곽 ROI
-    ContourDetection(); // 원 검출
-    Drawing(); // Drawing
-}
-
-// 전체 실행
-void CircleDection::ALLRun()
-{
-    Init();
     GetCornerPoints(); // 3점 좌표 추출
     GetVertexPoints(); // 최외곽 ROI
     ContourDetection(); // 원 검출
@@ -270,36 +202,6 @@ Mat CircleDection::GetResultImage()
 {
     return this->result;
 }
-
-// value 구조체 값 가져오기
-CircleValue* CircleDection::GetCircleValue()
-{
-    return &this->cirValue;
-}
-
-// 소스 이미지 출력
-bool CircleDection::ShowSrcImage()
-{
-    if (!this->src.data) {
-        // error
-        return false;
-    }
-    imshow("src", src);
-    return true;
-}
-
-// 결과 이미지 출력
-bool CircleDection::ShowResultImage()
-{
-    if (!this->result.data) {
-        // error
-        return false;
-    }
-    imshow("result", result);
-    return true;
-}
-
-
 
 //==============================================================================
 
@@ -748,9 +650,7 @@ void CircleDection::ContourDetection() {
     unsigned threadId;
     threadParam->cirCenters = &this->vCirCenters;
     threadParam->contours = &vContours;
-    //_beginthreadex(NULL, 0, CirDetectionThread, (void*)threadParam, 0, &threadId);
     CircleDetection(hContours, this->hCirCenters);
-    //threadParam->mut->lock();
     WaitForSingleObject((HANDLE)_beginthreadex(NULL, 0, CirDetectionThread, (void*)threadParam, 0, &threadId) , INFINITE);
 }
 
@@ -799,9 +699,7 @@ void CircleDection::fillPoly_(Size matSize, Mat& dst, vector<Point> pts) {
 // 원 검출 Thread
 unsigned WINAPI CircleDection::CirDetectionThread(void* para) {
     CirDetectionParam* Param = (CirDetectionParam*)para;
-    Param->mut->lock();
     Param->This->CircleDetection(*Param->contours, *Param->cirCenters);
-    Param->mut->unlock();
     return 0;
 }
 
