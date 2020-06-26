@@ -8,7 +8,7 @@ using namespace cv;
 using namespace std;
 enum DrawMode	//도형 종류
 {
-	None = -1, DPoint, DLine, DEllipse, DRectangle, DTriangle, DCrossHair
+	None = -1, DPoint, DLine, DEllipse, DRectangle, DTriangle
 };
 
 enum RollBackMode {	//롤백 명령어
@@ -131,6 +131,8 @@ public:
 	Point2d d_pix_pos;
 	Point2d u_img_pos;
 	Point2d u_pix_pos;
+	Point2d d_pos;
+	Point2d u_pos;
 
 
 
@@ -231,7 +233,6 @@ public:
 	afx_msg void OnDrawEllpse();
 	afx_msg void OnDrawRect();
 	afx_msg void OnDrawTri();
-	afx_msg void OnDrawCross();	
 	// 모드 선택
 	afx_msg void OnModeSelect();
 	// 선 굵기 & 선 색 선택

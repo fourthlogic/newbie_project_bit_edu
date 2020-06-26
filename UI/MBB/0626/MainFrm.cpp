@@ -169,3 +169,23 @@ void CMainFrame::OnOptionSave()
 	//pOptionView->OnOptionSave();
 	theApp.OnOptionSave();
 }
+
+BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
+{
+	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	// ALT + F4 방지 
+		if (pMsg->message == WM_SYSKEYDOWN) { 
+			if (pMsg->wParam == VK_F4) 
+				return TRUE; 
+		} 
+		if (pMsg->message == WM_KEYDOWN) {
+			if (pMsg->wParam == VK_ESCAPE || 
+				pMsg->wParam == VK_RETURN || 
+				pMsg->wParam == VK_SPACE || 
+				pMsg->wParam == VK_CANCEL) //CTRL + PAUSE 방지 
+				return TRUE; 
+		}
+
+			
+	return CMDIFrameWnd::PreTranslateMessage(pMsg);
+}

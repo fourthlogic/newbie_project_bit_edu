@@ -109,6 +109,7 @@ public:
 	COLORREF color;
 	afx_msg void OnClose();
 	afx_msg void OnOptionSave();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };
 
 
