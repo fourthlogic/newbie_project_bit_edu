@@ -16,6 +16,7 @@ enum RollBackMode {	//롤백 명령어
 };
 
 
+
 struct MyShape
 {
 	int shapeType; // 도형 모양	
@@ -28,7 +29,8 @@ struct MyShape
 	double theta;  // 각
 	double R_theta; // 회전각
 	double radin[2]; // 크기
-	CRect Rect[4];
+	vector<vector<Point2d>> edge; // 크기 조절
+	vector<vector<Point2d>> R_edge;
 };
 
 struct CopyShape {
@@ -42,6 +44,8 @@ struct RollbackInfo {	//롤백 정보
 	MyShape redoShape;	//다음 도형
 	MyShape undoShape;	//이전 도형
 };
+
+
 
 
 class CImgViewerView : public CView
@@ -144,7 +148,7 @@ public:
 	vector<int> zOrder;			//zOrder 리스트
 	vector<int> GroupList;		//Group 선택 리스트
 	vector<CopyShape> copyList;	//복사 리스트
-
+	double m_theta;
 
 	//되돌리기
 	int rollbackIndex;	//롤백 인덱스
@@ -187,7 +191,8 @@ public:
 	// 좌표 도형 내부 검사
 	int isLeft(Point2d linePt1, Point2d linePt2, CPoint pos);
 	int isContainPolygon(CPoint pos, vector<Point2d> vertices);
-
+	int isLeft(Point2d linePt1, Point2d linePt2, Point2d pos);
+	int isContainPolygon(Point2d pos, vector<Point2d> vertices);
 	// 네비게이터
 	void imgViewer2Navigator();
 	void GetImgPos(double Navigator_x, double Navigator_y);
