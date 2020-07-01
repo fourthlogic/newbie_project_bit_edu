@@ -30,6 +30,11 @@ protected:
 public:
 	virtual void OnInitialUpdate();
 
+	CEdit m_edit1;
+	CEdit m_edit2;
+	CEdit m_edit3;
+	CEdit m_edit4;
+	CEdit m_edit5;
 
 	CString m_strDist;							// 직교거리
 	CString m_strRadMax;						// 검출 원 최대 반지름
@@ -58,6 +63,7 @@ public:
 	afx_msg void OnEnUpdateEditOptionBgv();		// BGV 값
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
+	afx_msg void OnSize(UINT nType, int cx, int cy);
 };
 
 

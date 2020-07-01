@@ -22,12 +22,11 @@ BEGIN_MESSAGE_MAP(CMFCparamApp, CWinApp)
 	ON_COMMAND(ID_DRAW_LINE, &CMFCparamApp::OnDrawLine)
 	ON_COMMAND(ID_DRAW_ELLPSE, &CMFCparamApp::OnDrawEllpse)
 	ON_COMMAND(ID_DRAW_RECT, &CMFCparamApp::OnDrawRect)
+	ON_COMMAND(ID_DRAW_TRI, &CMFCparamApp::OnDrawTri)
 	ON_COMMAND(ID_MODE_SELECT, &CMFCparamApp::OnModeSelect)
 	ON_COMMAND(ID_SELECT_LW, &CMFCparamApp::OnSelectLw)
 	ON_COMMAND(ID_SELECT_COLOR, &CMFCparamApp::OnSelectColor)
 	ON_COMMAND(ID_APP_ABOUT, &CMFCparamApp::OnAppAbout)
-	ON_COMMAND(ID_DRAW_TRI, &CMFCparamApp::OnDrawTri)
-	ON_COMMAND(ID_DRAW_CROSS, &CMFCparamApp::OnDrawCross)
 END_MESSAGE_MAP()
 
 
@@ -103,7 +102,7 @@ BOOL CMFCparamApp::InitInstance()
 	//  문서, 프레임 창 및 뷰 사이의 연결 역할을 합니다.
 
 	// Option(설정창) 문서 템플릿 추가
-	pDocTemplate1 = new CMultiDocTemplate(IDR_MAINFRAME,
+	pDocTemplate1 = new CMultiDocTemplate(IDR_MENU_OPTION,
 		RUNTIME_CLASS(COptionDoc),
 		RUNTIME_CLASS(COptionFrame), // 사용자 지정 MDI 자식 프레임입니다.
 		RUNTIME_CLASS(COptionFormView));
@@ -112,7 +111,7 @@ BOOL CMFCparamApp::InitInstance()
 	AddDocTemplate(pDocTemplate1);
 
 	// 이미지 뷰어 문서 템플릿 추가
-	pDocTemplate2 = new CMultiDocTemplate(IDR_MAINFRAME,
+	pDocTemplate2 = new CMultiDocTemplate(IDR_MENU_IMAGEVIEW,
 		RUNTIME_CLASS(CImgViewerDoc),
 		RUNTIME_CLASS(CImgViewerFrame), // 사용자 지정 MDI 자식 프레임입니다.
 		RUNTIME_CLASS(CImgViewerView));
@@ -120,7 +119,8 @@ BOOL CMFCparamApp::InitInstance()
 		return FALSE;
 	AddDocTemplate(pDocTemplate2);
 
-	pDocTemplate3 = new CMultiDocTemplate(IDR_MAINFRAME,
+	//네이게이터
+	pDocTemplate3 = new CMultiDocTemplate(IDR_MENU_NAVI,
 		RUNTIME_CLASS(CNavigatorDoc),
 		RUNTIME_CLASS(CNavigatorFrame), // 사용자 지정 MDI 자식 프레임입니다.
 		RUNTIME_CLASS(CNavigatorView));
@@ -153,6 +153,7 @@ BOOL CMFCparamApp::InitInstance()
 
 	// 윈도우들의 포인터 저장
 	POSITION posDocument = pDocTemplate1->GetFirstDocPosition(); // 도큐먼트 포지션 얻기
+	POSITION a;
 	pOptionDoc = (COptionDoc*)pDocTemplate1->GetNextDoc(posDocument); // 설정창 Doc 포인터
 	POSITION posView = pOptionDoc->GetFirstViewPosition(); // 뷰 포지션 얻기
 	pOptionView = (COptionFormView*)pOptionDoc->GetNextView(posView); // 설정창 View 포인터
@@ -301,11 +302,6 @@ void CMFCparamApp::OnDrawTri()
 	pImgViewerView->OnDrawTri();
 }
 
-void CMFCparamApp::OnDrawCross()
-{
-	// TODO: 여기에 명령 처리기 코드를 추가합니다.
-	pImgViewerView->OnDrawCross();
-}
 void CMFCparamApp::OnModeSelect()
 {
 	// TODO: 여기에 명령 처리기 코드를 추가합니다.

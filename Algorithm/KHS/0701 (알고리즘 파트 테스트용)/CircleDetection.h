@@ -15,7 +15,7 @@ typedef struct CirDetectionParam
 {
     CircleDection* This;
     vector<vector<Point>>* contours;
-    vector<Point>* cirCenters;
+    vector<Vec3f>* cirCenters;
 }cirDetectionParam;
 
 class CircleDection
@@ -26,8 +26,10 @@ private:
     HBITMAP resultBitmap;
     CirDetectionParam* threadParam; // thread용 구조체
     vector<Point> cornerPts; // 외곽 3점 좌표 값
-    vector<Point> vCirCenters; // Vertical의 중심 좌표들의 값 
-    vector<Point> hCirCenters; // Horizontal의 중심 좌표들의 값 
+    vector<Vec3f> vCirCenters; // Vertical의 중심 좌표들의 값 
+    vector<Vec3f> hCirCenters; // Horizontal의 중심 좌표들의 값 
+    vector<Vec3f> CirCenters; // Horizontal의 중심 좌표들의 값 
+    vector<Point2d> LinePoints; // Horizontal의 중심 좌표들의 값 
     vector<Point> vertexPts;   // 최외곽 ROI Vertex Points
 
     
@@ -71,9 +73,8 @@ public:
     // get 함수
     Mat GetSourceImage();
     Mat GetResultImage();
-    
+    vector<Vec3f> GetCirclePoint();
  
-
 
     // 알고리즘 실행 부분
 private:
@@ -101,18 +102,27 @@ private:
     // 원 검출 Thread
     static unsigned WINAPI CirDetectionThread(void* para);
     // 원 검출
-    void CircleDetection(vector<vector<Point>>& contours, vector<Point>& cirCenters);
+    void CircleDetection(vector<vector<Point>>& contours, vector<Vec3f>& cirCenters);
     // 모든 Point를 포함하는 rect 추출
     Rect boundRect(vector<Point> pts);
     // 미분 함수(prewitt Edge)
     void Differential(Mat& src, Mat& dst);
+    // Otsu threshold
+    int OtsuThreshold(Mat& src);
+    // 선형 보간법 - 밝기값 추출
+    template <typename T>
+    double BilinearValue(Mat& img, Point2d pt);
+    // 최소제곱법 원 중심 추출
+    Vec3f CircleFitByTaubin(vector<Point2d> edges);
     // 사각형 내부의 점 포함 여부
     bool IsContain(Rect rc, vector<Point>& cirCenters);
     // 최소제곱법을 통해 교점 표시, 직선 및 원 그리기
     void Drawing();
     // 최소제곱법 x, y좌표 스위칭 후 계산한 뒤 나온 식을 다시 y=x 대칭이동
+    Vec2f LSM_Vertical(vector<Vec3f>& pts);
     Vec2f LSM_Vertical(vector<Point>& pts);
     // 최소제곱법 함수
+    Vec2f LSM_Horizontal(vector<Vec3f>& pts);
     Vec2f LSM_Horizontal(vector<Point>& pts);
 };
 

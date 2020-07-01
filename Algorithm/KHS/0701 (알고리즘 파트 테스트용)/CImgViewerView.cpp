@@ -14,6 +14,8 @@
 #include "CImgViewerView.h"
 #include "CSelectLineWidth.h"
 #define IsCTRLPressed()  ( 0x8000 ==(GetKeyState(VK_CONTROL) & 0x8000 ))
+//콘솔 출력
+#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console")
 
 //#ifdef _DEBUG
 //#define new DEBUG_NEW
@@ -31,7 +33,6 @@ BEGIN_MESSAGE_MAP(CImgViewerView, CView)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
 	ON_WM_MOUSEMOVE()
 	ON_WM_SIZE()
-	ON_WM_MOUSEHWHEEL()
 	ON_WM_MOUSEWHEEL()
 	ON_WM_MBUTTONDOWN()
 	ON_WM_MBUTTONUP()
@@ -44,6 +45,7 @@ BEGIN_MESSAGE_MAP(CImgViewerView, CView)
 	ON_COMMAND(ID_DRAW_LINE, &CImgViewerView::OnDrawLine)
 	ON_COMMAND(ID_DRAW_ELLPSE, &CImgViewerView::OnDrawEllpse)
 	ON_COMMAND(ID_DRAW_RECT, &CImgViewerView::OnDrawRect)
+	ON_COMMAND(ID_DRAW_TRI, &CImgViewerView::OnDrawTri)
 	ON_COMMAND(ID_MODE_SELECT, &CImgViewerView::OnModeSelect)
 	ON_COMMAND(ID_CONTEXT_COPY, &CImgViewerView::OnContextCopy)
 	ON_COMMAND(ID_CONTEXT_PASTE, &CImgViewerView::OnContextPaste)
@@ -57,8 +59,6 @@ BEGIN_MESSAGE_MAP(CImgViewerView, CView)
 	ON_WM_CREATE()
 	ON_WM_ERASEBKGND()
 	ON_WM_CLOSE()
-	ON_COMMAND(ID_DRAW_TRI, &CImgViewerView::OnDrawTri)
-	ON_COMMAND(ID_DRAW_CROSS, &CImgViewerView::OnDrawCross)
 END_MESSAGE_MAP()
 
 template <typename T>
@@ -134,6 +134,8 @@ void CImgViewerView::OnInitialUpdate()
 {
 	CView::OnInitialUpdate();
 	GetParent()->SetWindowText(_T("이미지 뷰"));
+	HICON hIcon = LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_MAINFRAME)); //icon 변경
+	GetParent()->SetIcon(hIcon, FALSE); //icon 셋팅
 
 }
 
@@ -143,23 +145,17 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 	CWnd::OnMouseMove(nFlags, point);
 	m_nFlags = nFlags;
 	// 좌표 업데이트
-	if (start_pos.x == 0)
-	{
-		mov_Pt.x = (z_pos.x + (m_ePt.x + point.x) / PWidth);
-	}
-	else
-	{
-		mov_Pt.x = m_Bitmap.bmWidth * ((point.x - start_pos.x) / (m_Bitmap.bmWidth * zoomView - 4));
-	}
-	if (start_pos.y == 0)
-	{
-		mov_Pt.y = (z_pos.y + (m_ePt.y + point.y) / PHeight);
-	}
-	else
-	{
-		mov_Pt.y = m_Bitmap.bmHeight * ((point.y - start_pos.y) / (m_Bitmap.bmHeight * zoomView - 4));
-	}
-	m_pos = point;
+	u_img_pos.x = z_pos.x + (int)((m_ePt.x + point.x) / PWidth);
+	u_img_pos.y = z_pos.y + (int)((m_ePt.y + point.y) / PHeight);
+
+	u_pix_pos.x = (((m_ePt.x + point.x) / PWidth - (int)((m_ePt.x + point.x) / PWidth)));
+	u_pix_pos.y = (((m_ePt.y + point.y) / PHeight - (int)((m_ePt.y + point.y) / PHeight)));
+
+	u_pos = u_img_pos + u_pix_pos;
+
+	m_pos.x = point.x;
+	m_pos.y = point.y;
+
 	int i = 0;
 	//패닝
 	if (nFlags & MK_MBUTTON)
@@ -176,17 +172,19 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 					i = 1 + ((0 - m_ePt.x) / PWidth);
 					z_pos.x -= i;
 					m_ePt.x += i * PWidth;
+				}
 
-					/*if (z_pos.x > 0)
-					{
-					   i = 1 + ((0 - m_ePt.x) / PWidth);
-					   z_pos.x -= i;
-					   m_ePt.x += i * PWidth;
-					}*/
+				//이미지 왼쪽으로 나갈때
+				if ((z_pos.x == (int)(-((m_bgRect.right / 5 * 4) / PWidth) - 1) && m_ePt.x <= PWidth * (1 - ((((m_bgRect.right / 5 * 4) / PWidth) - (int)((m_bgRect.right / 5 * 4) / PWidth))))) || z_pos.x < (int)(-((m_bgRect.right / 5 * 4) / PWidth) - 1))
+				{
+					z_pos.x = -((m_bgRect.right / 5 * 4) / PWidth) - 1;
+					m_ePt.x = PWidth * (1 - ((((m_bgRect.right / 5 * 4) / PWidth) - (int)((m_bgRect.right / 5 * 4) / PWidth))));
 				}
 			}
+
 			else // 왼쪽으로 끌었을때
 			{
+
 				m_ePt.x += m_sPt.x - point.x;
 
 				if (m_ePt.x + m_bgRect.right - (PWidth * (int)(zoomWidth + 2)) >= 0)
@@ -194,11 +192,16 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 					i = 1 + (m_ePt.x + m_bgRect.right - (PWidth * (int)(zoomWidth + 2))) / PWidth;
 					z_pos.x += i;
 					m_ePt.x -= i * PWidth;
+				}
 
+				//이미지 오른쪽으로 나갈때(고쳐야댐)
+				if ((z_pos.x == (int)(m_Bitmap.bmWidth - ((m_bgRect.right / 5 * 1) / PWidth)) && m_ePt.x >= PWidth * (1 - ((((m_bgRect.right / 5) / PWidth) - (int)((m_bgRect.right / 5) / PWidth))))) || z_pos.x > (int)(m_Bitmap.bmWidth - ((m_bgRect.right / 5) / PWidth)))
+				{
+					z_pos.x = m_Bitmap.bmWidth - ((m_bgRect.right / 5) / PWidth);
+					m_ePt.x = PWidth * (1 - ((((m_bgRect.right / 5) / PWidth) - (int)((m_bgRect.right / 5) / PWidth))));
 				}
 			}
 		}
-
 
 		if (start_pos.y == 0)
 		{
@@ -213,7 +216,14 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 					m_ePt.y -= i * PHeight;
 				}
 
+				//이미지 아래쪽으로 나갈때(고쳐야댐)
+				if ((z_pos.y == (int)(m_Bitmap.bmHeight - ((m_bgRect.bottom / 5 * 1) / PHeight)) && m_ePt.y >= PHeight * (1 - ((((m_bgRect.bottom / 5) / PHeight) - (int)((m_bgRect.bottom / 5) / PHeight))))) || z_pos.y > (int)(m_Bitmap.bmHeight - ((m_bgRect.bottom / 5) / PHeight)))
+				{
+					z_pos.y = m_Bitmap.bmHeight - ((m_bgRect.bottom / 5) / PHeight);
+					m_ePt.y = PHeight * (1 - ((((m_bgRect.bottom / 5) / PHeight) - (int)((m_bgRect.bottom / 5) / PHeight))));
+				}
 			}
+
 			else // 아래로 내렸을때
 			{
 				m_ePt.y -= point.y - m_sPt.y;
@@ -222,19 +232,19 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 					i = 1 + ((0 - m_ePt.y) / PHeight);
 					z_pos.y -= i;
 					m_ePt.y += i * PHeight;
+				}
 
-					/*if (z_pos.y > 0)
-					{
-					   i = 1 + ((0 - m_ePt.y) / PHeight);
-					   z_pos.y -= i;
-					   m_ePt.y += i * PHeight;
-					}*/
+				//이미지 위쪽으로 나갈때
+				if ((z_pos.y == (int)(-((m_bgRect.bottom / 5 * 4) / PHeight) - 1) && m_ePt.y <= PHeight * (1 - ((((m_bgRect.bottom / 5 * 4) / PHeight) - (int)((m_bgRect.bottom / 5 * 4) / PHeight))))) || z_pos.y < (int)(-((m_bgRect.bottom / 5 * 4) / PHeight) - 1))
+				{
+					z_pos.y = -((m_bgRect.bottom / 5 * 4) / PHeight) - 1;
+					m_ePt.y = PHeight * (1 - ((((m_bgRect.bottom / 5 * 4) / PHeight) - (int)((m_bgRect.bottom / 5 * 4) / PHeight))));
 				}
 			}
 		}
-		// B영역의 사각형 그리기
 
 
+		//m_ePt가 Pixel보다 크거나 작아질때
 		//---------------------------
 		if (m_ePt.x + m_bgRect.right > PWidth * (int)(zoomWidth + 2))
 		{
@@ -253,8 +263,10 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 			m_ePt.x = 0;
 		if (m_ePt.y < 0)
 			m_ePt.y = 0;
+		//-----------------------------
 
-		m_sPt = point;
+		m_sPt.x = point.x;
+		m_sPt.y = point.y;
 		//----------------------------------------------------------------
 		imgViewer2Navigator();
 
@@ -264,17 +276,24 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 
 	if (MK_LBUTTON == nFlags && drawID == TRUE) // 마우스를 클릭하여 드래그일 동안만 
 		Invalidate(FALSE);
+
 	// 크기 조정
 	else if (MK_LBUTTON == nFlags && (EdgeSelect == TRUE))
 	{
-		int o, p;
-		int xx, yy;
+		double o, p;
+		double xx, yy;
 		//CPoint TLX;
-		xx = d_sPt.x, yy = d_sPt.y;
-		d_sPt.x = (z_pos.x + (m_ePt.x + point.x) / PWidth) - start_pos.x;
-		d_sPt.y = (z_pos.y + (m_ePt.y + point.y) / PHeight) - start_pos.y;
-		o = (d_sPt.x - xx);
-		p = (d_sPt.y - yy);
+		xx = d_pos.x, yy = d_pos.y;
+
+		o = (u_pos.x - xx);
+		p = (u_pos.y - yy);
+
+		d_pos.x += o;
+		d_pos.y += p;
+
+		u_pos.x += o;
+		u_pos.y += p;
+
 		if (IsContainVector(SelectIndex, GroupList)) {
 			for (int j = 0; j < GroupList.size(); j++) {
 				double theta = data[GroupList[j]].theta;
@@ -292,25 +311,6 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 				{
 					data[GroupList[j]].RotatePts[EdgeIndex].x += o;
 					data[GroupList[j]].RotatePts[EdgeIndex].y += p;
-				}
-				// 크로스 헤어
-				else if (data[GroupList[j]].shapeType == DrawMode::DCrossHair)
-				{
-					if (EdgeIndex / 2 == 0)
-					{
-						data[GroupList[j]].RotatePts[EdgeIndex].x += o;
-						data[GroupList[j]].RotatePts[EdgeIndex].y += p;
-						data[GroupList[j]].RotatePts[EdgeIndex + 1].x -= o;
-						data[GroupList[j]].RotatePts[EdgeIndex + 1].y -= p;
-					}
-					else
-					{
-						data[GroupList[j]].RotatePts[EdgeIndex].x += o;
-						data[GroupList[j]].RotatePts[EdgeIndex].y += p;
-						data[GroupList[j]].RotatePts[EdgeIndex - 1].x -= o;
-						data[GroupList[j]].RotatePts[EdgeIndex - 1].y -= p;
-					}
-
 				}
 				//사각형 원
 				else
@@ -386,28 +386,10 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 				data[SelectIndex].RotatePts[EdgeIndex].x += o;
 				data[SelectIndex].RotatePts[EdgeIndex].y += p;
 			}
-			// 크로스 헤어
-			else if (data[SelectIndex].shapeType == DrawMode::DCrossHair)
-			{
-				if (EdgeIndex / 2 == 0)
-				{
-					data[SelectIndex].RotatePts[EdgeIndex].x += o;
-					data[SelectIndex].RotatePts[EdgeIndex].y += p;
-					data[SelectIndex].RotatePts[EdgeIndex + 1].x -= o;
-					data[SelectIndex].RotatePts[EdgeIndex + 1].y -= p;
-				}
-				else
-				{
-					data[SelectIndex].RotatePts[EdgeIndex].x += o;
-					data[SelectIndex].RotatePts[EdgeIndex].y += p;
-					data[SelectIndex].RotatePts[EdgeIndex - 1].x -= o;
-					data[SelectIndex].RotatePts[EdgeIndex - 1].y -= p;
-				}
-
-			}
 			//사각형 원
 			else
 			{
+
 				data[SelectIndex].RotatePts[EdgeIndex].x += o;
 				data[SelectIndex].RotatePts[EdgeIndex].y += p;
 
@@ -434,6 +416,16 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 						data[SelectIndex].RotatePts[0].x += o;
 						data[SelectIndex].RotatePts[2].y += p;
 					}
+					printf("o : %f ", o);
+					printf("p : %f \n", p);
+					printf("0.x : %f \n", data[SelectIndex].RotatePts[0].x);
+					printf("0.y : %f \n", data[SelectIndex].RotatePts[0].y);
+					printf("1.x : %f \n", data[SelectIndex].RotatePts[1].x);
+					printf("1.y : %f \n", data[SelectIndex].RotatePts[1].y);
+					printf("2.x : %f \n", data[SelectIndex].RotatePts[2].x);
+					printf("2.y : %f \n", data[SelectIndex].RotatePts[2].y);
+					printf("3.x : %f \n", data[SelectIndex].RotatePts[3].x);
+					printf("3.y : %f \n", data[SelectIndex].RotatePts[3].y);
 				}
 				else
 				{
@@ -470,24 +462,23 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 	{
 		Point2d center = data[SelectIndex].Center;
 		Point2d Rotate = data[SelectIndex].Rotate;
-		if (start_pos.x == 0)
-		{
-			d_sPt.x = (z_pos.x + (m_ePt.x + point.x) / PWidth);
-		}
-		else
-		{
-			d_sPt.x = m_Bitmap.bmWidth * ((point.x - start_pos.x) / (m_Bitmap.bmWidth * zoomView - 4));
-		}
-		if (start_pos.y == 0)
-		{
-			d_sPt.y = (z_pos.y + (m_ePt.y + point.y) / PHeight);
-		}
-		else
-		{
-			d_sPt.y = m_Bitmap.bmHeight * ((point.y - start_pos.y) / (m_Bitmap.bmHeight * zoomView - 4));
-		}
+		Point2d e_center = data[SelectIndex].pts[EdgeIndex];
+		//double dxd, dxi, dyd, dyi;
+		//dxd = modf(e_center.x, &dxi);
+		//dyd = modf(e_center.y, &dyi);
 
-		double theta = atan2((Rotate.x - center.x), (Rotate.y - center.y)) - atan2((d_sPt.x - center.x), (d_sPt.y - center.y));
+
+		//e_center.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd);
+		//e_center.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd);
+		double theta;
+		theta = atan2((d_pos.x - e_center.x), (d_pos.y - e_center.y)) - atan2((u_pos.x - e_center.x), (u_pos.y - e_center.y));
+
+		//if (data[SelectIndex].theta <= CV_PI) 
+		//	theta = atan2((d_pos.x - e_center.x), (d_pos.y - e_center.y)) - atan2((u_pos.x - e_center.x), (u_pos.y - e_center.y));
+		//else 
+		//	theta = atan2((u_pos.x - e_center.x), (u_pos.y - e_center.y)) - atan2((d_pos.x - e_center.x), (d_pos.y - e_center.y));
+		//
+		
 
 		if (IsContainVector(SelectIndex, GroupList)) {
 			for (int j = 0; j < GroupList.size(); j++) {
@@ -495,9 +486,11 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 				Point2d pt;
 				for (int i = 0; i < pts.size(); i++)
 				{
-
-					pt.x = cvRound((pts[i].x - data[GroupList[j]].Center.x) * cos(theta) - (pts[i].y - data[GroupList[j]].Center.y) * sin(theta) + data[GroupList[j]].Center.x);
-					pt.y = cvRound((pts[i].x - data[GroupList[j]].Center.x) * sin(theta) + (pts[i].y - data[GroupList[j]].Center.y) * cos(theta) + data[GroupList[j]].Center.y);
+					pt.x = ((pts[i].x - data[GroupList[j]].Center.x) * cos(theta) - (pts[i].y - data[GroupList[j]].Center.y) * sin(theta) + data[GroupList[j]].Center.x);
+					pt.y = ((pts[i].x - data[GroupList[j]].Center.x) * sin(theta) + (pts[i].y - data[GroupList[j]].Center.y) * cos(theta) + data[GroupList[j]].Center.y);
+					
+					//pt.x = ((pts[i].y - data[GroupList[j]].Center.y) * sin(theta) + (pts[i].x - data[GroupList[j]].Center.x) * cos(theta) + data[GroupList[j]].Center.x);
+					//pt.y = ((pts[i].y - data[GroupList[j]].Center.y) * cos(theta) - (pts[i].x - data[GroupList[j]].Center.x) * sin(theta) + data[GroupList[j]].Center.y);
 					pts[i] = pt;
 				}
 				data[GroupList[j]].RotatePts = pts;
@@ -509,9 +502,11 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 			Point2d pt;
 			for (int i = 0; i < pts.size(); i++)
 			{
-
-				pt.x = cvRound((pts[i].x - center.x) * cos(theta) - (pts[i].y - center.y) * sin(theta) + center.x);
-				pt.y = cvRound((pts[i].x - center.x) * sin(theta) + (pts[i].y - center.y) * cos(theta) + center.y);
+				pt.x = ((pts[i].x - center.x) * cos(theta) - (pts[i].y - center.y) * sin(theta) + center.x);
+				pt.y = ((pts[i].x - center.x) * sin(theta) + (pts[i].y - center.y) * cos(theta) + center.y);
+				
+				//pt.x = ((pts[i].y - center.y) * sin(theta) + (pts[i].x - center.x) * cos(theta) + center.x);
+				//pt.y = ((pts[i].y - center.y) * cos(theta) - (pts[i].x - center.x) * sin(theta) + center.y);
 				pts[i] = pt;
 			}
 			data[SelectIndex].RotatePts = pts;
@@ -523,29 +518,20 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 	else if (MK_LBUTTON == nFlags && (selectID == TRUE))
 	{
 
-		int o, p;
-		int xx, yy;
+		double o, p;
+		double xx, yy;
 
-		xx = d_sPt.x, yy = d_sPt.y;
-		if (start_pos.x == 0)
-		{
-			d_sPt.x = (z_pos.x + (m_ePt.x + point.x) / PWidth);
-		}
-		else
-		{
-			d_sPt.x = m_Bitmap.bmWidth * ((point.x - start_pos.x) / (m_Bitmap.bmWidth * zoomView - 4));
-		}
-		if (start_pos.y == 0)
-		{
-			d_sPt.y = (z_pos.y + (m_ePt.y + point.y) / PHeight);
-		}
-		else
-		{
-			d_sPt.y = m_Bitmap.bmHeight * ((point.y - start_pos.y) / (m_Bitmap.bmHeight * zoomView - 4));
-		}
+		xx = d_pos.x, yy = d_pos.y;
 
-		o = (d_sPt.x - xx);
-		p = (d_sPt.y - yy);
+		o = (u_pos.x - xx);
+		p = (u_pos.y - yy);
+
+		d_pos.x += o;
+		d_pos.y += p;
+
+		u_pos.x += o;
+		u_pos.y += p;
+		
 		if (IsContainVector(SelectIndex, GroupList)) {
 			for (int j = 0; j < GroupList.size(); j++) {
 				if (GroupList[j] == SelectIndex)
@@ -558,19 +544,19 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 				}
 			}
 		}
-		CPoint pt;
+		Point2d pt;
 		RectCount = data[SelectIndex].pts.size();
 		for (int i = 0; i < RectCount; i++)
 		{
-			pt.x = data[SelectIndex].RotatePts[i].x += o;
-			pt.y = data[SelectIndex].RotatePts[i].y += p;
+			data[SelectIndex].RotatePts[i].x += o;
+			data[SelectIndex].RotatePts[i].y += p;
 		}
 		UpdateWindow();
 		Invalidate(FALSE);
 	}
 	else if (MK_LBUTTON == nFlags && penID)
 		Invalidate(FALSE);
-	else if(IsCTRLPressed())
+	else if (IsCTRLPressed())
 		Invalidate(FALSE);
 
 }
@@ -587,26 +573,7 @@ void CImgViewerView::OnSize(UINT nType, int cx, int cy)
 	zoomWidth = cx * rectScale;
 	zoomHeight = cy * rectScale;
 
-	if (m_Bitmap.bmWidth * zoomView <= m_bgRect.right)
-	{
-		start_pos.x = m_bgRect.right / 2 - (m_Bitmap.bmWidth * zoomView) / 2;
-		z_pos.x = 0;
-	}
-	else
-	{
-		start_pos.x = 0;
-	}
-
-	if (m_Bitmap.bmHeight * zoomView <= m_bgRect.bottom)
-	{
-		start_pos.y = m_bgRect.bottom / 2 - (m_Bitmap.bmHeight * zoomView) / 2;
-		z_pos.y = 0;
-	}
-	else
-	{
-		start_pos.y = 0;
-	}
-
+	//---------------------
 	if (z_pos.x + zoomWidth + 5 >= m_Bitmap.bmWidth && zoomWidth <= m_Bitmap.bmWidth)
 	{
 		z_pos.x = m_Bitmap.bmWidth - zoomWidth - 5;
@@ -644,17 +611,20 @@ BOOL CImgViewerView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 		rectScale *= 0.8f;
 	}
 
-	before_Image_pos.x = z_pos.x + (m_ePt.x + m_pos.x) / PWidth;
-	before_Image_pos.y = z_pos.y + (m_ePt.y + m_pos.y) / PHeight;
+	before_Image_pos.x = z_pos.x + (int)((m_ePt.x + m_pos.x) / PWidth);
+	before_Image_pos.y = z_pos.y + (int)((m_ePt.y + m_pos.y) / PHeight);
 
 	before_Pixel_pos.x = (((m_ePt.x + m_pos.x) / PWidth - (int)((m_ePt.x + m_pos.x) / PWidth)));
 	before_Pixel_pos.y = (((m_ePt.y + m_pos.y) / PHeight - (int)((m_ePt.y + m_pos.y) / PHeight)));
 
+
 	//왼쪽위 꼭짓점
-	z_pos.x += round(((((float)m_ePt.x + (float)m_pos.x) / (PWidth * (int)(zoomWidth + 2))) * zoomWidth)
-		- ((((float)m_ePt.x + (float)m_pos.x) / (PWidth * (int)(zoomWidth + 2))) * (zoomWidth * zoomScale)));
-	z_pos.y += round(((((float)m_ePt.y + (float)m_pos.y) / (PHeight * (int)(zoomHeight + 2))) * zoomHeight)
-		- ((((float)m_ePt.y + (float)m_pos.y) / (PHeight * (int)(zoomHeight + 2))) * (zoomHeight * zoomScale)));
+	z_pos.x += (((m_ePt.x + m_pos.x) / (int)(PWidth * ((int)zoomWidth + 2))) * zoomWidth)
+		- (((m_ePt.x + m_pos.x) / (int)(PWidth * ((int)zoomWidth + 2))) * (zoomWidth * zoomScale));
+	z_pos.y += (((m_ePt.y + m_pos.y) / (int)(PHeight * ((int)zoomHeight + 2))) * zoomHeight)
+		- (((m_ePt.y + m_pos.y) / (int)(PHeight * ((int)zoomHeight + 2))) * (zoomHeight * zoomScale));
+
+
 
 	//원본에서 출력될 길이
 	zoomWidth = zoomWidth * zoomScale;
@@ -667,27 +637,45 @@ BOOL CImgViewerView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	PWidth = (printWidth) / (zoomWidth);
 	PHeight = (printHeight) / (zoomHeight);
 
-	after_Image_pos.x = z_pos.x + (m_ePt.x + m_pos.x) / PWidth;
-	after_Image_pos.y = z_pos.y + (m_ePt.y + m_pos.y) / PHeight;
+	after_Image_pos.x = z_pos.x + (int)((m_ePt.x + m_pos.x) / PWidth);
+	after_Image_pos.y = z_pos.y + (int)((m_ePt.y + m_pos.y) / PHeight);
 
 	after_Pixel_pos.x = (((m_ePt.x + m_pos.x) / PWidth - (int)((m_ePt.x + m_pos.x) / PWidth)));
 	after_Pixel_pos.y = (((m_ePt.y + m_pos.y) / PHeight - (int)((m_ePt.y + m_pos.y) / PHeight)));
 
-	if (before_Image_pos.x - (int)(after_Image_pos.x) != 0)
+	if (before_Image_pos.x - (after_Image_pos.x) != 0)
 	{
-		z_pos.x += before_Image_pos.x - (int)(after_Image_pos.x);
+		z_pos.x += before_Image_pos.x - (after_Image_pos.x);
+	}
+	if (before_Pixel_pos.x != after_Pixel_pos.x)
+	{
 		m_ePt.x += (before_Pixel_pos.x * PWidth) - (after_Pixel_pos.x * PWidth);
 	}
 
 	if (before_Image_pos.y - (after_Image_pos.y) != 0)
 	{
-		z_pos.y += before_Image_pos.y - (int)(after_Image_pos.y);
+		z_pos.y += before_Image_pos.y - (after_Image_pos.y);
+	}
+	if (before_Pixel_pos.y != after_Pixel_pos.y)
+	{
 		m_ePt.y += (before_Pixel_pos.y * PHeight) - (after_Pixel_pos.y * PHeight);
 	}
+	//----------------------------------
+	if (m_ePt.x >= PWidth)
+	{
+		z_pos.x += 1;
+		m_ePt.x -= PWidth;
+	}
+	if (m_ePt.y >= PHeight)
+	{
+		z_pos.y += 1;
+		m_ePt.y -= PHeight;
+	}
+	//-----------------------------------
 
 
 	//-----------------------------------------------
-	if (m_Bitmap.bmWidth * zoomView <= m_bgRect.right)
+	/*if (m_Bitmap.bmWidth * zoomView <= m_bgRect.right)
 	{
 		start_pos.x = m_bgRect.right / 2 - (m_Bitmap.bmWidth * zoomView) / 2;
 		z_pos.x = 0;
@@ -705,25 +693,42 @@ BOOL CImgViewerView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	else
 	{
 		start_pos.y = 0;
+	}*/
+	//이미지 왼쪽으로 나갈때
+	if ((z_pos.x == (int)(-((m_bgRect.right / 5 * 4) / PWidth) - 1) && m_ePt.x <= PWidth * (1 - ((((m_bgRect.right / 5 * 4) / PWidth) - (int)((m_bgRect.right / 5 * 4) / PWidth))))) || z_pos.x < (int)(-((m_bgRect.right / 5 * 4) / PWidth) - 1))
+	{
+		z_pos.x = -((m_bgRect.right / 5 * 4) / PWidth) - 1;
+		m_ePt.x = PWidth * (1 - ((((m_bgRect.right / 5 * 4) / PWidth) - (int)((m_bgRect.right / 5 * 4) / PWidth))));
+	}
+
+	//이미지 오른쪽으로 나갈때(고쳐야댐)
+	if ((z_pos.x == (int)(m_Bitmap.bmWidth - ((m_bgRect.right / 5 * 1) / PWidth)) && m_ePt.x >= PWidth * (1 - ((((m_bgRect.right / 5) / PWidth) - (int)((m_bgRect.right / 5) / PWidth))))) || z_pos.x > (int)(m_Bitmap.bmWidth - ((m_bgRect.right / 5) / PWidth)))
+	{
+		z_pos.x = m_Bitmap.bmWidth - ((m_bgRect.right / 5) / PWidth);
+		m_ePt.x = PWidth * (1 - ((((m_bgRect.right / 5) / PWidth) - (int)((m_bgRect.right / 5) / PWidth))));
+	}
+
+	//이미지 아래쪽으로 나갈때(고쳐야댐)
+	if ((z_pos.y == (int)(m_Bitmap.bmHeight - ((m_bgRect.bottom / 5 * 1) / PHeight)) && m_ePt.y >= PHeight * (1 - ((((m_bgRect.bottom / 5) / PHeight) - (int)((m_bgRect.bottom / 5) / PHeight))))) || z_pos.y > (int)(m_Bitmap.bmHeight - ((m_bgRect.bottom / 5) / PHeight)))
+	{
+		z_pos.y = m_Bitmap.bmHeight - ((m_bgRect.bottom / 5) / PHeight);
+		m_ePt.y = PHeight * (1 - ((((m_bgRect.bottom / 5) / PHeight) - (int)((m_bgRect.bottom / 5) / PHeight))));
+	}
+
+	//이미지 위쪽으로 나갈때
+	if ((z_pos.y == (int)(-((m_bgRect.bottom / 5 * 4) / PHeight) - 1) && m_ePt.y <= PHeight * (1 - ((((m_bgRect.bottom / 5 * 4) / PHeight) - (int)((m_bgRect.bottom / 5 * 4) / PHeight))))) || z_pos.y < (int)(-((m_bgRect.bottom / 5 * 4) / PHeight) - 1))
+	{
+		z_pos.y = -((m_bgRect.bottom / 5 * 4) / PHeight) - 1;
+		m_ePt.y = PHeight * (1 - ((((m_bgRect.bottom / 5 * 4) / PHeight) - (int)((m_bgRect.bottom / 5 * 4) / PHeight))));
 	}
 	//-----------------------------------
-	if (m_ePt.x >= PWidth)
-	{
-		z_pos.x += 1;
-		m_ePt.x -= PWidth;
-	}
-	if (m_ePt.y >= PHeight)
-	{
-		z_pos.y += 1;
-		m_ePt.y -= PHeight;
-	}
-	//-----------------------------------
-	if (m_ePt.x < 0 && z_pos.x > 0)
+
+	if (m_ePt.x < 0)
 	{
 		z_pos.x -= 1;
 		m_ePt.x += PWidth;
 	}
-	if (m_ePt.y < 0 && z_pos.y > 0)
+	if (m_ePt.y < 0)
 	{
 		z_pos.y -= 1;
 		m_ePt.y += PHeight;
@@ -743,7 +748,7 @@ BOOL CImgViewerView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	}
 	//---------------------------------
 
-	if (z_pos.x + zoomWidth + 5 >= m_Bitmap.bmWidth && zoomWidth <= m_Bitmap.bmWidth)
+	/*if (z_pos.x + zoomWidth + 5 >= m_Bitmap.bmWidth && zoomWidth <= m_Bitmap.bmWidth)
 	{
 		z_pos.x = m_Bitmap.bmWidth - zoomWidth - 5;
 		m_ePt.x = PWidth * (int)(zoomWidth + 2) - m_bgRect.right;
@@ -754,15 +759,15 @@ BOOL CImgViewerView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	{
 		z_pos.y = m_Bitmap.bmHeight - zoomHeight - 1;
 		m_ePt.y = PHeight * (int)(zoomHeight + 2) - m_bgRect.bottom;
-	}
+	}*/
 
 	//----------------------------------
-	if (z_pos.x <= 0)
+	/*if (z_pos.x <= 0)
 		z_pos.x = 0;
 	if (z_pos.y <= 0)
-		z_pos.y = 0;
+		z_pos.y = 0;*/
 
-	//---------------------------------------------------------
+		//---------------------------------------------------------
 	imgViewer2Navigator();
 	//---------------------------------------------------------
 
@@ -776,7 +781,8 @@ void CImgViewerView::OnMButtonDown(UINT nFlags, CPoint point)
 	CView::OnMButtonDown(nFlags, point);
 
 	SetCapture();
-	m_sPt = point;
+	m_sPt.x = point.x;
+	m_sPt.y = point.y;
 }
 
 void CImgViewerView::OnMButtonUp(UINT nFlags, CPoint point)
@@ -794,7 +800,7 @@ void CImgViewerView::OnMButtonUp(UINT nFlags, CPoint point)
 		m_ePt.y -= PHeight;
 	}
 
-	if (z_pos.x < 0)
+	/*if (z_pos.x < 0)
 		z_pos.x = 0;
 	if (z_pos.y < 0)
 		z_pos.y = 0;
@@ -810,7 +816,7 @@ void CImgViewerView::OnMButtonUp(UINT nFlags, CPoint point)
 	{
 		z_pos.y = m_Bitmap.bmHeight - zoomHeight - 1;
 		m_ePt.y = PHeight * (int)(zoomHeight + 2) - m_bgRect.bottom;
-	}
+	}*/
 
 	//-------------------------------------------------------
 	imgViewer2Navigator();
@@ -838,22 +844,31 @@ void CImgViewerView::OnPaint()
 	oldbitmap = mdcOffScreen.SelectObject(&bmpOffScreen);
 	oldbitmap2 = memDC.SelectObject(&m_background);
 
+	if (PWidth > 1)
+		mdcOffScreen.SetStretchBltMode(COLORONCOLOR);
+	else
+		mdcOffScreen.SetStretchBltMode(HALFTONE);
+	mdcOffScreen.StretchBlt(0, 0, PWidth * ((int)zoomWidth + 2), PHeight * ((int)zoomHeight + 2), &memDC, z_pos.x, z_pos.y, zoomWidth + 2, zoomHeight + 2, SRCCOPY);
+
+	PrintText(&mdcOffScreen);
+
+	if (CircleCenter.size() > 0)
+		DrawCircle(&mdcOffScreen, CircleCenter);
 
 	// 그림 그리기
-	 // 그림 그리기
 	if (drawShapeID == TRUE) {
-		draw(&memDC);
+		draw(&mdcOffScreen);
 	}
 	if (penID) {
-		draw(&memDC);
+		draw(&mdcOffScreen);
 	}
 	for (int i = 0; i < GroupList.size(); i++) {
-		SelectDrawShape(&memDC, data[GroupList[i]]);
+		SelectDrawShape(&mdcOffScreen, data[GroupList[i]]);
 	}
 	if (selectID == TRUE || !GroupList.empty())
 	{
 		if (selectID)
-			SelectDrawShape(&memDC, data[SelectIndex]);
+			SelectDrawShape(&mdcOffScreen, data[SelectIndex]);
 		// 그림 복원
 		for (int i = 0; i < data.GetSize(); i++)
 		{
@@ -861,27 +876,20 @@ void CImgViewerView::OnPaint()
 				continue;
 			if (IsContainVector(i, GroupList))
 				continue;
-			drawShape(&memDC, data[i]);
+			drawShape(&mdcOffScreen, data[i]);
 		}
 	}
 	else
 	{
 		// 그림 복원
 		for (int i = 0; i < data.GetSize(); i++)
-			drawShape(&memDC, data[i]);
+			drawShape(&mdcOffScreen, data[i]);
 	}
-
-
-	mdcOffScreen.SetStretchBltMode(HALFTONE);
-	mdcOffScreen.StretchBlt(start_pos.x, start_pos.y, PWidth * ((int)zoomWidth + 2), PHeight * ((int)zoomHeight + 2), &memDC, z_pos.x, z_pos.y, zoomWidth + 2, zoomHeight + 2, SRCCOPY);
-
-	PrintText(&mdcOffScreen);
 
 	pDC.SetStretchBltMode(HALFTONE);
 	pDC.StretchBlt(0, 0, m_bgRect.right, m_bgRect.bottom, &mdcOffScreen, m_ePt.x, m_ePt.y, m_bgRect.right, m_bgRect.bottom, SRCCOPY);
 
 	if (Save_Shape) {
-
 		CImage image;
 		image.Attach(m_background);
 		image.Save(fileSave, Gdiplus::ImageFormatJPEG);
@@ -902,7 +910,7 @@ void CImgViewerView::OnFileOpen()
 {
 	if (!m_Algorithm.SelectImage())
 		return;
-
+	CircleCenter.clear();
 	result_mat = m_Algorithm.GetSourceImage();
 	result_bmp = m_Algorithm.MatToBitmap(result_mat);
 
@@ -930,24 +938,23 @@ void CImgViewerView::OnFileOpen()
 	PWidth = 1;
 	PHeight = 1;
 
+	
 	if (m_Bitmap.bmWidth * zoomView <= m_bgRect.right)
 	{
-		start_pos.x = m_bgRect.right / 2 - (m_Bitmap.bmWidth * zoomView) / 2;
-		z_pos.x = 0;
+		z_pos.x = -(m_bgRect.right / 2 - (m_Bitmap.bmWidth * zoomView) / 2);
 	}
 	else
 	{
-		start_pos.x = 0;
+		z_pos.x = 0;
 	}
 
 	if (m_Bitmap.bmHeight * zoomView <= m_bgRect.bottom)
 	{
-		start_pos.y = m_bgRect.bottom / 2 - (m_Bitmap.bmHeight * zoomView) / 2;
-		z_pos.y = 0;
+		z_pos.y = -(m_bgRect.bottom / 2 - (m_Bitmap.bmHeight * zoomView) / 2);
 	}
 	else
 	{
-		start_pos.y = 0;
+		z_pos.y = 0;
 	}
 	theApp.pNavigatorView->OnFileOpen();
 	Invalidate(FALSE);
@@ -959,12 +966,13 @@ void CImgViewerView::paraChanged() // 이미지 처리 및 버퍼에 붙이기
 		return;
 
 	m_Algorithm.Run();
-	result_mat = m_Algorithm.GetResultImage();
-	result_bmp = m_Algorithm.MatToBitmap(result_mat);
-
-	m_background.Detach();
-	m_background.Attach(result_bmp);
-	m_background.GetBitmap(&m_Bitmap);
+	CircleCenter = m_Algorithm.GetCirclePoint();
+	//result_mat = m_Algorithm.GetResultImage();
+	//result_bmp = m_Algorithm.MatToBitmap(result_mat);
+	//
+	//m_background.Detach();
+	//m_background.Attach(result_bmp);
+	//m_background.GetBitmap(&m_Bitmap);
 
 	Invalidate(FALSE);
 }
@@ -972,29 +980,24 @@ void CImgViewerView::paraChanged() // 이미지 처리 및 버퍼에 붙이기
 void CImgViewerView::OnContextMenu(CWnd* pWnd, CPoint point)
 {
 	CMenu popup;
-	if ((penID) || !GroupList.empty())
+	if (result_mat.empty()) {
+		popup.LoadMenuW(IDR_MAINFRAME);
+		pMenu = popup.GetSubMenu(0);
+		pMenu->TrackPopupMenu(TPM_LEFTALIGN || TPM_RIGHTBUTTON, point.x, point.y, AfxGetMainWnd());
+	}
+	else if ((penID) || !GroupList.empty())
 	{
 		popup.LoadMenuW(IDR_MENU_CONTEXT);
 		pMenu = popup.GetSubMenu(0);
-		//pMenu->ModifyMenu(5, MF_POPUP | MF_BYPOSITION | MF_DISABLED);
-		if (!selectID) {
-			pMenu->EnableMenuItem(0, MF_DISABLED);
-			pMenu->EnableMenuItem(1, MF_DISABLED);
-		}
-		if (!iscopy) {
-			pMenu->EnableMenuItem(2, MF_DISABLED);
-		}
 		pMenu->TrackPopupMenu(TPM_LEFTALIGN || TPM_RIGHTBUTTON, point.x, point.y, AfxGetMainWnd());
 	}
 	else
 	{
-		popup.LoadMenuW(IDR_MAINFRAME);
-		pMenu = popup.GetSubMenu(2);
+		popup.LoadMenuW(IDR_MENU_IMAGEVIEW);
+		pMenu = popup.GetSubMenu(1);
 
 		pMenu->TrackPopupMenu(TPM_LEFTALIGN || TPM_RIGHTBUTTON, point.x, point.y, AfxGetMainWnd());
 	}
-	//popup.DestroyMenu();
-	//pMenu->DestroyMenu();
 }
 
 
@@ -1004,28 +1007,24 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 	SetCapture();
 	m_nFlags = nFlags;
 	// Down 버튼 저장
-	if (start_pos.x == 0)
-	{
-		d_sPt.x = (z_pos.x + (m_ePt.x + point.x) / PWidth);
-	}
-	else
-	{
-		d_sPt.x = m_Bitmap.bmWidth * ((point.x - start_pos.x) / (m_Bitmap.bmWidth * zoomView - 4));
-	}
-	if (start_pos.y == 0)
-	{
-		d_sPt.y = (z_pos.y + (m_ePt.y + point.y) / PHeight);
-	}
-	else
-	{
-		d_sPt.y = m_Bitmap.bmHeight * ((point.y - start_pos.y) / (m_Bitmap.bmHeight * zoomView - 4));
-	}
+
+	d_sPt.x = point.x;
+	d_sPt.y = point.y;
+
+	d_img_pos.x = z_pos.x + (int)((m_ePt.x + point.x) / PWidth);
+	d_img_pos.y = z_pos.y + (int)((m_ePt.y + point.y) / PHeight);
+
+	d_pix_pos.x = (((m_ePt.x + point.x) / PWidth - (int)((m_ePt.x + point.x) / PWidth)));
+	d_pix_pos.y = (((m_ePt.y + point.y) / PHeight - (int)((m_ePt.y + point.y) / PHeight)));
+	
+	d_pos = d_img_pos + d_pix_pos;
+
 	// darw 상태 검사
 	if (drawID == TRUE && drawStyle != DrawMode::None) {
 		drawShapeID = TRUE;
 		return;
 	}
-	// 엣지 클릭 검사 // 회전 선 클릭 검사//
+	// 엣지 클릭 검사
 	// 회전 선 클릭 검사
 	if (!GroupList.empty()) {
 		for (int j = 0; j < GroupList.size(); j++) {
@@ -1038,7 +1037,7 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 			centRC.right = max(Rotate.x, Center.x) + 10;
 			centRC.top = min(Rotate.y, Center.y) - 10;
 			centRC.bottom = max(Rotate.y, Center.y) + 10;
-			if (d_sPt.x >= centRC.left && d_sPt.x <= centRC.right && d_sPt.y >= centRC.top && d_sPt.y <= centRC.bottom) {
+			if (d_pos.x >= centRC.left && d_pos.x <= centRC.right && d_pos.y >= centRC.top && d_pos.y <= centRC.bottom) {
 				rotateID = TRUE;
 				SelectIndex = GroupList[j];
 				Invalidate(FALSE);
@@ -1052,14 +1051,14 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 				int rcCount = data[GroupList[j]].pts.size();
 				for (int i = 0; i < rcCount; i++)
 				{
-					CRect& rect = data[GroupList[j]].Rect[i];
-					if (d_sPt.x >= rect.left && d_sPt.x <= rect.right && d_sPt.y >= rect.top && d_sPt.y <= rect.bottom)
+					/*CRect& rect = data[GroupList[j]].Rect[i];
+					if (d_pos.x >= rect.left && d_pos.x <= rect.right && d_pos.y >= rect.top && d_pos.y <= rect.bottom)
 					{
 						EdgeSelect = TRUE;
 						EdgeIndex = i;
 						Invalidate(FALSE);
 						return;
-					}
+					}*/
 				}
 			}
 		}
@@ -1067,10 +1066,29 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 			//엣지 클릭 검사
 			for (int i = 0; i < RectCount; i++)
 			{
-				CRect& rect = data[SelectIndex].Rect[i];
-				if (d_sPt.x >= rect.left && d_sPt.x <= rect.right && d_sPt.y >= rect.top && d_sPt.y <= rect.bottom)
-				{
+				vector<vector<Point2d>> tedge, redge;
+				tedge.resize(data[SelectIndex].edge.size());
+				redge.resize(data[SelectIndex].R_edge.size());
+				for (int a = 0; a < data[SelectIndex].edge.size(); a++) {
+					tedge[i].push_back(Point2d(data[SelectIndex].edge[i][a].x - m_ePt.x, data[SelectIndex].edge[i][a].y - m_ePt.y));
+					redge[i].push_back(Point2d(data[SelectIndex].R_edge[i][a].x - m_ePt.x, data[SelectIndex].R_edge[i][a].y - m_ePt.y));
+				}
+
+				if (isContainPolygon(point, tedge[i])) {
 					EdgeSelect = TRUE;
+					EdgeIndex = i;
+					Invalidate(FALSE);
+					return;
+				}
+				else if (isContainPolygon(point, redge[i])) {
+					//Point2d Center = data[SelectIndex].Center;
+					//Point2d Rotate = data[SelectIndex].Rotate;
+
+					//centRC.left = min(Rotate.x, Center.x) - 10;
+					//centRC.right = max(Rotate.x, Center.x) + 10;
+					//centRC.top = min(Rotate.y, Center.y) - 10;
+					//centRC.bottom = max(Rotate.y, Center.y) + 10;
+					rotateID = TRUE;
 					EdgeIndex = i;
 					Invalidate(FALSE);
 					return;
@@ -1079,7 +1097,7 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 		}
 
 		// 회전 선 클릭 검사
-		if (!GroupList.empty()) {
+		/*if (!GroupList.empty()) {
 			for (int j = 0; j < GroupList.size(); j++) {
 				CRect centRC;
 
@@ -1090,7 +1108,7 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 				centRC.right = max(Rotate.x, Center.x) + 10;
 				centRC.top = min(Rotate.y, Center.y) - 10;
 				centRC.bottom = max(Rotate.y, Center.y) + 10;
-				if (d_sPt.x >= centRC.left && d_sPt.x <= centRC.right && d_sPt.y >= centRC.top && d_sPt.y <= centRC.bottom) {
+				if (d_pos.x >= centRC.left && d_pos.x <= centRC.right && d_pos.y >= centRC.top && d_pos.y <= centRC.bottom) {
 					rotateID = TRUE;
 					SelectIndex = GroupList[j];
 					Invalidate(FALSE);
@@ -1108,13 +1126,13 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 			centRC.right = max(Rotate.x, Center.x) + 10;
 			centRC.top = min(Rotate.y, Center.y) - 10;
 			centRC.bottom = max(Rotate.y, Center.y) + 10;
-			if (d_sPt.x >= centRC.left && d_sPt.x <= centRC.right && d_sPt.y >= centRC.top && d_sPt.y <= centRC.bottom) {
+			if (d_pos.x >= centRC.left && d_pos.x <= centRC.right && d_pos.y >= centRC.top && d_pos.y <= centRC.bottom) {
 				rotateID = TRUE;
 				Invalidate(FALSE);
 				return;
 			}
 
-		}
+		}*/
 	}
 
 	// 이미지 객체 클릭 검사
@@ -1122,7 +1140,7 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 	{
 		int zIndex = zOrder[i];
 		if (data[zOrder[i]].shapeType != DrawMode::DLine) {
-			if (isContainPolygon(CPoint(d_sPt.x, d_sPt.y), data[zOrder[i]].pts))
+			if (isContainPolygon(Point2d(d_pos.x, d_pos.y), data[zOrder[i]].pts))
 			{
 				Point pt;
 				RectCount = data[zOrder[i]].pts.size();
@@ -1130,7 +1148,7 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 				{
 					pt.x = data[zIndex].pts[j].x;
 					pt.y = data[zIndex].pts[j].y;
-					data[zIndex].Rect[j].SetRect(pt.x - 5, pt.y - 5, pt.x + 5, pt.y + 5);
+					//data[zIndex].Rect[j].SetRect(pt.x , pt.y , pt.x , pt.y );
 				}
 
 				if (selectID && IsCTRLPressed() && SelectIndex!=zOrder[i] && GroupList.empty()) {
@@ -1144,7 +1162,7 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 				if (IsCTRLPressed() && !IsContainVector(zOrder[0], GroupList)) {
 					GroupList.push_back(zOrder[0]);
 				}
-				else if (!IsContainVector(zOrder[0], GroupList)) {
+				else if (!IsCTRLPressed() && !IsContainVector(zOrder[0], GroupList)) {
 					GroupList.clear();
 				}
 				selectID = TRUE;
@@ -1186,7 +1204,7 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 				linePts.push_back(Point2d(data[zIndex].pts[1].x, data[zIndex].pts[1].x * A + B - 5));
 			}
 
-			if (isContainPolygon(CPoint(d_sPt.x, d_sPt.y), linePts))
+			if (isContainPolygon(Point2d(d_pos.x, d_pos.y), linePts))
 			{
 				CPoint pt;
 				RectCount = data[zIndex].pts.size();
@@ -1194,7 +1212,7 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 				{
 					pt.x = data[zIndex].pts[j].x;
 					pt.y = data[zIndex].pts[j].y;
-					data[zIndex].Rect[j].SetRect(pt.x - 5, pt.y - 5, pt.x + 5, pt.y + 5);
+					//data[zIndex].Rect[j].SetRect(pt.x , pt.y , pt.x , pt.y );
 				}
 
 				penID = TRUE;
@@ -1209,7 +1227,7 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 				if (IsCTRLPressed() && !IsContainVector(zOrder[0], GroupList)) {
 					GroupList.push_back(zOrder[0]);
 				}
-				else if (!IsContainVector(zOrder[0], GroupList)) {
+				else if (!IsCTRLPressed()&&!IsContainVector(zOrder[0], GroupList)) {
 					GroupList.clear();
 				}
 				
@@ -1233,6 +1251,8 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
 void CImgViewerView::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	//CMainFrame* frame = (CMainFrame*)AfxGetMainWnd();
+
+	ReleaseCapture();
 	m_nFlags = nFlags;
 
 
@@ -1244,66 +1264,126 @@ void CImgViewerView::OnLButtonUp(UINT nFlags, CPoint point)
 
 		shape.pts.clear();
 
-		if (start_pos.x == 0)
-		{
-			mov_Pt.x = (z_pos.x + (m_ePt.x + point.x) / PWidth);
-		}
-		else
-		{
-			mov_Pt.x = m_Bitmap.bmWidth * ((point.x - start_pos.x) / (m_Bitmap.bmWidth * zoomView - 4));
-		}
-		if (start_pos.y == 0)
-		{
-			mov_Pt.y = (z_pos.y + (m_ePt.y + point.y) / PHeight);
-		}
-		else
-		{
-			mov_Pt.y = m_Bitmap.bmHeight * ((point.y - start_pos.y) / (m_Bitmap.bmHeight * zoomView - 4));
-		}
-		if (d_sPt.x == mov_Pt.x && d_sPt.y == mov_Pt.y)
-		{
-			return;
-		}
+		mov_Pt.x = point.x;
+		mov_Pt.y = point.y;
+
 		// 마우스 버트을 놓으면 각종 값을 shape 구조체 맴버변수에 저장
 		shape.shapeType = drawStyle;  // 도형 콤보 상자에서 선택된 도형 스타일을 저장      
-
-		if (shape.shapeType == DrawMode::DLine)
+		if (shape.shapeType == DrawMode::DPoint)
 		{
-			shape.pts.push_back(Point2d(d_sPt.x, d_sPt.y));
-			shape.pts.push_back(Point2d(mov_Pt.x, mov_Pt.y));
+			shape.pts.push_back(Point2d(d_pos.x, d_pos.y));
+		}
+		else if (shape.shapeType == DrawMode::DLine)
+		{
+			shape.pts.push_back(Point2d(d_pos.x, d_pos.y));
+			shape.pts.push_back(Point2d(u_pos.x, u_pos.y));
 		}
 		else if (shape.shapeType == DrawMode::DEllipse)
 		{
-			shape.pts.push_back(Point2d(d_sPt.x, d_sPt.y));
-			shape.pts.push_back(Point2d(mov_Pt.x, d_sPt.y));
-			shape.pts.push_back(Point2d(mov_Pt.x, mov_Pt.y));
-			shape.pts.push_back(Point2d(d_sPt.x, mov_Pt.y));
+			double width = 0, height = 0;
+			//가로가 길 경우
+			if (abs(u_pos.x - d_pos.x) > abs(u_pos.y - d_pos.y))
+			{
+				width = ((u_pos.x - d_pos.x) / 2) - ((u_pos.y - d_pos.y) / 2);
+				d_pos.x += width;
+				u_pos.x -= width;
+				
+				shape.pts.push_back(Point2d(d_pos.x, d_pos.y));		//0
+				shape.pts.push_back(Point2d(u_pos.x, d_pos.y));		//1
+				shape.pts.push_back(Point2d(u_pos.x, u_pos.y));		//2
+				shape.pts.push_back(Point2d(d_pos.x, u_pos.y));		//3
+			}
+			//세로가 길 경우
+			else
+			{
+				height = ((u_pos.y - d_pos.y) / 2) - ((u_pos.x - d_pos.x) / 2);
+				d_pos.y += height;
+				u_pos.y -= height;
+
+				shape.pts.push_back(Point2d(d_pos.x, d_pos.y));		//0
+				shape.pts.push_back(Point2d(u_pos.x, d_pos.y));		//1
+				shape.pts.push_back(Point2d(u_pos.x, u_pos.y));		//2
+				shape.pts.push_back(Point2d(d_pos.x, u_pos.y));		//3
+			}
+			//shape.pts.push_back(Point2d(d_pos.x, d_pos.y));
+			//shape.pts.push_back(Point2d(u_pos.x, d_pos.y));
+			//shape.pts.push_back(Point2d(u_pos.x, u_pos.y));
+			//shape.pts.push_back(Point2d(d_pos.x, u_pos.y));
 		}
 		else if (shape.shapeType == DrawMode::DRectangle)
 		{
-			shape.pts.push_back(Point2d(d_sPt.x, d_sPt.y));
-			shape.pts.push_back(Point2d(mov_Pt.x, d_sPt.y));
-			shape.pts.push_back(Point2d(mov_Pt.x, mov_Pt.y));
-			shape.pts.push_back(Point2d(d_sPt.x, mov_Pt.y));
+			shape.pts.push_back(Point2d(d_pos.x, d_pos.y));		//0
+			shape.pts.push_back(Point2d(u_pos.x, d_pos.y));		//1
+			shape.pts.push_back(Point2d(u_pos.x, u_pos.y));		//2
+			shape.pts.push_back(Point2d(d_pos.x, u_pos.y));		//3
 		}
 		else if (shape.shapeType == DrawMode::DTriangle)
 		{
-			shape.pts.push_back(Point2d((d_sPt.x + mov_Pt.x) / 2, d_sPt.y));
-			shape.pts.push_back(Point2d(mov_Pt.x, mov_Pt.y));
-			shape.pts.push_back(Point2d(d_sPt.x, mov_Pt.y));
-		}
-		else if (shape.shapeType == DrawMode::DCrossHair)
-		{
-			shape.pts.push_back(Point2d((d_sPt.x + mov_Pt.x) / 2, d_sPt.y));
-			shape.pts.push_back(Point2d((d_sPt.x + mov_Pt.x) / 2, mov_Pt.y));
-			shape.pts.push_back(Point2d(d_sPt.x, (d_sPt.y + mov_Pt.y) / 2));
-			shape.pts.push_back(Point2d(mov_Pt.x, (d_sPt.y + mov_Pt.y) / 2));
+			shape.pts.push_back(Point2d(d_pos.x, d_pos.y));		//0
+			shape.pts.push_back(Point2d(u_pos.x, d_pos.y));		//1
+			shape.pts.push_back(Point2d(u_pos.x, u_pos.y));		//2
+			shape.pts.push_back(Point2d(d_pos.x, u_pos.y));		//3
 		}
 		Point2d pt(0, 0);
-		shape.radin[0] = abs(d_sPt.x - mov_Pt.x) / 2;
-		shape.radin[1] = abs(d_sPt.y - mov_Pt.y) / 2;
+		shape.radin[0] = abs(pts_0.x - pts_2.x) / 2;
+		shape.radin[1] = abs(pts_0.y - pts_2.y) / 2;
 		for (int i = 0; i < shape.pts.size(); i++)
 			pt += shape.pts[i];
+
+		double xi, xd;
+		double yi, yd;
+		vector<Point2d> pts(4);
+		for (int i = 0; i < shape.pts.size(); i++) {
+			xd = modf(shape.pts[i].x, &xi);
+			yd = modf(shape.pts[i].y, &yi);
+
+			pts[i].x = (PWidth * ((int)xi - z_pos.x)) + (PWidth * xd);
+			pts[i].y = (PHeight * ((int)yi - z_pos.y)) + (PHeight * yd);
+		}
+
+		shape.edge.resize(shape.pts.size());
+		shape.R_edge.resize(shape.pts.size());
+		for (int i = 0; i < shape.pts.size(); i++) {
+			
+			shape.edge[i].resize(4);
+			shape.edge[i].push_back(Point2d(pts[i].x - 8, pts[i].y - 8));
+			shape.edge[i].push_back(Point2d(pts[i].x + 8, pts[i].y - 8));
+			shape.edge[i].push_back(Point2d(pts[i].x + 8, pts[i].y + 8));
+			shape.edge[i].push_back(Point2d(pts[i].x - 8, pts[i].y + 8));
+
+
+			shape.R_edge[i].resize(4);
+			shape.R_edge[i].push_back(Point2d(pts[i].x - 15, pts[i].y - 15));
+			shape.R_edge[i].push_back(Point2d(pts[i].x + 15, pts[i].y - 15));
+			shape.R_edge[i].push_back(Point2d(pts[i].x + 15, pts[i].y + 15));
+			shape.R_edge[i].push_back(Point2d(pts[i].x - 15, pts[i].y + 15));
+
+
+			if (i == 0) {
+				shape.R_edge[i].push_back(Point2d(pts[i].x - 15, pts[i].y - 15));
+				shape.R_edge[i].push_back(Point2d(pts[i].x + 8, pts[i].y - 15));
+				shape.R_edge[i].push_back(Point2d(pts[i].x + 8, pts[i].y + 8));
+				shape.R_edge[i].push_back(Point2d(pts[i].x - 15, pts[i].y + 8));
+			}
+			else if (i == 1) {
+				shape.R_edge[i].push_back(Point2d(pts[i].x - 8, pts[i].y - 15));
+				shape.R_edge[i].push_back(Point2d(pts[i].x + 15, pts[i].y - 15));
+				shape.R_edge[i].push_back(Point2d(pts[i].x + 15, pts[i].y + 8));
+				shape.R_edge[i].push_back(Point2d(pts[i].x - 8, pts[i].y + 8));
+			}
+			else if (i == 2) {
+				shape.R_edge[i].push_back(Point2d(pts[i].x - 8, pts[i].y - 8));
+				shape.R_edge[i].push_back(Point2d(pts[i].x + 15, pts[i].y - 8));
+				shape.R_edge[i].push_back(Point2d(pts[i].x + 15, pts[i].y + 15));
+				shape.R_edge[i].push_back(Point2d(pts[i].x - 8, pts[i].y + 15));
+			}
+			else if (i == 3) {
+				shape.R_edge[i].push_back(Point2d(pts[i].x - 15, pts[i].y - 8));
+				shape.R_edge[i].push_back(Point2d(pts[i].x + 8, pts[i].y - 8));
+				shape.R_edge[i].push_back(Point2d(pts[i].x + 8, pts[i].y + 15));
+				shape.R_edge[i].push_back(Point2d(pts[i].x - 15, pts[i].y + 15));
+			}
+		}
 
 		shape.RotatePts = shape.pts;
 		shape.Center = pt / (int)shape.pts.size();
@@ -1458,26 +1538,12 @@ void CImgViewerView::OnLButtonUp(UINT nFlags, CPoint point)
 	else if (penID) {
 		vector<Point2d> vertices;
 		if (start_pos.x == 0)
-		{
-			mov_Pt.x = (z_pos.x + (m_ePt.x + point.x) / PWidth);
-		}
-		else
-		{
-			mov_Pt.x = m_Bitmap.bmWidth * ((point.x - start_pos.x) / (m_Bitmap.bmWidth * zoomView - 4));
-		}
-		if (start_pos.y == 0)
-		{
-			mov_Pt.y = (z_pos.y + (m_ePt.y + point.y) / PHeight);
-		}
-		else
-		{
-			mov_Pt.y = m_Bitmap.bmHeight * ((point.y - start_pos.y) / (m_Bitmap.bmHeight * zoomView - 4));
-		}
 
-		vertices.push_back(Point2d(d_sPt.x, d_sPt.y));
-		vertices.push_back(Point2d(mov_Pt.x, d_sPt.y));
-		vertices.push_back(Point2d(mov_Pt.x, mov_Pt.y));
-		vertices.push_back(Point2d(d_sPt.x, mov_Pt.y));
+		vertices.push_back(Point2d(d_pos.x, d_pos.y));
+		vertices.push_back(Point2d(u_pos.x, d_pos.y));
+		vertices.push_back(Point2d(u_pos.x, u_pos.y));
+		vertices.push_back(Point2d(d_pos.x, u_pos.y));
+
 		if (IsCTRLPressed()) {
 
 			if (SelectIndex != -1 && GroupList.empty()) {
@@ -1491,17 +1557,16 @@ void CImgViewerView::OnLButtonUp(UINT nFlags, CPoint point)
 		else {
 			GroupList.clear();
 		}
-		vector<int> te;
 		for (int i = 0; i < data.GetSize(); i++) {
 			for (int j = 0; j < data[i].pts.size(); j++) {
-				if (isContainPolygon(CPoint(data[i].pts[j].x, data[i].pts[j].y), vertices) != 0) {
-					te.push_back(i);
+				if (isContainPolygon(Point2d(data[i].pts[j].x, data[i].pts[j].y), vertices) != 0) {
+					if(!IsContainVector(i,GroupList))
+						GroupList.push_back(i);
 					break;
 				}
 			}
 		}
-		if (!te.empty())
-			GroupList.assign(te.begin(), te.end());
+		
 		if (!GroupList.empty()) {
 			EdgeSelect = FALSE;
 			Invalidate(FALSE);
@@ -1516,7 +1581,6 @@ void CImgViewerView::OnLButtonUp(UINT nFlags, CPoint point)
 	EdgeSelect = FALSE;
 	SelectShapeUpdate();
 	Invalidate(FALSE);
-	ReleaseCapture();
 	CView::OnLButtonUp(nFlags, point);
 }
 
@@ -1681,15 +1745,6 @@ void CImgViewerView::OnDrawRect()
 void CImgViewerView::OnDrawTri()
 {
 	drawStyle = DrawMode::DTriangle;
-	GroupList.clear();
-	drawID = TRUE;
-	penID = FALSE;
-}
-
-
-void CImgViewerView::OnDrawCross()
-{
-	drawStyle = DrawMode::DCrossHair;
 	GroupList.clear();
 	drawID = TRUE;
 	penID = FALSE;
@@ -2214,15 +2269,15 @@ BOOL CImgViewerView::OnEraseBkgnd(CDC* pDC)
 
 void CImgViewerView::imgViewer2Navigator()
 {
-	float x = z_pos.x + (m_ePt.x) / PWidth;
-	float y = z_pos.y + (m_ePt.y) / PHeight;
-	float Width = z_pos.x + (m_ePt.x + m_bgRect.right) / PWidth - x;
-	float Height = z_pos.y + (m_ePt.y + m_bgRect.bottom) / PHeight - y;
+	double x = z_pos.x + (m_ePt.x) / PWidth;
+	double y = z_pos.y + (m_ePt.y) / PHeight;
+	double Width = z_pos.x + (m_ePt.x + m_bgRect.right) / PWidth - x;
+	double Height = z_pos.y + (m_ePt.y + m_bgRect.bottom) / PHeight - y;
 
 	theApp.pNavigatorView->GetRectPos(x, y, Width, Height);
 }
 
-void CImgViewerView::GetImgPos(float Navigator_x, float Navigator_y)
+void CImgViewerView::GetImgPos(double Navigator_x, double Navigator_y)
 {
 	CPoint Navigator_pos;
 	Navigator_pos.x = Navigator_x * m_Bitmap.bmWidth;
@@ -2231,7 +2286,7 @@ void CImgViewerView::GetImgPos(float Navigator_x, float Navigator_y)
 	z_pos.x = Navigator_pos.x - zoomWidth / 2;
 	z_pos.y = Navigator_pos.y - zoomHeight / 2;
 
-	if (z_pos.x < 0)
+	/*if (z_pos.x < 0)
 		z_pos.x = 0;
 	if (z_pos.y < 0)
 		z_pos.y = 0;
@@ -2246,6 +2301,33 @@ void CImgViewerView::GetImgPos(float Navigator_x, float Navigator_y)
 	{
 		z_pos.y = m_Bitmap.bmHeight - zoomHeight - 1;
 		m_ePt.y = PHeight * (int)(zoomHeight + 2) - m_bgRect.bottom;
+	}*/
+
+	if ((z_pos.x == (int)(-((m_bgRect.right / 5 * 4) / PWidth) - 1) && m_ePt.x <= PWidth * (1 - ((((m_bgRect.right / 5 * 4) / PWidth) - (int)((m_bgRect.right / 5 * 4) / PWidth))))) || z_pos.x < (int)(-((m_bgRect.right / 5 * 4) / PWidth) - 1))
+	{
+		z_pos.x = -((m_bgRect.right / 5 * 4) / PWidth) - 1;
+		m_ePt.x = PWidth * (1 - ((((m_bgRect.right / 5 * 4) / PWidth) - (int)((m_bgRect.right / 5 * 4) / PWidth))));
+	}
+
+	//이미지 오른쪽으로 나갈때(고쳐야댐)
+	if ((z_pos.x == (int)(m_Bitmap.bmWidth - ((m_bgRect.right / 5 * 1) / PWidth)) && m_ePt.x >= PWidth * (1 - ((((m_bgRect.right / 5) / PWidth) - (int)((m_bgRect.right / 5) / PWidth))))) || z_pos.x > (int)(m_Bitmap.bmWidth - ((m_bgRect.right / 5) / PWidth)))
+	{
+		z_pos.x = m_Bitmap.bmWidth - ((m_bgRect.right / 5) / PWidth);
+		m_ePt.x = PWidth * (1 - ((((m_bgRect.right / 5) / PWidth) - (int)((m_bgRect.right / 5) / PWidth))));
+	}
+
+	//이미지 아래쪽으로 나갈때(고쳐야댐)
+	if ((z_pos.y == (int)(m_Bitmap.bmHeight - ((m_bgRect.bottom / 5 * 1) / PHeight)) && m_ePt.y >= PHeight * (1 - ((((m_bgRect.bottom / 5) / PHeight) - (int)((m_bgRect.bottom / 5) / PHeight))))) || z_pos.y > (int)(m_Bitmap.bmHeight - ((m_bgRect.bottom / 5) / PHeight)))
+	{
+		z_pos.y = m_Bitmap.bmHeight - ((m_bgRect.bottom / 5) / PHeight);
+		m_ePt.y = PHeight * (1 - ((((m_bgRect.bottom / 5) / PHeight) - (int)((m_bgRect.bottom / 5) / PHeight))));
+	}
+
+	//이미지 위쪽으로 나갈때
+	if ((z_pos.y == (int)(-((m_bgRect.bottom / 5 * 4) / PHeight) - 1) && m_ePt.y <= PHeight * (1 - ((((m_bgRect.bottom / 5 * 4) / PHeight) - (int)((m_bgRect.bottom / 5 * 4) / PHeight))))) || z_pos.y < (int)(-((m_bgRect.bottom / 5 * 4) / PHeight) - 1))
+	{
+		z_pos.y = -((m_bgRect.bottom / 5 * 4) / PHeight) - 1;
+		m_ePt.y = PHeight * (1 - ((((m_bgRect.bottom / 5 * 4) / PHeight) - (int)((m_bgRect.bottom / 5 * 4) / PHeight))));
 	}
 
 	imgViewer2Navigator();
@@ -2260,6 +2342,31 @@ int CImgViewerView::isLeft(Point2d linePt1, Point2d linePt2, CPoint pos)
 }
 
 int CImgViewerView::isContainPolygon(CPoint pos, vector<Point2d> vertices)
+{
+	int wideNum = 0;
+
+	for (int i = 0; i < vertices.size(); i++) {
+		int nextpos = (i + 1 >= vertices.size()) ? 0 : i + 1;
+		if (vertices[i].y <= pos.y) {
+			if (vertices[nextpos].y > pos.y)
+				if (isLeft(vertices[i], vertices[nextpos], pos) > 0)
+					++wideNum;
+		}
+		else {
+			if (vertices[nextpos].y <= pos.y)
+				if (isLeft(vertices[i], vertices[nextpos], pos) < 0)
+					--wideNum;
+		}
+	}
+	return wideNum;
+}
+
+int CImgViewerView::isLeft(Point2d linePt1, Point2d linePt2, Point2d pos)
+{
+	return ((linePt2.x - linePt1.x) * (pos.y - linePt1.y) - (pos.x - linePt1.x) * (linePt2.y - linePt1.y));
+}
+
+int CImgViewerView::isContainPolygon(Point2d pos, vector<Point2d> vertices)
 {
 	int wideNum = 0;
 
@@ -2297,7 +2404,7 @@ void CImgViewerView::SelectShapeUpdate()
 			for (int i = 0; i < RectCount; i++)
 			{
 				pt = data[GroupList[j]].pts[i];
-				data[GroupList[j]].Rect[i].SetRect(pt.x - 5, pt.y - 5, pt.x + 5, pt.y + 5);
+				//data[GroupList[j]].Rect[i].SetRect(pt.x , pt.y , pt.x , pt.y );
 			}
 
 			// 각도 업데이트
@@ -2330,7 +2437,7 @@ void CImgViewerView::SelectShapeUpdate()
 		for (int i = 0; i < RectCount; i++)
 		{
 			pt = data[SelectIndex].pts[i];
-			data[SelectIndex].Rect[i].SetRect(pt.x - 5, pt.y - 5, pt.x + 5, pt.y + 5);
+			//data[SelectIndex].Rect[i].SetRect(pt.x , pt.y , pt.x , pt.y );
 		}
 
 		// 각도 업데이트
@@ -2345,7 +2452,26 @@ void CImgViewerView::SelectShapeUpdate()
 			data[SelectIndex].radin[1] = sqrt(pow(pt.x, 2) + pow(pt.y, 2)) / 2;
 		}
 	}
+	//RectCount = data[SelectIndex].pts.size();
+	//int tempCount;
+	//if (data[SelectIndex].theta < CV_PI / 2)
+	//	tempCount = 0;
+	//else if (data[SelectIndex].theta < CV_PI)
+	//	tempCount = 1;
+	//else if (data[SelectIndex].theta < CV_PI * 3 / 2)
+	//	tempCount = 2;
+	//else if (data[SelectIndex].theta < CV_PI * 2)
+	//	tempCount = 3;
 
+	//vector<Point2d> temp = data[SelectIndex].pts;
+	//for (int i = 0; i < RectCount; i++)
+	//{
+	//	int Index = i + tempCount;
+	//	if (Index > RectCount)
+	//		Index -= RectCount;
+	//	temp[Index] = data[SelectIndex].pts[i];
+	//}
+	//data[SelectIndex].pts = temp;
 }
 
 Point2d CImgViewerView::Intersection(Point2d& pt, Point2d& LinePt1, Point2d& LinePt2)
@@ -2388,17 +2514,75 @@ void CImgViewerView::draw(CDC* pDC)
 	oldPen = pDC->SelectObject(pen);
 	pDC->SelectStockObject(NULL_BRUSH);
 
+	double dxi, dxd;
+	double dyi, dyd;
+	double uxi, uxd;
+	double uyi, uyd;
+	Point2d d_pts, d_pte;
 	if (drawStyle == DrawMode::DLine) // 콤보상자에서 직선 선택시
 	{
-		pDC->MoveTo(d_sPt.x, d_sPt.y); pDC->LineTo(mov_Pt.x, mov_Pt.y);
+		dxd = modf(d_pos.x, &dxi);
+		dyd = modf(d_pos.y, &dyi);
+		uxd = modf(u_pos.x, &uxi);
+		uyd = modf(u_pos.y, &uyi);
+
+		pts_0.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd);
+		pts_0.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd);
+		pts_1.x = (PWidth * ((int)uxi - z_pos.x)) + (PWidth * uxd);
+		pts_1.y = (PHeight * ((int)uyi - z_pos.y)) + (PHeight * uyd);
+
+		pDC->MoveTo(pts_0.x, pts_0.y);
+		pDC->LineTo(pts_1.x, pts_1.y);
+
+		//pDC->MoveTo(d_sPt.x, d_sPt.y); pDC->LineTo(mov_Pt.x, mov_Pt.y);
 	}
 	else if (drawStyle == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
 	{
-		pDC->Rectangle(d_sPt.x, d_sPt.y, mov_Pt.x, mov_Pt.y);
+		dxd = modf(d_pos.x, &dxi);
+		dyd = modf(d_pos.y, &dyi);
+		uxd = modf(u_pos.x, &uxi);
+		uyd = modf(u_pos.y, &uyi);
+
+
+		d_pts.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd);
+		d_pts.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd);
+		d_pte.x = (PWidth * ((int)uxi - z_pos.x)) + (PWidth * uxd);
+		d_pte.y = (PHeight * ((int)uyi - z_pos.y)) + (PHeight * uyd);
+
+		pDC->Rectangle(d_pts.x, d_pts.y, d_pte.x, d_pte.y);
 	}
 	else if (drawStyle == DrawMode::DEllipse) // 콤보상자에서 원 선택시
 	{
-		pDC->Ellipse(d_sPt.x, d_sPt.y, mov_Pt.x, mov_Pt.y);
+		Point2d tmp1(d_pos);
+		Point2d tmp2(u_pos);
+		double width = 0, height = 0;
+
+		if (abs(u_pos.x - d_pos.x) > abs(u_pos.y - d_pos.y))
+		{
+			width = ((u_pos.x - d_pos.x) / 2) - ((u_pos.y - d_pos.y) / 2);
+			tmp1.x += width;
+			tmp2.x -= width;
+		}
+		else
+		{
+			height = ((u_pos.y - d_pos.y) / 2) - ((u_pos.x - d_pos.x) / 2);
+			tmp1.y += height;
+			tmp2.y -= height;
+		}
+
+		dxd = modf(tmp1.x, &dxi);
+		dyd = modf(tmp1.y, &dyi);
+		uxd = modf(tmp2.x, &uxi);
+		uyd = modf(tmp2.y, &uyi);
+
+		pts_0.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd);
+		pts_0.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd);
+		pts_1.x = (PWidth * ((int)uxi - z_pos.x)) + (PWidth * uxd);
+		pts_1.y = (PHeight * ((int)uyi - z_pos.y)) + (PHeight * uyd);
+		
+		pDC->Ellipse(pts_0.x, pts_0.y, pts_1.x, pts_1.y);
+
+		//pDC->Ellipse(pts_0.x, pts_0.y, pts_1.x, pts_1.y);
 	}
 	else if (drawStyle == DrawMode::DTriangle) // 콤보상자에서 사각형 선택시
 	{
@@ -2407,15 +2591,23 @@ void CImgViewerView::draw(CDC* pDC)
 		pDC->LineTo(d_sPt.x, mov_Pt.y);
 		pDC->LineTo((d_sPt.x + mov_Pt.x) / 2, d_sPt.y);
 	}
-	else if (drawStyle == DrawMode::DCrossHair) // 콤보상자에서 사각형 선택시
-	{
-		pDC->MoveTo((d_sPt.x + mov_Pt.x) / 2, d_sPt.y);
-		pDC->LineTo((d_sPt.x + mov_Pt.x) / 2, mov_Pt.y);
-		pDC->MoveTo(d_sPt.x, (d_sPt.y + mov_Pt.y) / 2);
-		pDC->LineTo(m_pos.x, (d_sPt.y + mov_Pt.y) / 2);
-	}
-	else if (penID) {
-		pDC->Rectangle(d_sPt.x, d_sPt.y, mov_Pt.x, mov_Pt.y);
+
+	else if (penID && selectID==FALSE && rotateID == FALSE && drawShapeID == FALSE) {
+
+
+		dxd = modf(d_pos.x, &dxi);
+		dyd = modf(d_pos.y, &dyi);
+		uxd = modf(u_pos.x, &uxi);
+		uyd = modf(u_pos.y, &uyi);
+
+
+		d_pts.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd);
+		d_pts.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd);
+		d_pte.x = (PWidth * ((int)uxi - z_pos.x)) + (PWidth * uxd);
+		d_pte.y = (PHeight * ((int)uyi - z_pos.y)) + (PHeight * uyd);
+
+		pDC->Rectangle(d_pts.x, d_pts.y, d_pte.x, d_pte.y);
+		//pDC->Rectangle(pts_0.x, pts_0.y, pts_2.x, pts_2.y);
 	}
 	pDC->SelectObject(oldPen); // 이전 팬 선택		
 	pen->DeleteObject();  // 생성한 펜 메모리에서 제거			
@@ -2426,40 +2618,124 @@ void CImgViewerView::draw(CDC* pDC)
 void CImgViewerView::drawShape(CDC* pDC, MyShape& shape)
 {
 	int shapeType = shape.shapeType;
-	CPen* pen = new CPen(PS_SOLID, shape.penWidth, shape.shapeColor);
+	CPen* pen;
+	if(shape.shapeType==DrawMode::DPoint)
+		pen = new CPen(PS_SOLID, 3, shape.shapeColor);
+	else
+		pen = new CPen(PS_SOLID, shape.penWidth, shape.shapeColor);
 	CPen* oldPen;
 	oldPen = pDC->SelectObject(pen);
+	pDC->SelectStockObject(NULL_BRUSH);
 
-	if (shapeType == DrawMode::DLine)
+	double dxi, dxd;
+	double dyi, dyd;
+	double uxi, uxd;
+	double uyi, uyd;
+
+	double xi_0, xd_0;
+	double yi_0, yd_0;
+	double xi_1, xd_1;
+	double yi_1, yd_1;
+	double xi_2, xd_2;
+	double yi_2, yd_2;
+	double xi_3, xd_3;
+	double yi_3, yd_3;
+
+
+	if (shapeType == DrawMode::DPoint)
 	{
-		pDC->MoveTo(shape.pts[0].x, shape.pts[0].y);
-		pDC->LineTo(shape.pts[1].x, shape.pts[1].y);
+		dxd = modf(shape.RotatePts[0].x, &dxi);
+		dyd = modf(shape.RotatePts[0].y, &dyi);
+		pts_0.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd) - PWidth * 5;
+		pts_0.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd)-PHeight*5;
+		pts_1.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd)+ PWidth*5;
+		pts_1.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd)- PWidth*5;
+		pts_2.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd)+ PWidth*5;
+		pts_2.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd)+ PWidth*5;
+		pts_3.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd)- PWidth*5;
+		pts_3.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd)+ PWidth*5;
+
+		pDC->MoveTo(pts_0.x, pts_0.y);
+		pDC->LineTo(pts_2.x, pts_2.y);
+		pDC->MoveTo(pts_1.x, pts_1.y);
+		pDC->LineTo(pts_3.x, pts_3.y);
+	}
+	else if (shapeType == DrawMode::DLine)
+	{
+		dxd = modf(shape.RotatePts[0].x, &dxi);
+		dyd = modf(shape.RotatePts[0].y, &dyi);
+		uxd = modf(shape.RotatePts[1].x, &uxi);
+		uyd = modf(shape.RotatePts[1].y, &uyi);
+
+		pts_0.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd);
+		pts_0.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd);
+		pts_1.x = (PWidth * ((int)uxi - z_pos.x)) + (PWidth * uxd);
+		pts_1.y = (PHeight * ((int)uyi - z_pos.y)) + (PHeight * uyd);
+
+		pDC->MoveTo(pts_0.x, pts_0.y);
+		pDC->LineTo(pts_1.x, pts_1.y);
 	}
 	else if (shapeType == DrawMode::DEllipse) // 원 그리기
 	{
-		MyEllipseR(pDC, shape.Center, shape.radin[0], shape.radin[1], shape.theta, shape.shapeColor);
+		dxd = modf(shape.RotatePts[0].x, &dxi);
+		dyd = modf(shape.RotatePts[0].y, &dyi);
+		uxd = modf(shape.RotatePts[2].x, &uxi);
+		uyd = modf(shape.RotatePts[2].y, &uyi);
+
+		pts_0.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd);
+		pts_0.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd);
+		pts_1.x = (PWidth * ((int)uxi - z_pos.x)) + (PWidth * uxd);
+		pts_1.y = (PHeight * ((int)uyi - z_pos.y)) + (PHeight * uyd);
+
+		pDC->Ellipse(pts_0.x, pts_0.y, pts_1.x, pts_1.y);
+		//MyEllipseR(pDC, shape.Center, shape.radin[0], shape.radin[1], shape.theta, shape.shapeColor);
 	}
 	else if (shapeType == DrawMode::DRectangle)
 	{
-		pDC->MoveTo(shape.pts[0].x, shape.pts[0].y);
-		pDC->LineTo(shape.pts[1].x, shape.pts[1].y);
-		pDC->LineTo(shape.pts[2].x, shape.pts[2].y);
-		pDC->LineTo(shape.pts[3].x, shape.pts[3].y);
-		pDC->LineTo(shape.pts[0].x, shape.pts[0].y);
+		xd_0 = modf(shape.pts[0].x, &xi_0);
+		yd_0 = modf(shape.pts[0].y, &yi_0);
+		xd_1 = modf(shape.pts[1].x, &xi_1);
+		yd_1 = modf(shape.pts[1].y, &yi_1);
+		xd_2 = modf(shape.pts[2].x, &xi_2);
+		yd_2 = modf(shape.pts[2].y, &yi_2);
+		xd_3 = modf(shape.pts[3].x, &xi_3);
+		yd_3 = modf(shape.pts[3].y, &yi_3);
+
+		pts_0.x = (PWidth * ((int)xi_0 - z_pos.x)) + (PWidth * xd_0);
+		pts_0.y = (PHeight * ((int)yi_0 - z_pos.y)) + (PHeight * yd_0);
+		pts_1.x = (PWidth * ((int)xi_1 - z_pos.x)) + (PWidth * xd_1);
+		pts_1.y = (PHeight * ((int)yi_1 - z_pos.y)) + (PHeight * yd_1);
+		pts_2.x = (PWidth * ((int)xi_2 - z_pos.x)) + (PWidth * xd_2);
+		pts_2.y = (PHeight * ((int)yi_2 - z_pos.y)) + (PHeight * yd_2);
+		pts_3.x = (PWidth * ((int)xi_3 - z_pos.x)) + (PWidth * xd_3);
+		pts_3.y = (PHeight * ((int)yi_3 - z_pos.y)) + (PHeight * yd_3);
+
+		pDC->MoveTo(pts_0.x, pts_0.y);
+		pDC->LineTo(pts_1.x, pts_1.y);
+		pDC->LineTo(pts_2.x, pts_2.y);
+		pDC->LineTo(pts_3.x, pts_3.y);
+		pDC->LineTo(pts_0.x, pts_0.y);
 	}
 	else if (shapeType == DrawMode::DTriangle)
 	{
-		pDC->MoveTo(shape.pts[0].x, shape.pts[0].y);
-		pDC->LineTo(shape.pts[1].x, shape.pts[1].y);
-		pDC->LineTo(shape.pts[2].x, shape.pts[2].y);
-		pDC->LineTo(shape.pts[0].x, shape.pts[0].y);
-	}
-	else if (shapeType == DrawMode::DCrossHair)
-	{
-		pDC->MoveTo(shape.pts[0].x, shape.pts[0].y);
-		pDC->LineTo(shape.pts[1].x, shape.pts[1].y);
-		pDC->MoveTo(shape.pts[2].x, shape.pts[2].y);
-		pDC->LineTo(shape.pts[3].x, shape.pts[3].y);
+		dxd = modf(shape.RotatePts[0].x, &dxi);
+		dyd = modf(shape.RotatePts[0].y, &dyi);
+		uxd = modf(shape.RotatePts[2].x, &uxi);
+		uyd = modf(shape.RotatePts[2].y, &uyi);
+
+
+		pts_0.x = (((PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd)) + ((PWidth * ((int)uxi - z_pos.x)) + (PWidth * uxd))) / 2;
+		pts_0.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd);
+		pts_1.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd);
+		pts_1.y = (PHeight * ((int)uyi - z_pos.y)) + (PHeight * uyd);
+		pts_2.x = (PWidth * ((int)uxi - z_pos.x)) + (PWidth * uxd);
+		pts_2.y = (PHeight * ((int)uyi - z_pos.y)) + (PHeight * uyd);
+
+
+		pDC->MoveTo(pts_0.x, pts_0.y);
+		pDC->LineTo(pts_1.x, pts_1.y);
+		pDC->LineTo(pts_2.x, pts_2.y);
+		pDC->LineTo(pts_0.x, pts_0.y);
 	}
 	pDC->SelectObject(oldPen); // 이전 팬 선택		
 	pen->DeleteObject();  // 생성한 펜 메모리에서 제거		
@@ -2472,39 +2748,118 @@ void CImgViewerView::SelectDrawShape(CDC* pDC, MyShape& shape)
 	// 선택 실선
 	CPen* pen = new CPen(PS_DOT, shape.penWidth, BLACK_PEN);
 	CPen* oldPen;
-	Point2d Center = shape.Center;
-	Point2d Rotate = shape.Rotate;
 	oldPen = pDC->SelectObject(pen);
-	if (shape.shapeType == DrawMode::DLine) // 콤보상자에서 직선 선택시
+
+
+	double dxi, dxd;
+	double dyi, dyd;
+	double uxi, uxd;
+	double uyi, uyd;
+
+	double xi_0, xd_0;
+	double yi_0, yd_0;
+	double xi_1, xd_1;
+	double yi_1, yd_1;
+	double xi_2, xd_2;
+	double yi_2, yd_2;
+	double xi_3, xd_3;
+	double yi_3, yd_3;
+
+	Point2d d_pts, d_pte;
+	if (shape.shapeType == DrawMode::DPoint)
 	{
-		pDC->MoveTo(shape.pts[0].x, shape.pts[0].y);
-		pDC->LineTo(shape.pts[1].x, shape.pts[1].y);
+		dxd = modf(shape.pts[0].x, &dxi);
+		dyd = modf(shape.pts[0].y, &dyi);
+		pts_0.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd) - PWidth * 5;
+		pts_0.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd) - PHeight * 5;
+		pts_1.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd) + PWidth * 5;
+		pts_1.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd) - PWidth * 5;
+		pts_2.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd) + PWidth * 5;
+		pts_2.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd) + PWidth * 5;
+		pts_3.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd) - PWidth * 5;
+		pts_3.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd) + PWidth * 5;
+
+		pDC->MoveTo(pts_0.x, pts_0.y);
+		pDC->LineTo(pts_2.x, pts_2.y);
+		pDC->MoveTo(pts_1.x, pts_1.y);
+		pDC->LineTo(pts_3.x, pts_3.y);
 	}
-	else if (shape.shapeType == DrawMode::DRectangle) // 콤보상자에서 사각형 선택시
+	else if (shape.shapeType == DrawMode::DLine)
 	{
-		pDC->MoveTo(shape.pts[0].x, shape.pts[0].y);
-		pDC->LineTo(shape.pts[1].x, shape.pts[1].y);
-		pDC->LineTo(shape.pts[2].x, shape.pts[2].y);
-		pDC->LineTo(shape.pts[3].x, shape.pts[3].y);
-		pDC->LineTo(shape.pts[0].x, shape.pts[0].y);
+		dxd = modf(shape.pts[0].x, &dxi);
+		dyd = modf(shape.pts[0].y, &dyi);
+		uxd = modf(shape.pts[1].x, &uxi);
+		uyd = modf(shape.pts[1].y, &uyi);
+
+		pts_0.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd);
+		pts_0.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd);
+		pts_1.x = (PWidth * ((int)uxi - z_pos.x)) + (PWidth * uxd);
+		pts_1.y = (PHeight * ((int)uyi - z_pos.y)) + (PHeight * uyd);
+
+		pDC->MoveTo(pts_0.x, pts_0.y);
+		pDC->LineTo(pts_1.x, pts_1.y);
 	}
-	else if (shape.shapeType == DrawMode::DEllipse)
+	else if (shape.shapeType == DrawMode::DEllipse) // 원 그리기
 	{
-		MyEllipsePS_DOT(pDC, shape.Center, shape.radin[0], shape.radin[1], shape.R_theta);
+		MyEllipseR(pDC, shape.Center, shape.radin[0], shape.radin[1], shape.theta, shape.shapeColor);
 	}
-	else if (shape.shapeType == DrawMode::DTriangle) // 콤보상자에서 사각형 선택시
+	else if (shape.shapeType == DrawMode::DRectangle)
 	{
-		pDC->MoveTo(shape.pts[0].x, shape.pts[0].y);
-		pDC->LineTo(shape.pts[1].x, shape.pts[1].y);
-		pDC->LineTo(shape.pts[2].x, shape.pts[2].y);
-		pDC->LineTo(shape.pts[0].x, shape.pts[0].y);
+		//pDC->MoveTo(shape.pts[0].x, shape.pts[0].y);
+		//pDC->LineTo(shape.pts[1].x, shape.pts[1].y);
+		//pDC->LineTo(shape.pts[2].x, shape.pts[2].y);
+		//pDC->LineTo(shape.pts[0].x, shape.pts[0].y);
+
+		//dxd = modf(shape.pts[0].x, &dxi);
+		//dyd = modf(shape.pts[0].y, &dyi);
+		//uxd = modf(shape.pts[2].x, &uxi);
+		//uyd = modf(shape.pts[2].y, &uyi);
+
+
+		xd_0 = modf(shape.pts[0].x, &xi_0);
+		yd_0 = modf(shape.pts[0].y, &yi_0);
+		xd_1 = modf(shape.pts[1].x, &xi_1);
+		yd_1 = modf(shape.pts[1].y, &yi_1);
+		xd_2 = modf(shape.pts[2].x, &xi_2);
+		yd_2 = modf(shape.pts[2].y, &yi_2);
+		xd_3 = modf(shape.pts[3].x, &xi_3);
+		yd_3 = modf(shape.pts[3].y, &yi_3);
+
+		pts_0.x = (PWidth * ((int)xi_0 - z_pos.x)) + (PWidth * xd_0);
+		pts_0.y = (PHeight * ((int)yi_0 - z_pos.y)) + (PHeight * yd_0);
+		pts_1.x = (PWidth * ((int)xi_1 - z_pos.x)) + (PWidth * xd_1);
+		pts_1.y = (PHeight * ((int)yi_1 - z_pos.y)) + (PHeight * yd_1);
+		pts_2.x = (PWidth * ((int)xi_2 - z_pos.x)) + (PWidth * xd_2);
+		pts_2.y = (PHeight * ((int)yi_2 - z_pos.y)) + (PHeight * yd_2);
+		pts_3.x = (PWidth * ((int)xi_3 - z_pos.x)) + (PWidth * xd_3);
+		pts_3.y = (PHeight * ((int)yi_3 - z_pos.y)) + (PHeight * yd_3);
+
+		pDC->MoveTo(pts_0.x, pts_0.y);
+		pDC->LineTo(pts_1.x, pts_1.y);
+		pDC->LineTo(pts_2.x, pts_2.y);
+		pDC->LineTo(pts_3.x, pts_3.y);
+		pDC->LineTo(pts_0.x, pts_0.y);
 	}
-	else if (shape.shapeType == DrawMode::DCrossHair) // 콤보상자에서 크로스 헤어 선택시
+	else if (shape.shapeType == DrawMode::DTriangle)
 	{
-		pDC->MoveTo(shape.pts[0].x, shape.pts[0].y);
-		pDC->LineTo(shape.pts[1].x, shape.pts[1].y);
-		pDC->MoveTo(shape.pts[2].x, shape.pts[2].y);
-		pDC->LineTo(shape.pts[3].x, shape.pts[3].y);
+		dxd = modf(shape.pts[0].x, &dxi);
+		dyd = modf(shape.pts[0].y, &dyi);
+		uxd = modf(shape.pts[2].x, &uxi);
+		uyd = modf(shape.pts[2].y, &uyi);
+
+
+		pts_0.x = (((PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd)) + ((PWidth * ((int)uxi - z_pos.x)) + (PWidth * uxd))) / 2;
+		pts_0.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd);
+		pts_1.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd);
+		pts_1.y = (PHeight * ((int)uyi - z_pos.y)) + (PHeight * uyd);
+		pts_2.x = (PWidth * ((int)uxi - z_pos.x)) + (PWidth * uxd);
+		pts_2.y = (PHeight * ((int)uyi - z_pos.y)) + (PHeight * uyd);
+
+
+		pDC->MoveTo(pts_0.x, pts_0.y);
+		pDC->LineTo(pts_1.x, pts_1.y);
+		pDC->LineTo(pts_2.x, pts_2.y);
+		pDC->LineTo(pts_0.x, pts_0.y);
 	}
 
 	pDC->SelectObject(oldPen);
@@ -2514,44 +2869,184 @@ void CImgViewerView::SelectDrawShape(CDC* pDC, MyShape& shape)
 	// 확대 사각 박스 그리기
 	pDC->SelectStockObject(WHITE_BRUSH);
 	int rcCount = shape.pts.size();
-	for (int i = 0; i < rcCount; i++)
-		pDC->Rectangle(shape.Rect[i]);
+
+
+	Point2d Center = shape.Center;
+	Point2d Rotate = shape.Rotate;
+
+	double theta = shape.R_theta;
+	Point2d t_pts, c_pts;
+
+	for (int i = 0; i < rcCount; i++) {
+
+		xd_0 = modf(shape.RotatePts[i].x, &xi_0);
+		yd_0 = modf(shape.RotatePts[i].y, &yi_0);
+
+		t_pts.x = (PWidth * ((int)xi_0 - z_pos.x)) + (PWidth * xd_0);
+		t_pts.y = (PHeight * ((int)yi_0 - z_pos.y)) + (PHeight * yd_0);
+
+	
+		shape.edge[i][0].x = t_pts.x - 8;
+		shape.edge[i][0].y = t_pts.y - 8;
+		shape.edge[i][1].x = t_pts.x + 8;
+		shape.edge[i][1].y = t_pts.y - 8;
+		shape.edge[i][2].x = t_pts.x + 8;
+		shape.edge[i][2].y = t_pts.y + 8;
+		shape.edge[i][3].x = t_pts.x - 8;
+		shape.edge[i][3].y = t_pts.y + 8;
+
+
+		if (i == 0) {
+			shape.R_edge[i][0].x = t_pts.x - 15;
+			shape.R_edge[i][0].y = t_pts.y - 15;
+			shape.R_edge[i][1].x = t_pts.x + 8;
+			shape.R_edge[i][1].y = t_pts.y - 15;
+			shape.R_edge[i][2].x = t_pts.x + 8;
+			shape.R_edge[i][2].y = t_pts.y + 8;
+			shape.R_edge[i][3].x = t_pts.x - 15;
+			shape.R_edge[i][3].y = t_pts.y + 8;
+		}
+		else if (i == 1) {
+			shape.R_edge[i][0].x = t_pts.x - 8;
+			shape.R_edge[i][0].y = t_pts.y - 15;
+			shape.R_edge[i][1].x = t_pts.x + 15;
+			shape.R_edge[i][1].y = t_pts.y - 15;
+			shape.R_edge[i][2].x = t_pts.x + 15;
+			shape.R_edge[i][2].y = t_pts.y + 8;
+			shape.R_edge[i][3].x = t_pts.x - 8;
+			shape.R_edge[i][3].y = t_pts.y + 8;
+		}
+		else if (i == 2) {
+			shape.R_edge[i][0].x = t_pts.x - 8;
+			shape.R_edge[i][0].y = t_pts.y - 8;
+			shape.R_edge[i][1].x = t_pts.x + 15;
+			shape.R_edge[i][1].y = t_pts.y - 8;
+			shape.R_edge[i][2].x = t_pts.x + 15;
+			shape.R_edge[i][2].y = t_pts.y + 15;
+			shape.R_edge[i][3].x = t_pts.x - 8;
+			shape.R_edge[i][3].y = t_pts.y + 15;
+		}
+		else if (i == 3) {
+			shape.R_edge[i][0].x = t_pts.x - 15;
+			shape.R_edge[i][0].y = t_pts.y - 8;
+			shape.R_edge[i][1].x = t_pts.x + 8;
+			shape.R_edge[i][1].y = t_pts.y - 8;
+			shape.R_edge[i][2].x = t_pts.x + 8;
+			shape.R_edge[i][2].y = t_pts.y + 15;
+			shape.R_edge[i][3].x = t_pts.x - 15;
+			shape.R_edge[i][3].y = t_pts.y + 15;
+		}
+
+		//shape.R_edge[i][0].x = t_pts.x - 15;
+		//shape.R_edge[i][0].y = t_pts.y - 15;
+		//shape.R_edge[i][1].x = t_pts.x + 15;
+		//shape.R_edge[i][1].y = t_pts.y - 15;
+		//shape.R_edge[i][2].x = t_pts.x + 15;
+		//shape.R_edge[i][2].y = t_pts.y + 15;
+		//shape.R_edge[i][3].x = t_pts.x - 15;
+		//shape.R_edge[i][3].y = t_pts.y + 15;
+
+
+		Point2d pt, r_pt;
+		for (int j = 0; j < 4; j++) {
+			pt = shape.edge[i][j];
+			pt.x = ((shape.edge[i][j].x - t_pts.x) * cos(theta) - (shape.edge[i][j].y - t_pts.y) * sin(theta) + t_pts.x);
+			pt.y = ((shape.edge[i][j].x - t_pts.x) * sin(theta) + (shape.edge[i][j].y - t_pts.y) * cos(theta) + t_pts.y);
+			shape.edge[i][j] = pt;
+
+			r_pt = shape.R_edge[i][j];
+			r_pt.x = ((shape.R_edge[i][j].x - t_pts.x) * cos(theta) - (shape.R_edge[i][j].y - t_pts.y) * sin(theta) + t_pts.x);
+			r_pt.y = ((shape.R_edge[i][j].x - t_pts.x) * sin(theta) + (shape.R_edge[i][j].y - t_pts.y) * cos(theta) + t_pts.y);
+			shape.R_edge[i][j] = r_pt;
+		}
+}
+
+		
+	for (int i = 0; i < rcCount; i++) {
+
+		pDC->MoveTo(shape.edge[i][0].x, shape.edge[i][0].y);
+		for (int j = 1; j < 4; j++) 
+			pDC->LineTo(shape.edge[i][j].x, shape.edge[i][j].y);
+		pDC->LineTo(shape.edge[i][0].x, shape.edge[i][0].y);
+	}
+
+	for (int i = 0; i < rcCount; i++) {
+
+		pDC->MoveTo(shape.R_edge[i][0].x, shape.R_edge[i][0].y);
+		for (int j = 1; j < 4; j++)
+			pDC->LineTo(shape.R_edge[i][j].x, shape.R_edge[i][j].y);
+		pDC->LineTo(shape.R_edge[i][0].x, shape.R_edge[i][0].y);
+	}
 	pDC->SelectStockObject(NULL_BRUSH);
 
 	// 회전 직선 그리기
-	pen = new CPen(PS_SOLID, 1, RGB(0, 0, 255));
-	oldPen = pDC->SelectObject(pen);
-	pDC->MoveTo(Center.x, Center.y);
-	pDC->LineTo(Rotate.x, Rotate.y);
-	pDC->SelectObject(oldPen);
-	pen->DeleteObject();
-	delete pen;
+	//pen = new CPen(PS_SOLID, 3, RGB(0, 0, 255));
+	//oldPen = pDC->SelectObject(pen);
+
+	//if (shape.shapeType != DrawMode::DEllipse)
+	//{
+	//	dxd = modf(Center.x, &dxi);
+	//	dyd = modf(Center.y, &dyi);
+	//	uxd = modf(Rotate.x, &uxi);
+	//	uyd = modf(Rotate.y, &uyi);
+
+	//	pts_0.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd);
+	//	pts_0.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd);
+	//	pts_1.x = (PWidth * ((int)uxi - z_pos.x)) + (PWidth * uxd);
+	//	pts_1.y = (PHeight * ((int)uyi - z_pos.y)) + (PHeight * uyd);
+
+	//	pDC->MoveTo(pts_0.x, pts_0.y);
+	//	pDC->LineTo(pts_1.x, pts_1.y);
+	//}
+	//
+	//pDC->SelectObject(oldPen);
+	//pen->DeleteObject();
+	//delete pen;
 
 	// 회전 선택
 	if (rotateID == TRUE) {
 		pen = new CPen(PS_SOLID, shape.penWidth, RGB(0, 255, 0));
 		oldPen = pDC->SelectObject(pen);
 		RectCount = shape.pts.size();
-		if (shape.shapeType == DrawMode::DCrossHair)
+		if (shape.shapeType == DrawMode::DEllipse)
 		{
-			pDC->MoveTo(shape.RotatePts[0].x, shape.RotatePts[0].y);
-			pDC->LineTo(shape.RotatePts[1].x, shape.RotatePts[1].y);
-			pDC->MoveTo(shape.RotatePts[2].x, shape.RotatePts[2].y);
-			pDC->LineTo(shape.RotatePts[3].x, shape.RotatePts[3].y);
+			
 		}
-		else if (shape.shapeType == DrawMode::DEllipse)
-		{
-			MyEllipseR(pDC, shape.Center, shape.radin[0], shape.radin[1], shape.R_theta, shape.shapeColor);
+		else if (shape.shapeType == DrawMode::DPoint) {
+
 		}
 		else
 		{
-			pDC->MoveTo(data[SelectIndex].RotatePts[0].x, data[SelectIndex].RotatePts[0].y);
+			xd_0 = modf(shape.RotatePts[0].x, &xi_0);
+			yd_0 = modf(shape.RotatePts[0].y, &yi_0);
+			xd_1 = modf(shape.RotatePts[1].x, &xi_1);
+			yd_1 = modf(shape.RotatePts[1].y, &yi_1);
+			xd_2 = modf(shape.RotatePts[2].x, &xi_2);
+			yd_2 = modf(shape.RotatePts[2].y, &yi_2);
+			xd_3 = modf(shape.RotatePts[3].x, &xi_3);
+			yd_3 = modf(shape.RotatePts[3].y, &yi_3);
+
+			pts_0.x = (PWidth * ((int)xi_0 - z_pos.x)) + (PWidth * xd_0);
+			pts_0.y = (PHeight * ((int)yi_0 - z_pos.y)) + (PHeight * yd_0);
+			pts_1.x = (PWidth * ((int)xi_1 - z_pos.x)) + (PWidth * xd_1);
+			pts_1.y = (PHeight * ((int)yi_1 - z_pos.y)) + (PHeight * yd_1);
+			pts_2.x = (PWidth * ((int)xi_2 - z_pos.x)) + (PWidth * xd_2);
+			pts_2.y = (PHeight * ((int)yi_2 - z_pos.y)) + (PHeight * yd_2);
+			pts_3.x = (PWidth * ((int)xi_3 - z_pos.x)) + (PWidth * xd_3);
+			pts_3.y = (PHeight * ((int)yi_3 - z_pos.y)) + (PHeight * yd_3);
+
+			pDC->MoveTo(pts_0.x, pts_0.y);
+			pDC->LineTo(pts_1.x, pts_1.y);
+			pDC->LineTo(pts_2.x, pts_2.y);
+			pDC->LineTo(pts_3.x, pts_3.y);
+			pDC->LineTo(pts_0.x, pts_0.y);
+			/*pDC->MoveTo(data[SelectIndex].RotatePts[0].x, data[SelectIndex].RotatePts[0].y);
 			for (int i = 1; i < data[SelectIndex].RotatePts.size(); i++)
 				pDC->LineTo(data[SelectIndex].RotatePts[i].x, data[SelectIndex].RotatePts[i].y);
-			pDC->LineTo(data[SelectIndex].RotatePts[0].x, data[SelectIndex].RotatePts[0].y);
+			pDC->LineTo(data[SelectIndex].RotatePts[0].x, data[SelectIndex].RotatePts[0].y);*/
 		}
-		Rotate.x = d_sPt.x;
-		Rotate.y = d_sPt.y;
+		Rotate.x = d_pos.x;
+		Rotate.y = d_pos.y;
 
 		pDC->SelectObject(oldPen);
 		pen->DeleteObject();
@@ -2564,30 +3059,71 @@ void CImgViewerView::SelectDrawShape(CDC* pDC, MyShape& shape)
 		RectCount = shape.pts.size();
 		if (shape.RotatePts.size() > 0)
 		{
-			// 사각형 OR 직선
-			if (shape.shapeType == DrawMode::DCrossHair)
+			if (shape.shapeType == DrawMode::DEllipse)
 			{
-				pDC->MoveTo(shape.RotatePts[0].x, shape.RotatePts[0].y);
-				pDC->LineTo(shape.RotatePts[1].x, shape.RotatePts[1].y);
-				pDC->MoveTo(shape.RotatePts[2].x, shape.RotatePts[2].y);
-				pDC->LineTo(shape.RotatePts[3].x, shape.RotatePts[3].y);
-			}
-			else if (shape.shapeType == DrawMode::DEllipse)
-			{
-				Point2d RotateCenter(0, 0);
+				xd_0 = modf(shape.RotatePts[0].x, &xi_0);
+				yd_0 = modf(shape.RotatePts[0].y, &yi_0);
+				xd_1 = modf(shape.RotatePts[2].x, &xi_1);
+				yd_1 = modf(shape.RotatePts[2].y, &yi_1);
+
+				pts_0.x = (PWidth * ((int)xi_0 - z_pos.x)) + (PWidth * xd_0);
+				pts_0.y = (PHeight * ((int)yi_0 - z_pos.y)) + (PHeight * yd_0);
+				pts_1.x = (PWidth * ((int)xi_1 - z_pos.x)) + (PWidth * xd_1);
+				pts_1.y = (PHeight * ((int)yi_1 - z_pos.y)) + (PHeight * yd_1);
+
+				pDC->Ellipse(pts_0.x, pts_0.y, pts_1.x, pts_1.y);
+
+
+				/*Point2d RotateCenter(0, 0);
 				for (size_t i = 0; i < RectCount; i++)
 				{
 					RotateCenter.x += shape.RotatePts[i].x;
 					RotateCenter.y += shape.RotatePts[i].y;
 				}
-				MyEllipseR(pDC, RotateCenter / RectCount, shape.radin[0], shape.radin[1], shape.theta, RGB(0, 255, 0));
+				MyEllipseR(pDC, RotateCenter / RectCount, shape.radin[0], shape.radin[1], shape.theta, RGB(0, 255, 0));*/
+			}
+			else if (shape.shapeType == DrawMode::DPoint) {
+
+			}
+			else if (shape.shapeType == DrawMode::DLine) {
+				xd_0 = modf(shape.RotatePts[0].x, &xi_0);
+				yd_0 = modf(shape.RotatePts[0].y, &yi_0);
+				xd_1 = modf(shape.RotatePts[1].x, &xi_1);
+				yd_1 = modf(shape.RotatePts[1].y, &yi_1);
+
+				pts_0.x = (PWidth * ((int)xi_0 - z_pos.x)) + (PWidth * xd_0);
+				pts_0.y = (PHeight * ((int)yi_0 - z_pos.y)) + (PHeight * yd_0);
+				pts_1.x = (PWidth * ((int)xi_1 - z_pos.x)) + (PWidth * xd_1);
+				pts_1.y = (PHeight * ((int)yi_1 - z_pos.y)) + (PHeight * yd_1);
+
+				pDC->MoveTo(pts_0.x, pts_0.y);
+				pDC->LineTo(pts_1.x, pts_1.y);
 			}
 			else
 			{
-				pDC->MoveTo(shape.RotatePts[0].x, shape.RotatePts[0].y);
-				for (int i = 1; i < shape.RotatePts.size(); i++)
-					pDC->LineTo(shape.RotatePts[i].x, shape.RotatePts[i].y);
-				pDC->LineTo(shape.RotatePts[0].x, shape.RotatePts[0].y);
+				xd_0 = modf(shape.RotatePts[0].x, &xi_0);
+				yd_0 = modf(shape.RotatePts[0].y, &yi_0);
+				xd_1 = modf(shape.RotatePts[1].x, &xi_1);
+				yd_1 = modf(shape.RotatePts[1].y, &yi_1);
+				xd_2 = modf(shape.RotatePts[2].x, &xi_2);
+				yd_2 = modf(shape.RotatePts[2].y, &yi_2);
+				xd_3 = modf(shape.RotatePts[3].x, &xi_3);
+				yd_3 = modf(shape.RotatePts[3].y, &yi_3);
+
+				pts_0.x = (PWidth * ((int)xi_0 - z_pos.x)) + (PWidth * xd_0);
+				pts_0.y = (PHeight * ((int)yi_0 - z_pos.y)) + (PHeight * yd_0);
+				pts_1.x = (PWidth * ((int)xi_1 - z_pos.x)) + (PWidth * xd_1);
+				pts_1.y = (PHeight * ((int)yi_1 - z_pos.y)) + (PHeight * yd_1);
+				pts_2.x = (PWidth * ((int)xi_2 - z_pos.x)) + (PWidth * xd_2);
+				pts_2.y = (PHeight * ((int)yi_2 - z_pos.y)) + (PHeight * yd_2);
+				pts_3.x = (PWidth * ((int)xi_3 - z_pos.x)) + (PWidth * xd_3);
+				pts_3.y = (PHeight * ((int)yi_3 - z_pos.y)) + (PHeight * yd_3);
+
+				pDC->MoveTo(pts_0.x, pts_0.y);
+				pDC->LineTo(pts_1.x, pts_1.y);
+				pDC->LineTo(pts_2.x, pts_2.y);
+				pDC->LineTo(pts_3.x, pts_3.y);
+				pDC->LineTo(pts_0.x, pts_0.y);
 			}
 
 		}
@@ -2595,6 +3131,49 @@ void CImgViewerView::SelectDrawShape(CDC* pDC, MyShape& shape)
 		pen->DeleteObject();
 		delete pen;
 	}
+}
+
+void CImgViewerView::DrawCircle(CDC* pDC, vector<Vec3f>& circleCenter)
+{
+	CPen* pen;
+	pen = new CPen(PS_SOLID, 3, RGB(255, 0, 0));
+	CPen* oldPen;
+	oldPen = pDC->SelectObject(pen);
+	pDC->SelectStockObject(NULL_BRUSH);
+
+	double dxi, dxd;
+	double dyi, dyd;
+	double uxi, uxd;
+	double uyi, uyd;
+
+	double xi_0, xd_0;
+	double yi_0, yd_0;
+	double xi_1, xd_1;
+	double yi_1, yd_1;
+	double xi_2, xd_2;
+	double yi_2, yd_2;
+	double xi_3, xd_3;
+	double yi_3, yd_3;
+
+	for (int i = 0; i < circleCenter.size(); i++)
+	{
+
+		dxd = modf(circleCenter[i][0] - circleCenter[i][2], &dxi);
+		dyd = modf(circleCenter[i][1] - circleCenter[i][2], &dyi);
+		uxd = modf(circleCenter[i][0] + circleCenter[i][2], &uxi);
+		uyd = modf(circleCenter[i][1] + circleCenter[i][2], &uyi);
+
+		pts_0.x = (PWidth * ((int)dxi - z_pos.x)) + (PWidth * dxd);
+		pts_0.y = (PHeight * ((int)dyi - z_pos.y)) + (PHeight * dyd);
+		pts_1.x = (PWidth * ((int)uxi - z_pos.x)) + (PWidth * uxd);
+		pts_1.y = (PHeight * ((int)uyi - z_pos.y)) + (PHeight * uyd);
+
+		pDC->Ellipse(pts_0.x, pts_0.y, pts_1.x, pts_1.y);
+	}
+
+	pDC->SelectObject(oldPen); // 이전 팬 선택		
+	pen->DeleteObject();  // 생성한 펜 메모리에서 제거		
+	delete pen;
 }
 
 void CImgViewerView::MyEllipseR(CDC* pDC, Point2d Center, int radinX, int radinY, double theta, COLORREF parm_color)

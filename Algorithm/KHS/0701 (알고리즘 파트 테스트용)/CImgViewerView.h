@@ -8,12 +8,13 @@ using namespace cv;
 using namespace std;
 enum DrawMode	//도형 종류
 {
-	None = -1, DPoint, DLine, DEllipse, DRectangle, DTriangle, DCrossHair
+	None = -1, DPoint, DLine, DEllipse, DRectangle, DTriangle
 };
 
 enum RollBackMode {	//롤백 명령어
 	Create, Delete, Update,GroupStart,GroupEnd
 };
+
 
 
 struct MyShape
@@ -28,7 +29,8 @@ struct MyShape
 	double theta;  // 각
 	double R_theta; // 회전각
 	double radin[2]; // 크기
-	CRect Rect[4];
+	vector<vector<Point2d>> edge; // 크기 조절
+	vector<vector<Point2d>> R_edge;
 };
 
 struct CopyShape {
@@ -42,6 +44,8 @@ struct RollbackInfo {	//롤백 정보
 	MyShape redoShape;	//다음 도형
 	MyShape undoShape;	//이전 도형
 };
+
+
 
 
 class CImgViewerView : public CView
@@ -79,6 +83,7 @@ public:
 
 	// 이미지 처리용
 	CircleDection m_Algorithm; // 알고리즘 처리 클래스
+	vector<Vec3f> CircleCenter; // 원 검출
 	Mat result_mat; // 결과 이미지
 	HBITMAP result_bmp; // 결과 이미지 BITMAP 타입
 
@@ -89,25 +94,25 @@ public:
 	BITMAP m_Bitmap;		//이미지 정보
 
 	//패닝 && 줌
-	CPoint m_sPt;	//클릭 시작 좌표(이미지 좌표계)
+	Point2d m_sPt;	//클릭 시작 좌표(이미지 좌표계)
 	CPoint z_pos;	//줌 좌표(이미지 좌표계)
-	CPoint m_ePt;	//클라이언트 좌표
-	CPoint m_pos;	//무브 좌표(이미지 좌표계)
+	Point2d m_ePt;	//클라이언트 좌표
+	Point2d m_pos;	//무브 좌표(이미지 좌표계)
 	CRect m_bgRect;			// 화면 전체의 크기 - client 윈도의 전체크기
 
 	double zoomWidth, zoomHeight;	//줌 크기
 	double PWidth, PHeight;			//픽셀 사이즈
 
-	float zoomView; //줌 비율
-	float rectScale; //확대/축소 비율
-	float printWidth; //출력 크기
-	float printHeight; //출력 크기
+	double zoomView; //줌 비율
+	double rectScale; //확대/축소 비율
+	double printWidth; //출력 크기
+	double printHeight; //출력 크기
 
-	POINTF start_pos; //메모리 버퍼 시작 좌표
-	POINTF before_Image_pos; //확대/축소 전 마우스 원본에서 위치
-	POINTF before_Pixel_pos; //확대/축소 전 마우스 있는 픽셀에서의 위치
-	POINTF after_Image_pos; //확대/축소 후 마우스 원본에서 위치
-	POINTF after_Pixel_pos; //확대/축소 후 마우스 있는 픽셀에서의 위치
+	Point2d start_pos; //메모리 버퍼 시작 좌표
+	Point2d before_Image_pos; //확대/축소 전 마우스 원본에서 위치
+	Point2d before_Pixel_pos; //확대/축소 전 마우스 있는 픽셀에서의 위치
+	Point2d after_Image_pos; //확대/축소 후 마우스 원본에서 위치
+	Point2d after_Pixel_pos; //확대/축소 후 마우스 있는 픽셀에서의 위치
 	
 
 
@@ -115,13 +120,26 @@ public:
 	//그리기
 	int idx;			//이미지 선택 인덱스
 	int drawStyle;		//현재 도형 종류
-	CPoint d_sPt;		//그리기 시작값
-	CPoint mov_Pt;		//그리기 끝값
+	Point2d d_sPt;		//그리기 시작값
+	Point2d mov_Pt;		//그리기 끝값
 	MyShape shape;		// 도형 값을 저장하기 위한 구조체 변수 선언
 	CArray<MyShape, MyShape&> data;	//도형 리스트
 	UINT m_nFlags;
 	int l_width = 1;
 	COLORREF color = RGB(0, 0, 0);
+
+	Point2d pts_0;
+	Point2d pts_1;
+	Point2d pts_2;
+	Point2d pts_3;
+	Point2d d_img_pos;
+	Point2d d_pix_pos;
+	Point2d u_img_pos;
+	Point2d u_pix_pos;
+	Point2d d_pos;
+	Point2d u_pos;
+
+
 
 	//선택
 	CPoint p_pt;			//붙여넣기 좌표
@@ -131,7 +149,7 @@ public:
 	vector<int> zOrder;			//zOrder 리스트
 	vector<int> GroupList;		//Group 선택 리스트
 	vector<CopyShape> copyList;	//복사 리스트
-
+	double m_theta;
 
 	//되돌리기
 	int rollbackIndex;	//롤백 인덱스
@@ -167,6 +185,7 @@ public:
 	void SelectDrawShape(CDC* pDC, MyShape& shape);
 	void MyEllipsePS_DOT(CDC* pDC, Point2d Center, int radinX, int radinY, double theta);
 	void MyEllipseR(CDC* pDC, Point2d Center, int radinX, int radinY, double theta, COLORREF parm_color);
+	void DrawCircle(CDC* pDC, vector<Vec3f>& circleCenter);
 	//void SelectShapeUpdate(MyShape& shape); // 도형 정보 업데이트
 	void SelectShapeUpdate(); // 도형 정보 업데이트
 	Point2d Intersection(Point2d& pt, Point2d& LinePt1, Point2d& LinePt2); // 
@@ -174,10 +193,11 @@ public:
 	// 좌표 도형 내부 검사
 	int isLeft(Point2d linePt1, Point2d linePt2, CPoint pos);
 	int isContainPolygon(CPoint pos, vector<Point2d> vertices);
-
+	int isLeft(Point2d linePt1, Point2d linePt2, Point2d pos);
+	int isContainPolygon(Point2d pos, vector<Point2d> vertices);
 	// 네비게이터
 	void imgViewer2Navigator();
-	void GetImgPos(float Navigator_x, float Navigator_y);
+	void GetImgPos(double Navigator_x, double Navigator_y);
 
 	// 롤백 함수
 	void undo();
@@ -220,7 +240,6 @@ public:
 	afx_msg void OnDrawEllpse();
 	afx_msg void OnDrawRect();
 	afx_msg void OnDrawTri();
-	afx_msg void OnDrawCross();	
 	// 모드 선택
 	afx_msg void OnModeSelect();
 	// 선 굵기 & 선 색 선택

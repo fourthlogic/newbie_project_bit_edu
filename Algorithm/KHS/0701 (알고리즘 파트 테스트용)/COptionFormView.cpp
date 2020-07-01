@@ -1,13 +1,14 @@
 ﻿// COptionFormView.cpp: 구현 파일
 //
-#include "pch.h"
-#include "MFCparam.h"
-#include "COptionFormView.h"
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
 #endif
+#include "pch.h"
+#include "MFCparam.h"
+#include "COptionFormView.h"
+
 // COptionFormView
 
 IMPLEMENT_DYNCREATE(COptionFormView, CFormView)
@@ -35,6 +36,11 @@ void COptionFormView::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_OPTION_RMIN, m_strRadMin);
 	DDX_Text(pDX, IDC_EDIT_OPTION_BGV, m_strBGV);
 	DDX_Text(pDX, IDC_EDIT_OPTION_RUNTIME, m_nRuntime);
+	DDX_Control(pDX, IDC_EDIT_OPTION_DIST, m_edit1);
+	DDX_Control(pDX, IDC_EDIT_OPTION_RMAX, m_edit2);
+	DDX_Control(pDX, IDC_EDIT_OPTION_RMIN, m_edit3);
+	DDX_Control(pDX, IDC_EDIT_OPTION_BGV, m_edit4);
+	DDX_Control(pDX, IDC_EDIT_OPTION_RUNTIME, m_edit5);
 }
 
 BEGIN_MESSAGE_MAP(COptionFormView, CFormView)
@@ -49,6 +55,7 @@ BEGIN_MESSAGE_MAP(COptionFormView, CFormView)
 	ON_EN_UPDATE(IDC_EDIT_OPTION_BGV, &COptionFormView::OnEnUpdateEditOptionBgv)
 	ON_WM_CTLCOLOR()
 	ON_WM_DRAWITEM()
+	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 
@@ -78,7 +85,8 @@ void COptionFormView::OnInitialUpdate()
 	CFormView::OnInitialUpdate();
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
 	GetParent()->SetWindowText(_T("설정 창"));
-	
+	HICON hIcon = LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_MAINFRAME)); //icon 변경
+	GetParent()->SetIcon(hIcon, FALSE); //icon 셋팅
 	// 읽기모드 파일 열기
 	CFile saveFile;
 	if (saveFile.Open(_T("saveFile.dat"), CFile::modeRead))
@@ -88,6 +96,8 @@ void COptionFormView::OnInitialUpdate()
 		ar.Close();
 		saveFile.Close();
 	}
+
+
 	UpdateData(FALSE);
 
 }
@@ -137,6 +147,9 @@ void COptionFormView::OnBnClickedButtonDo()
 	endTime = clock();
 	m_nRuntime = endTime - startTime;
 	UpdateData(FALSE);
+	pMain = NULL;
+	pView = NULL;
+
 }
 
 void COptionFormView::OnOptionOpen() // 설정파일 열기
@@ -176,6 +189,7 @@ void COptionFormView::OnOptionOpen() // 설정파일 열기
 
 				record->Close();
 				record = NULL;
+
 				::CoUninitialize();
 			}
 		}
@@ -395,7 +409,6 @@ HBRUSH COptionFormView::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 
 void COptionFormView::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 {
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 	if (nIDCtl == IDC_BUTTON_DO || nIDCtl == IDC_BUTTON_OPTION_SAVE)
 	{
 		UINT state;
@@ -426,4 +439,56 @@ void COptionFormView::OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct)
 		dc.Detach();  // Detach the Button DC
 	}
 	CFormView::OnDrawItem(nIDCtl, lpDrawItemStruct);
+}
+
+void COptionFormView::OnSize(UINT nType, int cx, int cy)
+{
+	CFormView::OnSize(nType, cx, cy);
+
+	CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
+	if (pMain->start)
+	{
+		CRect rect;
+
+		//CStatic* c_static1 = (CStatic*)GetDlgItem(IDC_STATIC1);
+		//CStatic* c_static2 = (CStatic*)GetDlgItem(IDC_STATIC2);
+		//CStatic* c_static3 = (CStatic*)GetDlgItem(IDC_STATIC3);
+		//CStatic* c_static4 = (CStatic*)GetDlgItem(IDC_STATIC4);
+		//CStatic* c_static5 = (CStatic*)GetDlgItem(IDC_STATIC5);
+		CEdit* c_edit1 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_DIST);
+		CEdit* c_edit2 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_RMAX);
+		CEdit* c_edit3 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_RMIN);
+		CEdit* c_edit4 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_BGV);
+		CEdit* c_edit5 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_RUNTIME);
+
+		c_edit1->GetWindowRect(&rect);
+		ScreenToClient(&rect);
+		CFont font;
+		font.CreateFontW(rect.Height() * 0.8, rect.Width()*0.15, 0,                            // 출력각도
+			0,                            // 기준 선에서의각도
+			FW_LIGHT,                    // 글자굵기
+			FALSE,                        // Italic 적용여부
+			FALSE,                        // 밑줄적용여부
+			0,                        // 취소선적용여부
+			ANSI_CHARSET,            // 문자셋종류
+			OUT_DEFAULT_PRECIS,            // 출력정밀도
+			CLIP_DEFAULT_PRECIS,        // 클리핑정밀도
+			DEFAULT_QUALITY,                // 출력문자품질
+			DEFAULT_PITCH | FF_SWISS,                // 글꼴Pitch
+			_T("Arial")                // 글꼴
+		);
+		
+		c_edit1->SetFont(&font);
+		c_edit2->SetFont(&font);
+		c_edit3->SetFont(&font);
+		c_edit4->SetFont(&font);
+		c_edit5->SetFont(&font);
+
+		//c_static1->SetFont(&font);
+		//c_static2->SetFont(&font);
+		//c_static3->SetFont(&font);
+		//c_static4->SetFont(&font);
+		//c_static5->SetFont(&font);
+	}
+	
 }

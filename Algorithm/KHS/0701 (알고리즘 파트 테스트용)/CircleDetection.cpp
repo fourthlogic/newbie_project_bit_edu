@@ -1,12 +1,12 @@
 #pragma once
-#include "pch.h"
-#include "CircleDetection.h"
-
 //#ifdef _DEBUG
 //#define new DEBUG_NEW
 //#undef THIS_FILE
 //static char THIS_FILE[] = __FILE__;
 //#endif
+#include "pch.h"
+#include "CircleDetection.h"
+
 //void main()
 //{
 //    CircleDection cir;
@@ -155,10 +155,11 @@ void CircleDection::Run()
     vCirCenters.clear(); // Vertical의 중심 좌표들의 값 
     hCirCenters.clear(); // Horizontal의 중심 좌표들의 값 
     vertexPts.clear();   // 최외곽 ROI Vertex Points
+    CirCenters.clear(); // 중심값  초기화
     GetCornerPoints(); // 3점 좌표 추출
     GetVertexPoints(); // 최외곽 ROI
     ContourDetection(); // 원 검출
-    Drawing(); // Drawing
+    //Drawing(); // Drawing 삭제 예정
 }
 
 // 이미지 set
@@ -203,50 +204,119 @@ Mat CircleDection::GetResultImage()
     return this->result;
 }
 
-//==============================================================================
+// 서클 중심값 가져오기
+vector<Vec3f> CircleDection::GetCirclePoint()
+{
+    CirCenters.clear();
 
-
+    std::copy(std::begin(vCirCenters), std::end(vCirCenters), std::back_inserter(CirCenters));
+    std::copy(std::begin(hCirCenters), std::end(hCirCenters), std::back_inserter(CirCenters));
+    return this->CirCenters;
+}
 
 // 3점 좌표 추출 수정판
 void CircleDection::GetCornerPoints()
 {
     Mat grayImage = this->src.clone();
     Matx <uchar, 3, 3> mask(0, 1, 0, 1, 1, 1, 0, 1, 0);
-    //threshold(grayImage, grayImage, this->thMinValue, 255, THRESH_TOZERO); // min_grayscale이 안되면 0
-    //threshold(grayImage, grayImage, this->thMaxValue, 255, THRESH_TOZERO_INV); // min_grayscale이 넘어도 0
-    ToZeroThreshold(grayImage, grayImage, this->thMinValue, this->thMaxValue);
-    morphologyEx(grayImage, grayImage, MORPH_OPEN, mask); // 외곽의 솔트를 제거하기 위해
+    threshold(grayImage, grayImage, 27, 255, THRESH_BINARY); // 쓰레숄딩 값 설정
 
     vector<vector<Point>> contours;
     MyContours(grayImage, contours);
-    //findContours(grayImage, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
     vector<Point> approx;
+    vector<Point> temp1, temp2;
+    vector<Point> vApprox;
+    vector<Point> hApprox;
+    int flg = 0;
+    double distance0to1;
+    double distance0to3;
     for (size_t i = 0; i < contours.size(); i++)
     {
         if (contourArea(Mat(contours[i])) > 5000)
         {
             DouglasPeucker(contours[i], approx, 0);
-            //approxPolyDP(Mat(contours[i]), approx, arcLength(Mat(contours[i]), true) * 0.1, true);
+
+            distance0to1 = sqrt(pow(approx[0].x - approx[1].x, 2) + pow(approx[0].y - approx[1].y, 2));
+            distance0to3 = sqrt(pow(approx[0].x - approx[3].x, 2) + pow(approx[0].y - approx[3].y, 2));
+
+            if (distance0to1 < distance0to3)
+            {
+                for (int j = 0; j < contours[i].size(); j++)
+                {
+                    if (contours[i][j] == approx[2])
+                        flg = 2;
+                    else if (contours[i][j] == approx[3])
+                        flg = 1;
+                    else if (contours[i][j] == approx[0])
+                        flg = 3;
+
+                    if (flg == 1)
+                        temp1.push_back(contours[i][j]);
+                    else if (flg == 2)
+                        temp2.push_back(contours[i][j]);
+                }
+            }
+            else
+            {
+                for (int j = 0; j < contours[i].size(); j++)
+                {
+                    if (contours[i][j] == approx[1])
+                        flg = 2;
+                    else if (contours[i][j] == approx[2])
+                        flg = 1;
+                    else if (contours[i][j] == approx[3])
+                        flg = 3;
+
+                    if (flg == 1)
+                        temp1.push_back(contours[i][j]);
+                    else if (flg == 2)
+                        temp2.push_back(contours[i][j]);
+                }
+            }
             break;
         }
     }
-    //for (int i = 0; i < approx.size(); i++)
-    //    circle(this->src, approx[i], 3, Scalar(255));
+    Vec2d veq, heq;
+    veq = LSM_Vertical(temp1);
+    heq = LSM_Horizontal(temp2);
 
-    double distance0to1 = sqrt(pow(approx[0].x - approx[1].x, 2) + pow(approx[0].y - approx[1].y, 2));
-    double distance0to3 = sqrt(pow(approx[0].x - approx[3].x, 2) + pow(approx[0].y - approx[3].y, 2));
+    double adjDist = 1.5; // 직선과의 거리 조정
+    for (int i = 0; i < temp1.size(); i++)
+    {
+        Point2d center(temp1[i].x, temp1[i].y);
+        double dist = abs(veq[0] * center.x - center.y + veq[1]) / sqrt(pow(veq[0], 2) + 1);
+        if (dist < adjDist)
+        {
+            vApprox.push_back(temp1[i]);
+        }
+    }
+
+    for (int i = 0; i < temp2.size() / 2; i++)
+    {
+        Point2d center(temp2[i].x, temp2[i].y);
+        double dist = abs(heq[0] * center.x - center.y + heq[1]) / sqrt(pow(heq[0], 2) + 1);
+        if (dist < adjDist)
+        {
+            hApprox.push_back(temp2[i]);
+        }
+    }
+    veq = LSM_Vertical(vApprox);
+    heq = LSM_Horizontal(hApprox);
+
+    Point2d target;
+    target.x = (heq[1] - veq[1]) / (veq[0] - heq[0]);
+    target.y = (veq[0] * (heq[1] - veq[1])) / (veq[0] - heq[0]) + veq[1];
 
     if (distance0to1 < distance0to3)
     {
         this->cornerPts.push_back(approx[0]);
-        this->cornerPts.push_back(approx[3]);
+        this->cornerPts.push_back(target);
         this->cornerPts.push_back(approx[2]);
     }
     else
     {
         this->cornerPts.push_back(approx[3]);
-        this->cornerPts.push_back(approx[2]);
+        this->cornerPts.push_back(target);
         this->cornerPts.push_back(approx[1]);
     }
 }
@@ -556,56 +626,78 @@ void CircleDection::GetVertexPoints()
 {
     int rotateX, rotateY;
     double theta;
-
+    int errorV = 8;
+    int errorH = 8;
     int heightV = sqrt(pow(this->cornerPts[0].y - this->cornerPts[1].y, 2) + pow(this->cornerPts[0].x - this->cornerPts[1].x, 2));
-    int widthV = this->distance;
+    int widthV = this->distance + errorV;
 
-    int heightH = this->distance;
+    int heightH = this->distance + errorH;
     int widthH = sqrt(pow(this->cornerPts[1].y - this->cornerPts[2].y, 2) + pow(this->cornerPts[1].x - this->cornerPts[2].x, 2));
 
     this->vertexPts.resize(6);
 
     if (this->cornerPts[1].x == this->cornerPts[0].x) {
         this->vertexPts[0] = this->cornerPts[0];
+        this->vertexPts[0].x += errorV;
+        this->vertexPts[5] = Point(this->cornerPts[0].x + widthV, this->cornerPts[0].y);
+        this->vertexPts[4] = Point(this->cornerPts[1].x + widthV, this->cornerPts[1].y);
+
         this->vertexPts[1] = this->cornerPts[1];
-        this->vertexPts[5] = Point(this->cornerPts[0].x + this->distance, this->cornerPts[0].y);
-        this->vertexPts[4] = Point(this->cornerPts[1].x + this->distance, this->cornerPts[1].y);
+        this->vertexPts[1].x += errorV;
     }
     else {
         theta = atan((double)((this->cornerPts[0].x - this->cornerPts[1].x)) / (this->cornerPts[0].y - this->cornerPts[1].y));
-        this->vertexPts[0] = this->cornerPts[0];
-        this->vertexPts[1] = this->cornerPts[1];
 
-
-        rotateX = (this->distance) * cos(theta) + this->cornerPts[0].x;
-        rotateY = -(this->distance) * sin(theta) + this->cornerPts[0].y;
+        rotateX = (widthV)*cos(theta) + this->cornerPts[0].x;
+        rotateY = -(widthV)*sin(theta) + this->cornerPts[0].y;
         this->vertexPts[5] = Point(rotateX, rotateY);
 
 
         rotateX = widthV * cos(theta) + heightV * sin(theta) + this->cornerPts[0].x;
         rotateY = -widthV * sin(theta) + heightV * cos(theta) + this->cornerPts[0].y;
         this->vertexPts[4] = Point(rotateX, rotateY);
+
+
+        rotateX = (errorV)*cos(theta) + this->cornerPts[0].x;
+        rotateY = -(errorV)*sin(theta) + this->cornerPts[0].y;
+        this->vertexPts[0] = Point(rotateX, rotateY);
+
+
+        rotateX = errorV * cos(theta) + heightV * sin(theta) + this->cornerPts[0].x;
+        rotateY = -errorV * sin(theta) + heightV * cos(theta) + this->cornerPts[0].y;
+        this->vertexPts[1] = Point(rotateX, rotateY);
     }
+
 
     if (this->cornerPts[2].y == this->cornerPts[1].y) {
         this->vertexPts[2] = this->cornerPts[2];
-        this->vertexPts[3] = Point(this->cornerPts[2].x, this->cornerPts[2].y - this->distance);
+        this->vertexPts[2].y -= errorH;
 
-        this->vertexPts[4].x = this->cornerPts[1].x + this->vertexPts[4].x - this->vertexPts[1].x;
-        this->vertexPts[4].y = this->cornerPts[1].y - this->distance + this->vertexPts[4].y - this->vertexPts[1].y;
+        this->vertexPts[3] = Point(this->cornerPts[2].x, this->cornerPts[2].y - heightH);
+
+        this->vertexPts[4].x = this->vertexPts[4].x;
+        this->vertexPts[4].y = this->vertexPts[4].y - heightH;
+
+        this->vertexPts[1].y -= errorH;
     }
-    else {
+    else
+    {
         theta = -atan((this->cornerPts[1].y - this->cornerPts[2].y) / (double)((this->cornerPts[1].x - this->cornerPts[2].x)));
-        rotateX = -this->distance * sin(theta) + this->cornerPts[1].x;
-        rotateY = -this->distance * cos(theta) + this->cornerPts[1].y;
 
-        this->vertexPts[4].x = rotateX + this->vertexPts[4].x - this->vertexPts[1].x;
-        this->vertexPts[4].y = rotateY + this->vertexPts[4].y - this->vertexPts[1].y;
+        this->vertexPts[4].x = -heightH * sin(theta) + this->vertexPts[4].x;
+        this->vertexPts[4].y = -heightH * cos(theta) + this->vertexPts[4].y;
 
-        this->vertexPts[2] = this->cornerPts[2];
+
         rotateX = widthH * cos(theta) - heightH * sin(theta) + this->cornerPts[1].x;
         rotateY = -widthH * sin(theta) - heightH * cos(theta) + this->cornerPts[1].y;
         this->vertexPts[3] = Point(rotateX, rotateY);
+
+        rotateX = widthH * cos(theta) - errorH * sin(theta) + this->cornerPts[1].x;
+        rotateY = -widthH * sin(theta) - errorH * cos(theta) + this->cornerPts[1].y;
+        this->vertexPts[2] = Point(rotateX, rotateY);
+
+        this->vertexPts[1].x = -errorH * sin(theta) + this->vertexPts[1].x;
+        this->vertexPts[1].y = -errorH * cos(theta) + this->vertexPts[1].y;
     }
 }
 
@@ -622,7 +714,6 @@ void CircleDection::ContourDetection() {
     ToZeroThreshold(imgThreshold, imgThreshold, 0, this->BGV);
     vector<vector<Point>> contours;
     MyContours(imgThreshold, contours);
-    //findContours(imgThreshold, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
 
     //Vertical과 Horizontal 구분
     double a = (vertexPts[1].y - vertexPts[4].y) * 1.0 / (vertexPts[1].x - vertexPts[4].x) * 1.0;
@@ -704,13 +795,12 @@ unsigned WINAPI CircleDection::CirDetectionThread(void* para) {
 }
 
 // 원 검출
-void CircleDection::CircleDetection(vector<vector<Point>>& contours, vector<Point>& cirCenters) {
+void CircleDection::CircleDetection(vector<vector<Point>>& contours, vector<Vec3f>& cirCenters) {
 
     for (vector<Point> pts : contours) {
         double areaValue = contourArea(pts); // 면적값 계산
         if (areaValue < 50 && areaValue > 0) {
-            //Rect rc = boundingRect(pts);
-            Rect rc = boundRect(pts);
+            Rect rc = boundRect(pts); // 면적 사이즈를 지정할수 있게 설정하면 좋을듯 
 #pragma region 수정 요함
             if (rc.tl().x - 3 > 0 && rc.tl().y - 3 > 0) {
                 rc -= Point(3, 3);
@@ -725,59 +815,115 @@ void CircleDection::CircleDetection(vector<vector<Point>>& contours, vector<Poin
 #pragma endregion
 
             Mat cirRect = this->src(rc);
-            Differential(cirRect, cirRect);
-
-            int rCount = 0;
-            for (int r = this->radMin; r <= this->radMax; r++, rCount++)
+            for (int i = 0; i < cirRect.rows; i++)
             {
-                int rotate = 360 / (8 * r);
-                int** vote = (int**)calloc(cirRect.rows, sizeof(int*));
-                for (int i = 0; i < cirRect.rows; i++) {
-                    vote[i] = (int*)calloc(cirRect.cols, sizeof(int));
-                }
-                if (IsContain(rc, cirCenters))
-                    continue;
-                for (int i = 0; i < cirRect.cols; i++) {
-                    uchar* ptr = this->src.ptr<uchar>(i);
-                    for (int j = 0; j < cirRect.rows; j++) {
-                        if (ptr[j] >= 100)
-                            continue;
-                        for (int t = 1; t <= 360; t += rotate)
-                        {
-                            int a = i - r * cvRound(cos(t * CV_PI / 180));
-                            int b = j - r * cvRound(sin(t * CV_PI / 180));
-                            if (a >= 0 && a < cirRect.cols && b >= 0 && b < cirRect.rows) {
-                                if (cirRect.at<uchar>(b, a) >= 100)
-                                    vote[j][i] += 1;
-                            }
-                        }
-
-                    }
-                }
-                int max = -1;
-                Point idx;
-
-                for (int i = 0; i < cirRect.cols; i++)
+                for (int j = 0; j < cirRect.cols; j++)
                 {
-                    for (int j = 0; j < cirRect.rows; j++)
-                    {
-                        if (vote[j][i] >= max)
-                        {
-                            max = vote[j][i];
-                            idx = Point(i, j);
-                        }
-                    }
+                    if (cirRect.at<uchar>(i, j) >= 190)
+                        cirRect.at<uchar>(i, j) = 140;
                 }
-                /*if (r != 0)
-                    continue;*/
-                if (max >= 360 / rotate)
-                {
-                    cirCenters.push_back(Point(idx.x + rc.tl().x, idx.y + rc.tl().y));
-                }
-                for (int i = 0; i < cirRect.rows; i++)
-                    free(vote[i]);
-                free(vote);
             }
+
+            Mat dstX, dstY, norm, angles, re;
+            Sobel(cirRect, dstX, CV_32F, 1, 0, 3); // Sobel(src, dst, depth, dx, dy, maskSize)
+            Sobel(cirRect, dstY, CV_32F, 0, 1, 3);
+            magnitude(dstX, dstY, norm); // 1차미분
+            phase(dstX, dstY, angles, false);
+
+
+            Point2d a, b, c;
+            double cc, aa, bb;
+            int thresh = OtsuThreshold(cirRect);
+
+            vector<Point2d> _pts;
+            vector<double> edge_angles;
+            for (int y = 1; y < cirRect.rows - 1; y++)
+            {
+                for (int x = 1; x < cirRect.cols - 1; x++)
+                {
+                    b = Point2d(x, y);
+                    bb = cirRect.at<uchar>(y, x);
+                    if (norm.at<float>(y, x) >= thresh)
+                    {
+                        double theta = angles.at<float>(y, x);
+                        c = { b.x + cos(theta), b.y + sin(theta) };
+                        a = { b.x - cos(theta), b.y - sin(theta) };
+
+                        cc = BilinearValue<uchar>(cirRect, c);
+                        aa = BilinearValue<uchar>(cirRect, a);
+                        if (aa <= cirRect.at<uchar>(y, x) && bb <= cirRect.at<uchar>(y, x))
+                        {
+                            //double lambda = abs(cc - bb) / (abs(bb - aa) + abs(bb - cc));
+                            if (theta >= 0 && theta < CV_PI / 2)
+                            {
+                                double lambda = abs(cc - bb) / (abs(bb - aa) + abs(bb - cc));
+                                b = { b.x + lambda, b.y + lambda };
+                            }
+                            else if (theta >= CV_PI / 2 && theta < CV_PI)
+                            {
+                                double lambda = abs(cc - bb) / (abs(bb - aa) + abs(bb - cc));
+                                b = { b.x + 1 - lambda, b.y + lambda };
+                            }
+                            else if (theta >= CV_PI && theta < CV_PI * 3 / 2)
+                            {
+                                double lambda = abs(aa - bb) / (abs(bb - aa) + abs(bb - cc));
+                                b = { b.x + lambda, b.y + lambda };
+                            }
+                            else if (theta >= CV_PI * 3 / 2 && theta > 0)
+                            {
+                                double lambda = abs(cc - bb) / (abs(bb - aa) + abs(bb - cc));
+                                b = { b.x + lambda, b.y + 1 - lambda };
+                            }
+                            _pts.push_back(b);
+                            edge_angles.push_back(theta * 180 / CV_PI);
+                        }
+                    }
+                }
+            }
+
+            Vec3f Center;
+            vector<double> dataX;
+
+            Center = CircleFitByTaubin(_pts);
+            int angle_count = edge_angles.size();
+            for (int i = 0; i < edge_angles.size(); i++) {
+
+                double dy = Center[1] - _pts[i].y;
+                double dx = Center[0] - _pts[i].x;
+                double angle = atan(dy / dx) * (180.0 / CV_PI);
+                angle += 180.f;
+                if (dx < 0.0) {
+                    angle += 180.0;
+                }
+                /* else if (dy < 0.0) {
+                     angle += 360.0;
+                 }*/
+                if (angle > 360.f)
+                    angle -= 360.f;
+                if (edge_angles[i] - 20 < angle && angle < edge_angles[i] + 20)
+                    angle_count--;
+            }
+            if (angle_count > _pts.size() / 4)
+                continue;
+            int vote = 0;
+
+
+            if (this->radMax >= Center[2] && this->radMin <= Center[2]) {
+                cirCenters.push_back(Vec3f(Center[0] + rc.x, Center[1] + rc.y, Center[2]));
+                for (int t = 0; t <= 360; t += 5)
+                {
+                    double a = Center[0] - Center[2] * (cos(t * CV_PI / 180));
+                    double b = Center[1] - Center[2] * (sin(t * CV_PI / 180));
+                    if (a >= 0 && a < cirRect.cols && b >= 0 && b < cirRect.rows) {
+
+                        if (BilinearValue<float>(norm, Point2d(a, b)) >= 100)
+                            vote += 1;
+                    }
+                }
+                if (vote >= 60) // 허프 깊이 
+                    cirCenters.push_back(Vec3f(Center[0] + rc.x, Center[1] + rc.y, Center[2]));
+            }
+
         }
     }
 }
@@ -822,6 +968,165 @@ void CircleDection::Differential(Mat& src, Mat& dst) {
     magnitude(dstX, dstY, dst);
 
     dst.convertTo(dst, CV_8U);
+}
+
+// Otsu threshold
+int CircleDection::OtsuThreshold(Mat& src) {
+    if (!src.data)
+        return 0;
+
+    uchar* pSrc;
+    double hist[256], chist[256], cxhist[256];
+    memset(hist, 0, sizeof(hist));
+    memset(chist, 0, sizeof(chist));
+    memset(cxhist, 0, sizeof(cxhist));
+    int ntot = src.rows * src.cols;
+    int i = 0;
+    // make histogram ;
+    for (int i = 0; i < src.rows; i++)
+    {
+        uchar* pSrc = src.ptr<uchar>(i);
+        for (int j = 0; j < src.cols; j++)
+        {
+            hist[pSrc[j]] += 1;
+        }
+    }
+
+    // normalize; // 평준화
+    for (i = 0; i < 256; i++)
+        hist[i] /= ntot;
+
+    // make 0- and 1-st cumulative histogram;
+    chist[0] = hist[0];
+    cxhist[0] = 0;
+    for (i = 1; i < 256; i++) {
+        chist[i] = chist[i - 1] + hist[i];                    //0-th cumulative histogram ;
+        cxhist[i] = cxhist[i - 1] + double(i) * hist[i]; //1-th cumulative histogram ;
+    };
+
+    double gain_max = 0;
+    int thresh = 0;
+    double m = cxhist[255];                     //total mean ;
+    int mul_count = 1;                            //number of degenerate maxima;
+    for (i = 0; i < 256; i++) {
+        if (chist[i] == 0.) continue;
+        double q1 = chist[i];                  //weight1;
+        double q2 = 1 - q1;                     //weight2;
+        if (q2 == 0.) break;
+        double m1 = cxhist[i] / q1;             //mean1 ;
+        double m2 = (m - cxhist[i]) / q2;       //mean2 ;
+        double gain = q1 * q2 * (m1 - m2) * (m1 - m2);
+
+        if (gain_max < gain) {
+            gain_max = gain;
+            thresh = i;
+            mul_count = 1;                         //reset mul_count=1;
+        }
+        else if (gain_max == gain)             //degenerate case;
+            mul_count++;
+    }
+    if (mul_count > 1)
+        thresh = thresh + (mul_count - 1) / 2;    //2016.04.26;
+
+    return thresh;
+}
+
+// 최소제곱법 원 중심 추출
+Vec3f CircleDection::CircleFitByTaubin(vector<Point2d> edges)
+{
+    int i, iter, IterMAX = 99;
+
+    double Xi, Yi, Zi;
+    double Mz, Mxy, Mxx, Myy, Mxz, Myz, Mzz, Cov_xy, Var_z;
+    double A0, A1, A2, A22, A3, A33;
+    double Dy, xnew, x, ynew, y;
+    double DET, Xcenter, Ycenter;
+    double meanX = 0., meanY = 0.;
+
+    Vec3f circle;
+
+    for (int i = 0; i < edges.size(); i++)
+    {
+        meanX += edges[i].x;
+        meanY += edges[i].y;
+    }
+    meanX /= edges.size();
+    meanY /= edges.size();
+
+    Mxx = Myy = Mxy = Mxz = Myz = Mzz = 0.;
+
+    for (i = 0; i < edges.size(); i++)
+    {
+        Xi = edges[i].x - meanX;  
+        Yi = edges[i].y - meanY;  
+        Zi = Xi * Xi + Yi * Yi;
+
+        Mxy += Xi * Yi;
+        Mxx += Xi * Xi;
+        Myy += Yi * Yi;
+        Mxz += Xi * Zi;
+        Myz += Yi * Zi;
+        Mzz += Zi * Zi;
+    }
+    Mxx /= edges.size();
+    Myy /= edges.size();
+    Mxy /= edges.size();
+    Mxz /= edges.size();
+    Myz /= edges.size();
+    Mzz /= edges.size();
+
+    Mz = Mxx + Myy;
+    Cov_xy = Mxx * Myy - Mxy * Mxy;
+    Var_z = Mzz - Mz * Mz;
+    A3 = 4.f * Mz;
+    A2 = -3.f * Mz * Mz - Mzz;
+    A1 = Var_z * Mz + 4.f * Cov_xy * Mz - Mxz * Mxz - Myz * Myz;
+    A0 = Mxz * (Mxz * Myy - Myz * Mxy) + Myz * (Myz * Mxx - Mxz * Mxy) - Var_z * Cov_xy;
+    A22 = A2 + A2;
+    A33 = A3 + A3 + A3;
+
+    for (x = 0., y = A0, iter = 0; iter < IterMAX; iter++)  
+    {
+        Dy = A1 + x * (A22 + A33 * x);
+        xnew = x - y / Dy;
+        if ((xnew == x) || (!isfinite(xnew))) break;
+        ynew = A0 + xnew * (A1 + xnew * (A2 + xnew * A3));
+        if (abs(ynew) >= abs(y))  break;
+        x = xnew;  y = ynew;
+    }
+
+    DET = x * x - x * Mz + Cov_xy;
+    Xcenter = (Mxz * (Myy - x) - Myz * Mxy) / DET / 2.f;
+    Ycenter = (Myz * (Mxx - x) - Mxz * Mxy) / DET / 2.f;
+
+
+    circle[0] = Xcenter + meanX;
+    circle[1] = Ycenter + meanY;
+    circle[2] = sqrt(Xcenter * Xcenter + Ycenter * Ycenter + Mz);
+
+    return circle;
+}
+
+// 선형 보간법 - 밝기값 추출
+template <typename T>
+double CircleDection::BilinearValue(Mat& img, Point2d pt)
+{
+    if (pt.x >= img.cols - 1) pt.x--;
+    if (pt.y >= img.rows - 1) pt.y--;
+
+    Point pt_int((int)pt.x, (int)pt.y);
+    double A = img.at<T>(pt_int);
+    double B = img.at<T>(pt_int + Point(0, 1));
+    double C = img.at<T>(pt_int + Point(1, 0));
+    double D = img.at<T>(pt_int + Point(1, 1));
+
+    double alpha = pt.y - pt_int.y;
+    double beta = pt.x - pt_int.x;
+    double M1 = A + alpha * (B - A);
+    double M2 = C + alpha * (D - C);
+    double P = M1 + beta * (M2 - M1);
+
+    return P;
 }
 
 // 사각형 내부의 점 포함 여부
@@ -880,15 +1185,66 @@ void CircleDection::Drawing()
 
     for (int i = 0; i < this->vCirCenters.size(); i++)
     {
-        Point center(this->vCirCenters[i].x, this->vCirCenters[i].y);
+        Point center(this->vCirCenters[i][0], this->vCirCenters[i][1]);
         circle(this->result, center, 5, Scalar(0, 0, 255), 1, -1);
     }
 
     for (int i = 0; i < this->hCirCenters.size(); i++)
     {
-        Point center(this->hCirCenters[i].x, this->hCirCenters[i].y);
+        Point center(this->hCirCenters[i][0], this->hCirCenters[i][1]);
         circle(this->result, center, 5, Scalar(0, 0, 255), 1, -1);
     }
+}
+
+// 최소제곱법 x, y좌표 스위칭 후 계산한 뒤 나온 식을 다시 y=x 대칭이동
+Vec2f CircleDection::LSM_Vertical(vector<Vec3f>& pts)
+{
+    //x=ay+b
+    double a, b;
+    double xx = 0, x = 0, xy = 0, y = 0;
+    int n = pts.size();
+    Vec2f result;
+    for (int i = 0; i < n; i++)
+    {
+        xx += (pts[i][1]) * (pts[i][1]);
+        x += (pts[i][1]);
+        xy += (pts[i][1]) * (pts[i][0]);
+        y += (pts[i][0]);
+
+    }
+    a = (n * xy - x * y) / (n * xx - x * x);
+    b = (xx * y - x * xy) / (n * xx - x * x);
+    // x=ya+b ==> y = (1/a) * x - b/a
+    result[0] = 1 / a;
+    result[1] = -b / a;
+
+    return result;
+}
+
+// 최소제곱법 함수
+Vec2f CircleDection::LSM_Horizontal(vector<Vec3f>& pts)
+{
+    //y=ax+b
+    double a, b;
+    double xx = 0, x = 0, xy = 0, y = 0;
+
+    int n = pts.size();
+    Vec2f result;
+    for (int i = 0; i < n; i++)
+    {
+        xx += (pts[i][0]) * (pts[i][0]);
+        x += (pts[i][0]);
+        xy += (pts[i][0]) * (pts[i][1]);
+        y += (pts[i][1]);
+
+    }
+    a = (n * xy - x * y) / (n * xx - x * x);
+    b = (xx * y - x * xy) / (n * xx - x * x);
+    result[0] = a;
+    result[1] = b;
+    //cout << "y=" << a << "x+" << b << endl; // y=ax+b
+
+    return result;
 }
 
 // 최소제곱법 x, y좌표 스위칭 후 계산한 뒤 나온 식을 다시 y=x 대칭이동
@@ -941,8 +1297,5 @@ Vec2f CircleDection::LSM_Horizontal(vector<Point>& pts)
 
     return result;
 }
-
-
-
 
 

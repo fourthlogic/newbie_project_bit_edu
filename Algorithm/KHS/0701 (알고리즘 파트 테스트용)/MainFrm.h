@@ -15,6 +15,14 @@
 #include "CNavigatorDoc.h"
 #include "CNavigatorView.h"
 
+struct ClientSize {
+	int sx;
+	int sy;
+	int cx;
+	int cy;
+};
+
+
 class imageData {
 	std::string fileName;
 	Mat src;
@@ -76,6 +84,15 @@ public:
 	CircleDection Cir;
 
 	CRect m_rect;
+	ClientSize c_Option;
+	ClientSize c_Navi;
+	ClientSize c_ImgView;
+
+	BOOL start = FALSE;
+	//BOOL s_Option = FALSE;
+	//BOOL s_Viewer = FALSE;
+	//BOOL s_Navi = FALSE;
+
 	//POSITION posTemplate = NULL, posDocument = NULL, posView = NULL, posFrame = NULL;
 	//CMultiDocTemplate* pDocTemplate = NULL;
 	//COptionDoc* pOptionDoc = NULL;
@@ -90,9 +107,9 @@ public:
 
 	vector<imageData> imageList;
 	COLORREF color;
-	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 	afx_msg void OnClose();
 	afx_msg void OnOptionSave();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };
 
 
