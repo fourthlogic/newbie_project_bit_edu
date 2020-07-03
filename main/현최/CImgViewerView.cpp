@@ -1160,7 +1160,6 @@ void CImgViewerView::OnMouseMove(UINT nFlags, CPoint point)
 					}
 				}
 			}
-
 		}
 		// 꼭지점 업데이트
 		//SelectShapeUpdate();
@@ -2330,19 +2329,19 @@ void CImgViewerView::OnLButtonUp(UINT nFlags, CPoint point)
 			rollbackIndex = rollback.size() - 1;
 		}
 		else {
-			if (data[SelectIndex].shapeType == DrawMode::DEllipse) {
-				data[SelectIndex].RotatePts[0].x = pts_0.x;
-				data[SelectIndex].RotatePts[0].y = pts_0.y;
+			//if (data[SelectIndex].shapeType == DrawMode::DEllipse) {
+			//	data[SelectIndex].RotatePts[0].x = pts_0.x;
+			//	data[SelectIndex].RotatePts[0].y = pts_0.y;
 
-				data[SelectIndex].RotatePts[1].x = pts_2.x;
-				data[SelectIndex].RotatePts[1].y = pts_0.y;
+			//	data[SelectIndex].RotatePts[1].x = pts_2.x;
+			//	data[SelectIndex].RotatePts[1].y = pts_0.y;
 
-				data[SelectIndex].RotatePts[2].x = pts_2.x;
-				data[SelectIndex].RotatePts[2].y = pts_2.y;
+			//	data[SelectIndex].RotatePts[2].x = pts_2.x;
+			//	data[SelectIndex].RotatePts[2].y = pts_2.y;
 
-				data[SelectIndex].RotatePts[3].x = pts_0.x;
-				data[SelectIndex].RotatePts[3].y = pts_2.y;
-			}
+			//	data[SelectIndex].RotatePts[3].x = pts_0.x;
+			//	data[SelectIndex].RotatePts[3].y = pts_2.y;
+			//}
 			data[SelectIndex].pts = data[SelectIndex].RotatePts;
 			RectCount = data[SelectIndex].pts.size();
 			for (int i = 0; i < RectCount; i++)
@@ -3242,12 +3241,12 @@ int CImgViewerView::isContainPolygon(CPoint pos, vector<Point2d> vertices)
 	return wideNum;
 }
 
-int CImgViewerView::isLeft(Point2d linePt1, Point2d linePt2, Point2d pos)
+double CImgViewerView::isLeft(Point2d linePt1, Point2d linePt2, Point2d pos)
 {
 	return ((linePt2.x - linePt1.x) * (pos.y - linePt1.y) - (pos.x - linePt1.x) * (linePt2.y - linePt1.y));
 }
 
-int CImgViewerView::isContainPolygon(Point2d pos, vector<Point2d> vertices)
+double CImgViewerView::isContainPolygon(Point2d pos, vector<Point2d> vertices)
 {
 	int wideNum = 0;
 
@@ -3902,193 +3901,196 @@ void CImgViewerView::SelectDrawShape(CDC* pDC, MyShape& shape)
 	pen->DeleteObject();
 	delete pen;
 
-	// 확대 사각 박스 그리기
-	pDC->SelectStockObject(WHITE_BRUSH);
-	int rcCount = shape.pts.size();
-	if (shape.shapeType == DrawMode::DTriangle)
-		rcCount++;
-
-
 	Point2d Center = shape.Center;
 	Point2d Rotate = shape.Rotate;
+	// 확대 사각 박스 그리기
+	if (EdgeSelect==false  && rotateID == false) {
+		pDC->SelectStockObject(WHITE_BRUSH);
+		int rcCount = shape.pts.size();
+		if (shape.shapeType == DrawMode::DTriangle)
+			rcCount++;
 
-	double theta = shape.R_theta;
-	Point2d t_pts, c_pts;
 
-	if (shape.shapeType != DrawMode::DPoint) {
-		for (int i = 0; i < rcCount; i++) {
-			if (shape.shapeType == DrawMode::DTriangle) {
 
-				if (i == 2 || i == 3) {
+		double theta = shape.R_theta;
+		Point2d t_pts, c_pts;
 
-					xd_0 = modf(shape.RotatePts[i - 1].x, &xi_0);
-					yd_0 = modf(shape.RotatePts[i - 1].y, &yi_0);
-				}
-				else {
-					double dX, dY;
-					double a, b, c = 1;
-					dX = shape.RotatePts[1].x - shape.RotatePts[2].x;
-					dY = shape.RotatePts[1].y - shape.RotatePts[2].y;
+		if (shape.shapeType != DrawMode::DPoint) {
+			for (int i = 0; i < rcCount; i++) {
+				if (shape.shapeType == DrawMode::DTriangle) {
 
-					if (dX == 0)
-					{
-						a = 0;
+					if (i == 2 || i == 3) {
 
-					}
-					else if (dY == 0)
-					{
-						c = 0;
-						a = -1;
+						xd_0 = modf(shape.RotatePts[i - 1].x, &xi_0);
+						yd_0 = modf(shape.RotatePts[i - 1].y, &yi_0);
 					}
 					else {
-						a = dY / dX;
-					}
-					b = -a * shape.RotatePts[0].x + c * shape.RotatePts[0].y;
+						double dX, dY;
+						double a, b, c = 1;
+						dX = shape.RotatePts[1].x - shape.RotatePts[2].x;
+						dY = shape.RotatePts[1].y - shape.RotatePts[2].y;
 
-					if (i == 0) {
-						if (a != 0) {
-							Point2d test = Perpendicular_intersection(shape.RotatePts[2], shape.RotatePts[0], Point2d((c - b) / a, 1));
-							cout << test << endl;
-							xd_0 = modf(test.x, &xi_0);
-							yd_0 = modf(test.y, &yi_0);
+						if (dX == 0)
+						{
+							a = 0;
 
+						}
+						else if (dY == 0)
+						{
+							c = 0;
+							a = -1;
 						}
 						else {
-							xd_0 = modf(Intersection(shape.RotatePts[2], shape.RotatePts[0], Point2d(1, (a + b) / c)).x, &xi_0);
-							yd_0 = modf(Intersection(shape.RotatePts[2], shape.RotatePts[0], Point2d(1, (a + b) / c)).y, &yi_0);
+							a = dY / dX;
 						}
+						b = -a * shape.RotatePts[0].x + c * shape.RotatePts[0].y;
+
+						if (i == 0) {
+							if (a != 0) {
+								Point2d test = Perpendicular_intersection(shape.RotatePts[2], shape.RotatePts[0], Point2d((c - b) / a, 1));
+								cout << test << endl;
+								xd_0 = modf(test.x, &xi_0);
+								yd_0 = modf(test.y, &yi_0);
+
+							}
+							else {
+								xd_0 = modf(Intersection(shape.RotatePts[2], shape.RotatePts[0], Point2d(1, (a + b) / c)).x, &xi_0);
+								yd_0 = modf(Intersection(shape.RotatePts[2], shape.RotatePts[0], Point2d(1, (a + b) / c)).y, &yi_0);
+							}
+						}
+						else if (i == 1) {
+							if (a != 0) {
+								Point2d test = Perpendicular_intersection(shape.RotatePts[1], shape.RotatePts[0], Point2d((c - b) / a, 1));
+								cout << test << endl;
+								xd_0 = modf(test.x, &xi_0);
+								yd_0 = modf(test.y, &yi_0);
+							}
+							else {
+								xd_0 = modf(Intersection(shape.RotatePts[1], shape.RotatePts[0], Point2d(1, (a + b) / c)).x, &xi_0);
+								yd_0 = modf(Intersection(shape.RotatePts[1], shape.RotatePts[0], Point2d(1, (a + b) / c)).y, &yi_0);
+
+							}
+						}
+					}
+				}
+				else {
+					xd_0 = modf(shape.RotatePts[i].x, &xi_0);
+					yd_0 = modf(shape.RotatePts[i].y, &yi_0);
+				}
+				t_pts.x = (PWidth * ((int)xi_0 - z_pos.x)) + (PWidth * xd_0);
+				t_pts.y = (PHeight * ((int)yi_0 - z_pos.y)) + (PHeight * yd_0);
+
+
+				shape.edge[i][0].x = t_pts.x - 8;
+				shape.edge[i][0].y = t_pts.y - 8;
+				shape.edge[i][1].x = t_pts.x + 8;
+				shape.edge[i][1].y = t_pts.y - 8;
+				shape.edge[i][2].x = t_pts.x + 8;
+				shape.edge[i][2].y = t_pts.y + 8;
+				shape.edge[i][3].x = t_pts.x - 8;
+				shape.edge[i][3].y = t_pts.y + 8;
+
+				if (shape.shapeType == DrawMode::DLine) {
+					if (i == 0) {
+						shape.R_edge[i][0].x = t_pts.x - 15;
+						shape.R_edge[i][0].y = t_pts.y - 15;
+						shape.R_edge[i][1].x = t_pts.x + 8;
+						shape.R_edge[i][1].y = t_pts.y - 15;
+						shape.R_edge[i][2].x = t_pts.x + 8;
+						shape.R_edge[i][2].y = t_pts.y + 8;
+						shape.R_edge[i][3].x = t_pts.x - 15;
+						shape.R_edge[i][3].y = t_pts.y + 8;
 					}
 					else if (i == 1) {
-						if (a != 0) {
-							Point2d test = Perpendicular_intersection(shape.RotatePts[1], shape.RotatePts[0], Point2d((c - b) / a, 1));
-							cout << test << endl;
-							xd_0 = modf(test.x, &xi_0);
-							yd_0 = modf(test.y, &yi_0);
-						}
-						else {
-							xd_0 = modf(Intersection(shape.RotatePts[1], shape.RotatePts[0], Point2d(1, (a + b) / c)).x, &xi_0);
-							yd_0 = modf(Intersection(shape.RotatePts[1], shape.RotatePts[0], Point2d(1, (a + b) / c)).y, &yi_0);
+						shape.R_edge[i][0].x = t_pts.x - 8;
+						shape.R_edge[i][0].y = t_pts.y - 8;
+						shape.R_edge[i][1].x = t_pts.x + 15;
+						shape.R_edge[i][1].y = t_pts.y - 8;
+						shape.R_edge[i][2].x = t_pts.x + 15;
+						shape.R_edge[i][2].y = t_pts.y + 15;
+						shape.R_edge[i][3].x = t_pts.x - 8;
+						shape.R_edge[i][3].y = t_pts.y + 15;
+					}
+				}
+				else if (shape.shapeType != DrawMode::DEllipse) {
+					if (i == 0) {
+						shape.R_edge[i][0].x = t_pts.x - 15;
+						shape.R_edge[i][0].y = t_pts.y - 15;
+						shape.R_edge[i][1].x = t_pts.x + 8;
+						shape.R_edge[i][1].y = t_pts.y - 15;
+						shape.R_edge[i][2].x = t_pts.x + 8;
+						shape.R_edge[i][2].y = t_pts.y + 8;
+						shape.R_edge[i][3].x = t_pts.x - 15;
+						shape.R_edge[i][3].y = t_pts.y + 8;
+					}
+					else if (i == 1) {
+						shape.R_edge[i][0].x = t_pts.x - 8;
+						shape.R_edge[i][0].y = t_pts.y - 15;
+						shape.R_edge[i][1].x = t_pts.x + 15;
+						shape.R_edge[i][1].y = t_pts.y - 15;
+						shape.R_edge[i][2].x = t_pts.x + 15;
+						shape.R_edge[i][2].y = t_pts.y + 8;
+						shape.R_edge[i][3].x = t_pts.x - 8;
+						shape.R_edge[i][3].y = t_pts.y + 8;
+					}
+					else if (i == 2) {
+						shape.R_edge[i][0].x = t_pts.x - 8;
+						shape.R_edge[i][0].y = t_pts.y - 8;
+						shape.R_edge[i][1].x = t_pts.x + 15;
+						shape.R_edge[i][1].y = t_pts.y - 8;
+						shape.R_edge[i][2].x = t_pts.x + 15;
+						shape.R_edge[i][2].y = t_pts.y + 15;
+						shape.R_edge[i][3].x = t_pts.x - 8;
+						shape.R_edge[i][3].y = t_pts.y + 15;
+					}
+					else if (i == 3) {
+						shape.R_edge[i][0].x = t_pts.x - 15;
+						shape.R_edge[i][0].y = t_pts.y - 8;
+						shape.R_edge[i][1].x = t_pts.x + 8;
+						shape.R_edge[i][1].y = t_pts.y - 8;
+						shape.R_edge[i][2].x = t_pts.x + 8;
+						shape.R_edge[i][2].y = t_pts.y + 15;
+						shape.R_edge[i][3].x = t_pts.x - 15;
+						shape.R_edge[i][3].y = t_pts.y + 15;
+					}
+				}
 
-						}
+				Point2d pt, r_pt;
+				for (int j = 0; j < 4; j++) {
+					pt = shape.edge[i][j];
+					pt.x = ((shape.edge[i][j].x - t_pts.x) * cos(theta) - (shape.edge[i][j].y - t_pts.y) * sin(theta) + t_pts.x);
+					pt.y = ((shape.edge[i][j].x - t_pts.x) * sin(theta) + (shape.edge[i][j].y - t_pts.y) * cos(theta) + t_pts.y);
+					shape.edge[i][j] = pt;
+
+					if (shape.shapeType != DrawMode::DEllipse) {
+						r_pt = shape.R_edge[i][j];
+						r_pt.x = ((shape.R_edge[i][j].x - t_pts.x) * cos(theta) - (shape.R_edge[i][j].y - t_pts.y) * sin(theta) + t_pts.x);
+						r_pt.y = ((shape.R_edge[i][j].x - t_pts.x) * sin(theta) + (shape.R_edge[i][j].y - t_pts.y) * cos(theta) + t_pts.y);
+						shape.R_edge[i][j] = r_pt;
 					}
 				}
 			}
-			else {
-				xd_0 = modf(shape.RotatePts[i].x, &xi_0);
-				yd_0 = modf(shape.RotatePts[i].y, &yi_0);
-			}
-			t_pts.x = (PWidth * ((int)xi_0 - z_pos.x)) + (PWidth * xd_0);
-			t_pts.y = (PHeight * ((int)yi_0 - z_pos.y)) + (PHeight * yd_0);
-
-
-			shape.edge[i][0].x = t_pts.x - 8;
-			shape.edge[i][0].y = t_pts.y - 8;
-			shape.edge[i][1].x = t_pts.x + 8;
-			shape.edge[i][1].y = t_pts.y - 8;
-			shape.edge[i][2].x = t_pts.x + 8;
-			shape.edge[i][2].y = t_pts.y + 8;
-			shape.edge[i][3].x = t_pts.x - 8;
-			shape.edge[i][3].y = t_pts.y + 8;
-
-			if (shape.shapeType == DrawMode::DLine) {
-				if (i == 0) {
-					shape.R_edge[i][0].x = t_pts.x - 15;
-					shape.R_edge[i][0].y = t_pts.y - 15;
-					shape.R_edge[i][1].x = t_pts.x + 8;
-					shape.R_edge[i][1].y = t_pts.y - 15;
-					shape.R_edge[i][2].x = t_pts.x + 8;
-					shape.R_edge[i][2].y = t_pts.y + 8;
-					shape.R_edge[i][3].x = t_pts.x - 15;
-					shape.R_edge[i][3].y = t_pts.y + 8;
-				}
-				else if (i == 1) {
-					shape.R_edge[i][0].x = t_pts.x - 8;
-					shape.R_edge[i][0].y = t_pts.y - 8;
-					shape.R_edge[i][1].x = t_pts.x + 15;
-					shape.R_edge[i][1].y = t_pts.y - 8;
-					shape.R_edge[i][2].x = t_pts.x + 15;
-					shape.R_edge[i][2].y = t_pts.y + 15;
-					shape.R_edge[i][3].x = t_pts.x - 8;
-					shape.R_edge[i][3].y = t_pts.y + 15;
-				}
-			}
-			else if (shape.shapeType != DrawMode::DEllipse) {
-				if (i == 0) {
-					shape.R_edge[i][0].x = t_pts.x - 15;
-					shape.R_edge[i][0].y = t_pts.y - 15;
-					shape.R_edge[i][1].x = t_pts.x + 8;
-					shape.R_edge[i][1].y = t_pts.y - 15;
-					shape.R_edge[i][2].x = t_pts.x + 8;
-					shape.R_edge[i][2].y = t_pts.y + 8;
-					shape.R_edge[i][3].x = t_pts.x - 15;
-					shape.R_edge[i][3].y = t_pts.y + 8;
-				}
-				else if (i == 1) {
-					shape.R_edge[i][0].x = t_pts.x - 8;
-					shape.R_edge[i][0].y = t_pts.y - 15;
-					shape.R_edge[i][1].x = t_pts.x + 15;
-					shape.R_edge[i][1].y = t_pts.y - 15;
-					shape.R_edge[i][2].x = t_pts.x + 15;
-					shape.R_edge[i][2].y = t_pts.y + 8;
-					shape.R_edge[i][3].x = t_pts.x - 8;
-					shape.R_edge[i][3].y = t_pts.y + 8;
-				}
-				else if (i == 2) {
-					shape.R_edge[i][0].x = t_pts.x - 8;
-					shape.R_edge[i][0].y = t_pts.y - 8;
-					shape.R_edge[i][1].x = t_pts.x + 15;
-					shape.R_edge[i][1].y = t_pts.y - 8;
-					shape.R_edge[i][2].x = t_pts.x + 15;
-					shape.R_edge[i][2].y = t_pts.y + 15;
-					shape.R_edge[i][3].x = t_pts.x - 8;
-					shape.R_edge[i][3].y = t_pts.y + 15;
-				}
-				else if (i == 3) {
-					shape.R_edge[i][0].x = t_pts.x - 15;
-					shape.R_edge[i][0].y = t_pts.y - 8;
-					shape.R_edge[i][1].x = t_pts.x + 8;
-					shape.R_edge[i][1].y = t_pts.y - 8;
-					shape.R_edge[i][2].x = t_pts.x + 8;
-					shape.R_edge[i][2].y = t_pts.y + 15;
-					shape.R_edge[i][3].x = t_pts.x - 15;
-					shape.R_edge[i][3].y = t_pts.y + 15;
-				}
-			}
-
-			Point2d pt, r_pt;
-			for (int j = 0; j < 4; j++) {
-				pt = shape.edge[i][j];
-				pt.x = ((shape.edge[i][j].x - t_pts.x) * cos(theta) - (shape.edge[i][j].y - t_pts.y) * sin(theta) + t_pts.x);
-				pt.y = ((shape.edge[i][j].x - t_pts.x) * sin(theta) + (shape.edge[i][j].y - t_pts.y) * cos(theta) + t_pts.y);
-				shape.edge[i][j] = pt;
-
-				if (shape.shapeType != DrawMode::DEllipse) {
-					r_pt = shape.R_edge[i][j];
-					r_pt.x = ((shape.R_edge[i][j].x - t_pts.x) * cos(theta) - (shape.R_edge[i][j].y - t_pts.y) * sin(theta) + t_pts.x);
-					r_pt.y = ((shape.R_edge[i][j].x - t_pts.x) * sin(theta) + (shape.R_edge[i][j].y - t_pts.y) * cos(theta) + t_pts.y);
-					shape.R_edge[i][j] = r_pt;
-				}
-			}
-		}
-		for (int i = 0; i < rcCount; i++) {
-
-			pDC->MoveTo(shape.edge[i][0].x, shape.edge[i][0].y);
-			for (int j = 1; j < 4; j++)
-				pDC->LineTo(shape.edge[i][j].x, shape.edge[i][j].y);
-			pDC->LineTo(shape.edge[i][0].x, shape.edge[i][0].y);
-		}
-		if (shape.shapeType != DrawMode::DEllipse) {
 			for (int i = 0; i < rcCount; i++) {
 
-				pDC->MoveTo(shape.R_edge[i][0].x, shape.R_edge[i][0].y);
+				pDC->MoveTo(shape.edge[i][0].x, shape.edge[i][0].y);
 				for (int j = 1; j < 4; j++)
-					pDC->LineTo(shape.R_edge[i][j].x, shape.R_edge[i][j].y);
-				pDC->LineTo(shape.R_edge[i][0].x, shape.R_edge[i][0].y);
+					pDC->LineTo(shape.edge[i][j].x, shape.edge[i][j].y);
+				pDC->LineTo(shape.edge[i][0].x, shape.edge[i][0].y);
 			}
-		}
-		pDC->SelectStockObject(NULL_BRUSH);
-	}
+			if (shape.shapeType != DrawMode::DEllipse) {
+				for (int i = 0; i < rcCount; i++) {
 
+					pDC->MoveTo(shape.R_edge[i][0].x, shape.R_edge[i][0].y);
+					for (int j = 1; j < 4; j++)
+						pDC->LineTo(shape.R_edge[i][j].x, shape.R_edge[i][j].y);
+					pDC->LineTo(shape.R_edge[i][0].x, shape.R_edge[i][0].y);
+				}
+			}
+			pDC->SelectStockObject(NULL_BRUSH);
+		}
+
+	}
+	
 
 	// 회전 선택
 	if (rotateID == TRUE) {

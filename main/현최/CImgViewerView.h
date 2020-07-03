@@ -199,8 +199,8 @@ public:
 	// 좌표 도형 내부 검사
 	int isLeft(Point2d linePt1, Point2d linePt2, CPoint pos);
 	int isContainPolygon(CPoint pos, vector<Point2d> vertices);
-	int isLeft(Point2d linePt1, Point2d linePt2, Point2d pos);
-	int isContainPolygon(Point2d pos, vector<Point2d> vertices);
+	double isLeft(Point2d linePt1, Point2d linePt2, Point2d pos);
+	double isContainPolygon(Point2d pos, vector<Point2d> vertices);
 	int isContainPolygon(Point2d pos, vector<Point2d> vertices, int shapeType);
 	BOOL polygon_points_inside(vector<Point2d> rc, vector<Point2d> V);
 	BOOL lineCircleIntersection(Point2d AP1, Point2d AP2, MyShape& sh);
