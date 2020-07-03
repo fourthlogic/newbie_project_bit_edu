@@ -28,6 +28,8 @@
 #define IDC_BUTTON_DO                   1005
 #define IDC_EDIT_OPTION_THMIN           1006
 #define IDC_EDIT_OPTION_RUNTIME         1006
+#define IDC_EDIT_OPTION_DIST2           1006
+#define IDC_EDIT_OPTION_ADJDIST         1006
 #define IDC_SLIDER_LW                   1008
 #define IDC_EDIT_LW                     1009
 #define IDC_STATIC1                     1010

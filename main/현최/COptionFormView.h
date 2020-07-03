@@ -30,18 +30,14 @@ protected:
 public:
 	virtual void OnInitialUpdate();
 
-	CEdit m_edit1;
-	CEdit m_edit2;
-	CEdit m_edit3;
-	CEdit m_edit4;
-	CEdit m_edit5;
-
 	CString m_strDist;							// 직교거리
+	CString m_strAdjDist;						// 오차범위
 	CString m_strRadMax;						// 검출 원 최대 반지름
 	CString m_strRadMin;						// 검출 원 최소 반지름
 	CString m_strBGV;							// BGV 값
 
 	int m_nDist;
+	double m_adjDist;
 	int m_nRadMax;
 	int m_nRadMin;
 	int m_nBGV;

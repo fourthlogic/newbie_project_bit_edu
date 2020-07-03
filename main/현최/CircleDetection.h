@@ -36,6 +36,7 @@ private:
     
     // Value
     int distance; // ROI 추출 범위
+    double adjDist; // ROI 추출 오차범위
     int radMin; // 검출원 최소 반지름
     int radMax; // 검출원 최대 반지름
     int BGV; // 그레이
@@ -69,6 +70,7 @@ public:
     void SetImage(Mat& src); // 이미지 Set
     void SetThreshValue(int thMinValue, int thMaxValue); // Thresh value set
     void SetDistance(int distance); // ROI 추출 범위값 set
+    void SetAdjDist(double adjDist); // ROI 추출 오차 범위값 set
     void SetCircleValue(int radMin, int radMax, int BGV); // 원검출 Value set
 
     // get 함수
@@ -119,8 +121,7 @@ private:
     Vec3f CircleFitByTaubin(vector<Point2d> edges);
     // 사각형 내부의 점 포함 여부
     bool IsContain(Rect rc, vector<Point>& cirCenters);
-    // 최소제곱법을 통해 교점 표시, 직선 및 원 그리기
-    void Drawing();
+    // 최소제곱법을 통해 교점과 직선의 좌표 추출
     void getPointOfIntersection();
     // 최소제곱법 x, y좌표 스위칭 후 계산한 뒤 나온 식을 다시 y=x 대칭이동
     Vec2f LSM_Vertical(vector<Vec3f>& pts);

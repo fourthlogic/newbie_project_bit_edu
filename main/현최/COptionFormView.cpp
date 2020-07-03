@@ -12,6 +12,7 @@ IMPLEMENT_DYNCREATE(COptionFormView, CFormView)
 COptionFormView::COptionFormView()
 	: CFormView(IDD_COptionFormView)
 	, m_strDist(_T(""))
+	, m_strAdjDist(_T(""))
 	, m_strRadMax(_T(""))
 	, m_strRadMin(_T(""))
 	, m_strBGV(_T(""))
@@ -28,13 +29,10 @@ void COptionFormView::DoDataExchange(CDataExchange* pDX)
 {
 	CFormView::DoDataExchange(pDX);
 	DDX_Text(pDX, IDC_EDIT_OPTION_DIST, m_strDist);
+	DDX_Text(pDX, IDC_EDIT_OPTION_ADJDIST, m_strAdjDist);
 	DDX_Text(pDX, IDC_EDIT_OPTION_RMAX, m_strRadMax);
 	DDX_Text(pDX, IDC_EDIT_OPTION_RMIN, m_strRadMin);
 	DDX_Text(pDX, IDC_EDIT_OPTION_BGV, m_strBGV);
-	DDX_Control(pDX, IDC_EDIT_OPTION_DIST, m_edit1);
-	DDX_Control(pDX, IDC_EDIT_OPTION_RMAX, m_edit2);
-	DDX_Control(pDX, IDC_EDIT_OPTION_RMIN, m_edit3);
-	DDX_Control(pDX, IDC_EDIT_OPTION_BGV, m_edit4);
 }
 
 BEGIN_MESSAGE_MAP(COptionFormView, CFormView)
@@ -87,6 +85,7 @@ void COptionFormView::OnInitialUpdate()
 	if (!bRet)
 	{
 		m_strDist = _T("0");
+		m_strAdjDist = _T("0");
 		m_strRadMax = _T("0");
 		m_strRadMin = _T("0");
 		m_strBGV = _T("0");
@@ -115,6 +114,7 @@ void COptionFormView::OnInitialUpdate()
 
 		record = m_pConnection->Execute(executeQuery, NULL, adCmdUnspecified);
 		m_strDist = record->Fields->GetItem("Distance")->Value;
+		m_strAdjDist = record->Fields->GetItem("AdjDist")->Value;
 		m_strRadMax = record->Fields->GetItem("RadMax")->Value;
 		m_strRadMin = record->Fields->GetItem("RadMin")->Value;
 		m_strBGV = record->Fields->GetItem("BGV")->Value;
@@ -141,6 +141,7 @@ void COptionFormView::OnAppExit()
 	UpdateData();
 
 	m_nDist = _ttoi(m_strDist);
+	m_adjDist = _ttof(m_strAdjDist);
 	m_nRadMax = _ttoi(m_strRadMax);
 	m_nRadMin = _ttoi(m_strRadMin);
 	m_nBGV = _ttoi(m_strBGV);
@@ -172,6 +173,7 @@ void COptionFormView::OnAppExit()
 		// 테이블 항목 생성
 		m_pTable->PutName("Params");
 		m_pTable->Columns->Append("Distance", ADOX::adVarWChar, 10);
+		m_pTable->Columns->Append("AdjDist", ADOX::adVarWChar, 10);
 		m_pTable->Columns->Append("RadMax", ADOX::adVarWChar, 10);
 		m_pTable->Columns->Append("RadMin", ADOX::adVarWChar, 10);
 		m_pTable->Columns->Append("BGV", ADOX::adVarWChar, 10);
@@ -181,13 +183,13 @@ void COptionFormView::OnAppExit()
 		m_pCatalog = NULL;
 		m_pTable = NULL;
 
-		queryInsert.Format(_T("INSERT INTO Params(Distance, RadMax, RadMin, BGV) values('%d', '%d', '%d', '%d')"), m_nDist, m_nRadMax, m_nRadMin, m_nBGV);
+		queryInsert.Format(_T("INSERT INTO Params(Distance, AdjDist, RadMax, RadMin, BGV) values('%d', '%lf', '%d', '%d', '%d')"), m_nDist, m_adjDist, m_nRadMax, m_nRadMin, m_nBGV);
 		executeQuery = queryInsert;
 	}
 	// 파일이 이미 존재할 경우
 	else
 	{
-		queryUpdate.Format(_T("UPDATE [Params] SET [Distance] = '%d', [Radmax] = '%d', [RadMin] = '%d', [BGV] = '%d'"), m_nDist, m_nRadMax, m_nRadMin, m_nBGV);
+		queryUpdate.Format(_T("UPDATE [Params] SET [Distance] = '%d', [AdjDist] = '%lf', [Radmax] = '%d', [RadMin] = '%d', [BGV] = '%d'"), m_nDist, m_adjDist, m_nRadMax, m_nRadMin, m_nBGV);
 		executeQuery = queryUpdate;
 	}
 
@@ -229,11 +231,13 @@ void COptionFormView::OnBnClickedButtonDo()
 	CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
 	CImgViewerView* pView = theApp.pImgViewerView;
 	m_nDist = _ttoi(m_strDist);
+	m_adjDist = _ttof(m_strAdjDist);
 	m_nRadMax = _ttoi(m_strRadMax);
 	m_nRadMin = _ttoi(m_strRadMin);
 	m_nBGV = _ttoi(m_strBGV);
 
 	pView->m_Algorithm.SetDistance(m_nDist);
+	pView->m_Algorithm.SetAdjDist(m_adjDist);
 	pView->m_Algorithm.SetCircleValue(m_nRadMin, m_nRadMax, m_nBGV);
 	pView->paraChanged();
 	std::chrono::system_clock::time_point EndTime = std::chrono::system_clock::now();
@@ -277,6 +281,7 @@ void COptionFormView::OnOptionOpen() // 설정파일 열기
 
 				record = m_pConnection->Execute(executeQuery, NULL, adCmdUnspecified);
 				m_strDist = record->Fields->GetItem("Distance")->Value;
+				m_strAdjDist = record->Fields->GetItem("AdjDist")->Value;
 				m_strRadMax = record->Fields->GetItem("RadMax")->Value;
 				m_strRadMin = record->Fields->GetItem("RadMin")->Value;
 				m_strBGV = record->Fields->GetItem("BGV")->Value;
@@ -304,6 +309,7 @@ void COptionFormView::OnOptionSave()
 	// Edit control에 직접 변경한 설정값들 적용
 	UpdateData();
 	m_nDist = _ttoi(m_strDist);
+	m_adjDist = _ttof(m_strAdjDist);
 	m_nRadMax = _ttoi(m_strRadMax);
 	m_nRadMin = _ttoi(m_strRadMin);
 	m_nBGV = _ttoi(m_strBGV);
@@ -338,6 +344,7 @@ void COptionFormView::OnOptionSave()
 			// 테이블 항목 생성
 			m_pTable->PutName("Params");
 			m_pTable->Columns->Append("Distance", ADOX::adVarWChar, 10);
+			m_pTable->Columns->Append("AdjDist", ADOX::adVarWChar, 10);
 			m_pTable->Columns->Append("RadMax", ADOX::adVarWChar, 10);
 			m_pTable->Columns->Append("RadMin", ADOX::adVarWChar, 10);
 			m_pTable->Columns->Append("BGV", ADOX::adVarWChar, 10);
@@ -347,13 +354,13 @@ void COptionFormView::OnOptionSave()
 			m_pCatalog = NULL;
 			m_pTable = NULL;
 
-			queryInsert.Format(_T("INSERT INTO Params(Distance, RadMax, RadMin, BGV) values('%d', '%d', '%d', '%d')"), m_nDist, m_nRadMax, m_nRadMin, m_nBGV);
+			queryInsert.Format(_T("INSERT INTO Params(Distance, AdjDist, RadMax, RadMin, BGV) values('%d', '%lf', '%d', '%d', '%d')"), m_nDist, m_adjDist, m_nRadMax, m_nRadMin, m_nBGV);
 			executeQuery = queryInsert;
 		}
 		// 파일이 이미 존재할 경우
 		else
 		{
-			queryUpdate.Format(_T("UPDATE [Params] SET [Distance] = '%d', [Radmax] = '%d', [RadMin] = '%d', [BGV] = '%d'"), m_nDist, m_nRadMax, m_nRadMin, m_nBGV);
+			queryUpdate.Format(_T("UPDATE [Params] SET [Distance] = '%d', [AdjDist] = '%lf', [Radmax] = '%d', [RadMin] = '%d', [BGV] = '%d'"), m_nDist, m_adjDist, m_nRadMax, m_nRadMin, m_nBGV);
 			executeQuery = queryUpdate;
 		}
 		

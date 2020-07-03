@@ -186,6 +186,12 @@ void CircleDection::SetDistance(int distance = 20)
     this->distance = distance;
 }
 
+// ROI 추출 오차범위 set
+void CircleDection::SetAdjDist(double adjDist = 2.0)
+{
+    this->adjDist = adjDist;
+}
+
 // 원검출 set
 void CircleDection::SetCircleValue(int radMin = 2, int radMax = 4, int BGV = 100)
 {
@@ -1159,12 +1165,37 @@ bool CircleDection::IsContain(Rect rc, vector<Point>& cirCenters) {
 // 최소제곱법을 통해 교점과 직선의 좌표 구하기
 void CircleDection::getPointOfIntersection()
 {
-    Vec2f vEquation, hEquation;
+    Vec2d vEquation, hEquation;
     Point2d target, temp1, temp2;
     pair<Point2d, Point2d> templines;
     vEquation = LSM_Vertical(this->vCirCenters); // 수직 원들의 최소제곱법 직선식
     hEquation = LSM_Horizontal(this->hCirCenters); // 수평 원들의 최소제곱법 직선식
+    // 직선의 방정식과 거리가 먼 경우를 제외
+    vector<Vec3f> vCirCenters_, hCirCenters_;
+    for (int i = 0; i < this->vCirCenters.size(); i++)
+    {
+        Point2d center(this->vCirCenters[i][0], this->vCirCenters[i][1]);
+        if (this->adjDist > abs(vEquation[0] * center.x - center.y + vEquation[1]) / sqrt(pow(vEquation[0], 2) + 1))
+        {
+            vCirCenters_.push_back(vCirCenters[i]);
+        }
+    }
 
+    for (int i = 0; i < this->hCirCenters.size(); i++)
+    {
+        Point2d center(this->hCirCenters[i][0], this->hCirCenters[i][1]);
+        if (this->adjDist > abs(hEquation[0] * center.x - center.y + hEquation[1]) / sqrt(pow(hEquation[0], 2) + 1))
+        {
+            hCirCenters_.push_back(hCirCenters[i]);
+        }
+    }
+    vCirCenters.clear();
+    hCirCenters.clear();
+    vCirCenters = vCirCenters_;
+    hCirCenters = hCirCenters_;
+
+    vEquation = LSM_Vertical(this->vCirCenters); // 수직 원들의 최소제곱법 직선식
+    hEquation = LSM_Horizontal(this->hCirCenters); // 수평 원들의 최소제곱법 직선식
     // 최소제곱법 직선식들의 교점
     target.x = (hEquation[1] - vEquation[1]) / (vEquation[0] - hEquation[0]);
     target.y = (vEquation[0] * (hEquation[1] - vEquation[1])) / (vEquation[0] - hEquation[0]) + vEquation[1];
