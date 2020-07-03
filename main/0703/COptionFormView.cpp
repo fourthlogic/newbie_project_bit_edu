@@ -31,12 +31,10 @@ void COptionFormView::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_OPTION_RMAX, m_strRadMax);
 	DDX_Text(pDX, IDC_EDIT_OPTION_RMIN, m_strRadMin);
 	DDX_Text(pDX, IDC_EDIT_OPTION_BGV, m_strBGV);
-	DDX_Text(pDX, IDC_EDIT_OPTION_RUNTIME, m_nRuntime);
 	DDX_Control(pDX, IDC_EDIT_OPTION_DIST, m_edit1);
 	DDX_Control(pDX, IDC_EDIT_OPTION_RMAX, m_edit2);
 	DDX_Control(pDX, IDC_EDIT_OPTION_RMIN, m_edit3);
 	DDX_Control(pDX, IDC_EDIT_OPTION_BGV, m_edit4);
-	DDX_Control(pDX, IDC_EDIT_OPTION_RUNTIME, m_edit5);
 }
 
 BEGIN_MESSAGE_MAP(COptionFormView, CFormView)
@@ -241,6 +239,10 @@ void COptionFormView::OnBnClickedButtonDo()
 	std::chrono::system_clock::time_point EndTime = std::chrono::system_clock::now();
 	std::chrono::milliseconds mill = std::chrono::duration_cast<std::chrono::milliseconds>(EndTime - StartTime);
 	m_nRuntime = mill.count();
+
+	CString runtime;
+	runtime.Format(_T("Runtime : %d ms"), m_nRuntime);
+	pMain->m_wndStatusBar.SetPaneText(0, runtime);
 
 	UpdateData(FALSE);
 }

@@ -23,9 +23,9 @@ static UINT indicators[] =
 {
 	ID_SEPARATOR,           // 상태 줄 표시기
 	//ID_INDICATOR_USER_FILENAME,
-	ID_INDICATOR_CAPS,
-	ID_INDICATOR_NUM,
-	ID_INDICATOR_SCRL,
+	//ID_INDICATOR_CAPS,
+	//ID_INDICATOR_NUM,
+	//ID_INDICATOR_SCRL,
 };
 
 // CMainFrame 생성/소멸
@@ -51,16 +51,16 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	//	return -1;      // 만들지 못했습니다.
 	//}
 
-	//if (!m_wndStatusBar.Create(this))
-	//{
-	//	TRACE0("상태 표시줄을 만들지 못했습니다.\n");
-	//	return -1;      // 만들지 못했습니다.
-	//}
-	//m_wndStatusBar.SetIndicators(indicators, sizeof(indicators)/sizeof(UINT));
-	//m_wndStatusBar.SetPaneInfo(0, ID_SEPARATOR, SBPS_NORMAL, 200);
-	//m_wndStatusBar.SetPaneInfo(1, ID_INDICATOR_USER_FILENAME, SBPS_STRETCH, 200);
-	//
-	//m_wndStatusBar.SetPaneText(1, _T("테스트"));
+	if (!m_wndStatusBar.Create(this))
+	{
+		TRACE0("상태 표시줄을 만들지 못했습니다.\n");
+		return -1;      // 만들지 못했습니다.
+	}
+	m_wndStatusBar.SetIndicators(indicators, sizeof(indicators) / sizeof(UINT));
+	m_wndStatusBar.SetPaneInfo(0, ID_INDICATOR_USER_FILENAME, SBPS_STRETCH, 200);
+	CString runtime;
+	runtime = _T("Runtime : 0");
+	m_wndStatusBar.SetPaneText(0, runtime);
 
 	// TODO: 도구 모음을 도킹할 수 없게 하려면 이 세 줄을 삭제하십시오.
 	//m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
