@@ -12,7 +12,7 @@ enum DrawMode	//도형 종류
 };
 
 enum RollBackMode {	//롤백 명령어
-	Create, Delete, Update,GroupStart,GroupEnd
+	Create, Delete, Update, GroupStart, GroupEnd
 };
 
 
@@ -54,19 +54,19 @@ protected: // serialization에서만 만들어집니다.
 	CImgViewerView() noexcept;
 	DECLARE_DYNCREATE(CImgViewerView)
 
-// 특성입니다.
+	// 특성입니다.
 public:
 	CImgViewerDoc* GetDocument() const;
 
-// 작업입니다.
+	// 작업입니다.
 public:
 
-// 재정의입니다.
+	// 재정의입니다.
 public:
 	virtual void OnDraw(CDC* pDC);  // 이 뷰를 그리기 위해 재정의되었습니다.
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 
-// 구현입니다.
+	// 구현입니다.
 public:
 	virtual ~CImgViewerView();
 #ifdef _DEBUG
@@ -76,7 +76,7 @@ public:
 
 protected:
 
-// 생성된 메시지 맵 함수
+	// 생성된 메시지 맵 함수
 protected:
 	DECLARE_MESSAGE_MAP()
 public:
@@ -115,7 +115,7 @@ public:
 	Point2d before_Pixel_pos; //확대/축소 전 마우스 있는 픽셀에서의 위치
 	Point2d after_Image_pos; //확대/축소 후 마우스 원본에서 위치
 	Point2d after_Pixel_pos; //확대/축소 후 마우스 있는 픽셀에서의 위치
-	
+
 
 
 	CMenu* pMenu;
@@ -140,6 +140,7 @@ public:
 	Point2d u_pix_pos;
 	Point2d d_pos;
 	Point2d u_pos;
+	Point2d rotatePts;
 
 
 
@@ -151,6 +152,7 @@ public:
 	vector<int> zOrder;			//zOrder 리스트
 	vector<int> GroupList;		//Group 선택 리스트
 	vector<CopyShape> copyList;	//복사 리스트
+	vector<MyShape> ctrlCopyList;
 	double m_theta;
 
 	//되돌리기
@@ -165,7 +167,7 @@ public:
 	BOOL selectID = FALSE; // 선택 
 	BOOL EdgeSelect = FALSE; // 엣지 선택
 	BOOL rotateID = FALSE; // 회전 선택
-
+	BOOL ctrlSelect = FALSE;//컨트롤 누르고 선택
 
 	int RectCount = 0; // 좌표 개수
 	int SelectIndex; // 선택 이미지 인덱스
@@ -180,7 +182,7 @@ public:
 	void DrawTextEx(CDC* pDC, const CString& str, CRect rect, UINT nFormat);	//RGB 센터 출력
 	void paraChanged(); // 파라미터 업데이트
 
-	
+
 	// 도형 그리기 함수 
 	void draw(CDC* pDC);
 	void drawShape(CDC* pDC, MyShape& shape);
@@ -199,6 +201,14 @@ public:
 	int isContainPolygon(CPoint pos, vector<Point2d> vertices);
 	int isLeft(Point2d linePt1, Point2d linePt2, Point2d pos);
 	int isContainPolygon(Point2d pos, vector<Point2d> vertices);
+	int isContainPolygon(Point2d pos, vector<Point2d> vertices, int shapeType);
+	BOOL polygon_points_inside(vector<Point2d> rc, vector<Point2d> V);
+	BOOL lineCircleIntersection(Point2d AP1, Point2d AP2, MyShape& sh);
+	BOOL lineLineIntersection(Point2d A, Point2d B, Point2d C, Point2d D);
+
+	BOOL polygon_edges_overlap(vector<Point2d> rc, vector<Point2d> V);
+
+	BOOL overlap(vector<Point2d> rc, vector<Point2d> V);
 	// 네비게이터
 	void imgViewer2Navigator();
 	void GetImgPos(double Navigator_x, double Navigator_y);
@@ -253,6 +263,8 @@ public:
 
 #ifndef _DEBUG  // MFCparamView.cpp의 디버그 버전
 inline CImgViewerDoc* CImgViewerView::GetDocument() const
-   { return reinterpret_cast<CImgViewerDoc*>(m_pDocument); }
+{
+	return reinterpret_cast<CImgViewerDoc*>(m_pDocument);
+}
 #endif
 

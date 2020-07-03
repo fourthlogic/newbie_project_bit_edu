@@ -63,8 +63,6 @@ public:
 	afx_msg void OnEnUpdateEditOptionBgv();		// BGV 값
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnDrawItem(int nIDCtl, LPDRAWITEMSTRUCT lpDrawItemStruct);
-	afx_msg void OnSize(UINT nType, int cx, int cy);
-
 	void CheckParams();
 };
 

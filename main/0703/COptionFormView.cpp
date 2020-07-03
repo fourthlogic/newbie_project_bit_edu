@@ -51,7 +51,6 @@ BEGIN_MESSAGE_MAP(COptionFormView, CFormView)
 	ON_EN_UPDATE(IDC_EDIT_OPTION_BGV, &COptionFormView::OnEnUpdateEditOptionBgv)
 	ON_WM_CTLCOLOR()
 	ON_WM_DRAWITEM()
-	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 
@@ -106,7 +105,7 @@ void COptionFormView::OnInitialUpdate()
 	{
 		// DB연결
 		CString temp;
-		temp.Format(_T("Provider=Microsoft.ACE.OLEDB.16.0;Data Source=%s;"), pathName);
+		temp.Format(_T("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=%s;"), pathName);
 		m_pConnection->ConnectionString = _bstr_t(temp);
 		m_pConnection->Open("", "", "", adModeUnknown);
 
@@ -161,7 +160,7 @@ void COptionFormView::OnAppExit()
 	m_pTable.CreateInstance(__uuidof (Table));
 
 	CString strPath;
-	strPath.Format(_T("Provider=Microsoft.ACE.OLEDB.16.0;Data Source=%s;"), pathName);
+	strPath.Format(_T("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=%s;"), pathName);
 
 	CString queryInsert, queryUpdate; // 쿼리문이 저장될 변수
 	_bstr_t executeQuery;
@@ -265,7 +264,7 @@ void COptionFormView::OnOptionOpen() // 설정파일 열기
 			{
 				// DB연결
 				CString temp;
-				temp.Format(_T("Provider=Microsoft.ACE.OLEDB.16.0;Data Source=%s;"), pathName);
+				temp.Format(_T("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=%s;"), pathName);
 				m_pConnection->ConnectionString = _bstr_t(temp);
 				m_pConnection->Open("", "", "", adModeUnknown);
 
@@ -324,7 +323,7 @@ void COptionFormView::OnOptionSave()
 		m_pTable.CreateInstance(__uuidof (Table));
 
 		CString strPath;
-		strPath.Format(_T("Provider=Microsoft.ACE.OLEDB.16.0;Data Source=%s;"), pathName);
+		strPath.Format(_T("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=%s;"), pathName);
 
 		CString queryInsert, queryUpdate; // 쿼리문이 저장될 변수
 		_bstr_t executeQuery;
@@ -596,54 +595,3 @@ void COptionFormView::CheckParams()
 	UpdateData(FALSE);
 }
 
-void COptionFormView::OnSize(UINT nType, int cx, int cy)
-{
-	CFormView::OnSize(nType, cx, cy);
-
-	CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
-	if (pMain->start)
-	{
-		CRect rect;
-
-		//CStatic* c_static1 = (CStatic*)GetDlgItem(IDC_STATIC1);
-		//CStatic* c_static2 = (CStatic*)GetDlgItem(IDC_STATIC2);
-		//CStatic* c_static3 = (CStatic*)GetDlgItem(IDC_STATIC3);
-		//CStatic* c_static4 = (CStatic*)GetDlgItem(IDC_STATIC4);
-		//CStatic* c_static5 = (CStatic*)GetDlgItem(IDC_STATIC5);
-		CEdit* c_edit1 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_DIST);
-		CEdit* c_edit2 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_RMAX);
-		CEdit* c_edit3 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_RMIN);
-		CEdit* c_edit4 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_BGV);
-		CEdit* c_edit5 = (CEdit*)GetDlgItem(IDC_EDIT_OPTION_RUNTIME);
-
-		c_edit1->GetWindowRect(&rect);
-		ScreenToClient(&rect);
-		CFont font;
-		font.CreateFontW(rect.Height() * 0.8, rect.Width()*0.15, 0,                            // 출력각도
-			0,                            // 기준 선에서의각도
-			FW_LIGHT,                    // 글자굵기
-			FALSE,                        // Italic 적용여부
-			FALSE,                        // 밑줄적용여부
-			0,                        // 취소선적용여부
-			ANSI_CHARSET,            // 문자셋종류
-			OUT_DEFAULT_PRECIS,            // 출력정밀도
-			CLIP_DEFAULT_PRECIS,        // 클리핑정밀도
-			DEFAULT_QUALITY,                // 출력문자품질
-			DEFAULT_PITCH | FF_SWISS,                // 글꼴Pitch
-			_T("Arial")                // 글꼴
-		);
-		
-		c_edit1->SetFont(&font);
-		c_edit2->SetFont(&font);
-		c_edit3->SetFont(&font);
-		c_edit4->SetFont(&font);
-		c_edit5->SetFont(&font);
-
-		//c_static1->SetFont(&font);
-		//c_static2->SetFont(&font);
-		//c_static3->SetFont(&font);
-		//c_static4->SetFont(&font);
-		//c_static5->SetFont(&font);
-	}
-	
-}
