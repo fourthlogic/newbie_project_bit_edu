@@ -25,7 +25,7 @@ struct MyShape
 	vector<Point2d> pts; // 좌표
 	vector<Point2d> RotatePts; // 회전 좌표
 	Point2d Center; // 센터
-	Point2d Rotate; // 회전
+	//Point2d Rotate; // 회전
 	double theta;  // 각
 	double R_theta; // 회전각
 	double radin[2]; // 크기
@@ -130,10 +130,12 @@ public:
 	int l_width = 1;
 	COLORREF color = RGB(0, 0, 0);
 
+
 	Point2d pts_0;
 	Point2d pts_1;
 	Point2d pts_2;
 	Point2d pts_3;
+
 	Point2d d_img_pos;
 	Point2d d_pix_pos;
 	Point2d u_img_pos;
@@ -197,10 +199,9 @@ public:
 	Point2d Intersection(Point2d& pt, Point2d& LinePt1, Point2d& LinePt2); // 
 
 	// 좌표 도형 내부 검사
-	int isLeft(Point2d linePt1, Point2d linePt2, CPoint pos);
-	int isContainPolygon(CPoint pos, vector<Point2d> vertices);
+
 	double isLeft(Point2d linePt1, Point2d linePt2, Point2d pos);
-	double isContainPolygon(Point2d pos, vector<Point2d> vertices);
+	int isContainPolygon(Point2d pos, vector<Point2d> vertices);
 	int isContainPolygon(Point2d pos, vector<Point2d> vertices, int shapeType);
 	BOOL polygon_points_inside(vector<Point2d> rc, vector<Point2d> V);
 	BOOL lineCircleIntersection(Point2d AP1, Point2d AP2, MyShape& sh);

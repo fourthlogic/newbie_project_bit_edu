@@ -75,57 +75,58 @@ void COptionFormView::OnInitialUpdate()
 {
 	CFormView::OnInitialUpdate();
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
-	GetParent()->SetWindowText(_T("설정 창"));
-	HICON hIcon = LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_MAINFRAME)); //icon 변경
-	GetParent()->SetIcon(hIcon, FALSE); //icon 셋팅
-	// 읽기모드 파일 열기
-	CString pathName = _T("saveParams.accdb");
-	CFileFind pFind;
-	BOOL bRet = pFind.FindFile(pathName);
-	if (!bRet)
-	{
-		m_strDist = _T("0");
-		m_strAdjDist = _T("0");
-		m_strRadMax = _T("0");
-		m_strRadMin = _T("0");
-		m_strBGV = _T("0");
-		UpdateData(FALSE);
-		return;
-	}
-	::CoInitialize(NULL);
-	ADODB::_ConnectionPtr m_pConnection;
+	//GetParent()->SetWindowText(_T("설정 창"));
+	//HICON hIcon = LoadIcon(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_MAINFRAME)); //icon 변경
+	//GetParent()->SetIcon(hIcon, FALSE); //icon 셋팅
+	//// 읽기모드 파일 열기
+	//CString pathName = _T("saveParams.accdb");
+	//CFileFind pFind;
+	//BOOL bRet = pFind.FindFile(pathName);
+	//if (!bRet)
+	//{
+	//	m_strDist = _T("0");
+	//	m_strAdjDist = _T("0");
+	//	m_strRadMax = _T("0");
+	//	m_strRadMin = _T("0");
+	//	m_strBGV = _T("0");
+	//	UpdateData(FALSE);
+	//	return;
+	//}
+	//::CoInitialize(NULL);
+	//ADODB::_ConnectionPtr m_pConnection;
 
-	HRESULT hr = S_OK;
-	// 연결 인스턴스 생성
-	hr = m_pConnection.CreateInstance(__uuidof(Connection));
-	if (SUCCEEDED(hr))
-	{
-		// DB연결
-		CString temp;
-		temp.Format(_T("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=%s;"), pathName);
-		m_pConnection->ConnectionString = _bstr_t(temp);
-		m_pConnection->Open("", "", "", adModeUnknown);
+	//HRESULT hr = S_OK;
+	//// 연결 인스턴스 생성
+	//hr = m_pConnection.CreateInstance(__uuidof(Connection));
+	//if (SUCCEEDED(hr))
+	//{
+	//	// DB연결
+	//	CString temp;
+	//	temp.Format(_T("Provider=Microsoft.ACE.OLEDB.12.0;Data Source=%s;"), pathName);
+	//	m_pConnection->ConnectionString = _bstr_t(temp);
+	//	m_pConnection->Open("", "", "", adModeUnknown);
 
-		ADODB::_RecordsetPtr record; // DB의 레코드셋
+	//	ADODB::_RecordsetPtr record; // DB의 레코드셋
 
-		CString query;// 쿼리문이 저장될 변수
-		query = "SELECT * FROM (Params)";
-		_bstr_t executeQuery = query;
+	//	CString query;// 쿼리문이 저장될 변수
+	//	query = "SELECT * FROM (Params)";
+	//	_bstr_t executeQuery = query;
 
-		record = m_pConnection->Execute(executeQuery, NULL, adCmdUnspecified);
-		m_strDist = record->Fields->GetItem("Distance")->Value;
-		m_strAdjDist = record->Fields->GetItem("AdjDist")->Value;
-		m_strRadMax = record->Fields->GetItem("RadMax")->Value;
-		m_strRadMin = record->Fields->GetItem("RadMin")->Value;
-		m_strBGV = record->Fields->GetItem("BGV")->Value;
+	//	record = m_pConnection->Execute(executeQuery, NULL, adCmdUnspecified);
+	//	m_strDist = record->Fields->GetItem("Distance")->Value;
+	//	m_strAdjDist = record->Fields->GetItem("AdjDist")->Value;
+	//	m_strRadMax = record->Fields->GetItem("RadMax")->Value;
+	//	m_strRadMin = record->Fields->GetItem("RadMin")->Value;
+	//	m_strBGV = record->Fields->GetItem("BGV")->Value;
 
-		record->Close();
-		record = NULL;
-		m_pConnection->Close();
-		m_pConnection = NULL;
-	}
-	::CoUninitialize();
-
+	//	record->Close();
+	//	record = NULL;
+	//	m_pConnection->Close();
+	//	m_pConnection = NULL;
+	//}
+	//::CoUninitialize();
+	double tempadj = _ttof(m_strAdjDist);
+	m_strAdjDist.Format(_T("%.1lf"), tempadj);
 	UpdateData(FALSE);
 }
 
@@ -299,6 +300,8 @@ void COptionFormView::OnOptionOpen() // 설정파일 열기
 		}
 	}
 	//UpdateData(FALSE);
+	double tempadj = _ttof(m_strAdjDist);
+	m_strAdjDist.Format(_T("%.1lf"), tempadj);
 	this->CheckParams();
 }
 
