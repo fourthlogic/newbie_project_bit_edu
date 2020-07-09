@@ -63,8 +63,8 @@ public:
     bool isReady(); // 소스 이미지 상태
 
     //실행
-    void Run(); // 알고리즘 부분 실행
-    void Rotation_Run();
+    bool Run(); // 알고리즘 부분 실행
+    bool Rotation_Run();
 
     // Image Data Type 변환
     HBITMAP MatToBitmap(Mat& src);
@@ -135,6 +135,6 @@ private:
     // 로테이션 함수
     template <typename T>
     void rotation(Mat src, Mat& dst, double theta, Point pt);
-    void Rotation();
+    bool Rotation();
 };
 

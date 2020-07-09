@@ -2293,16 +2293,26 @@ void CImgViewerView::paraChanged(bool isRotateCheck) // 이미지 처리 및 버
     if (!m_Algorithm.isReady())
         return;
 
-    if (isRotateCheck)
-        m_Algorithm.Rotation_Run();
-    else
-        m_Algorithm.Run();
+    if (isRotateCheck) {
+        if(!m_Algorithm.Rotation_Run())
+            return;
+    }
+    else {
+        if (!m_Algorithm.Run())
+            return;
+    }
 
     CircleCenter = m_Algorithm.GetCirclePoint();
     CirLinePoints = m_Algorithm.GetCirLinePoints();
     IntersectionPoint = m_Algorithm.GetIntersectionPoint();
 
-    result_mat = m_Algorithm.GetOriginalImage();
+
+    if (isRotateCheck)
+        result_mat = m_Algorithm.GetRotateImage();
+    else
+        result_mat = m_Algorithm.GetOriginalImage();
+
+   
     result_bmp = m_Algorithm.MatToBitmap(result_mat);
 
     m_background.Detach();
@@ -2346,8 +2356,6 @@ void CImgViewerView::paraChanged(bool isRotateCheck) // 이미지 처리 및 버
     theApp.pNavigatorView->OnFileOpen();
     Invalidate(FALSE);
 }
-
-
 
 
 // 도형 그리기 함수

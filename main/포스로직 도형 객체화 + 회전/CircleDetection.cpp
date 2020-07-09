@@ -115,9 +115,11 @@ bool CircleDection::SelectImage()
         std::string strStd(pszConvertedAnsiString);
         this->Original = imread(strStd,IMREAD_GRAYSCALE);
         this->src = this->Original.clone();
+        this->Rotate = this->Original.clone();
         this->SetImage(this->src);
         this->SetFilename(strStd);
         this->Initialize();
+        isRotate = false;
         return TRUE;
     }
     else
@@ -131,7 +133,7 @@ bool CircleDection::isReady()
 }
 
 // 전체 실행
-void CircleDection::Run()
+bool CircleDection::Run()
 {
     this->src = this->Original.clone();
     SetImage(src);
@@ -147,14 +149,19 @@ void CircleDection::Run()
         GetVertexPoints(); // 최외곽 ROI
         ContourDetection(); // 원 검출
         getPointOfIntersection();
+        return true;
     }
+    else
+        return false;
 }
 
 // 회전 이미지 알고리즘 실행
-void CircleDection::Rotation_Run()
+bool CircleDection::Rotation_Run()
 {
-    if (isRotate == false)
-        Rotation();
+    if (isRotate == false) {
+        if (Rotation() == false)
+            return false;
+    }
     this->src = this->Rotate.clone();
     SetImage(src);
     // 최기화
@@ -171,7 +178,9 @@ void CircleDection::Rotation_Run()
         GetVertexPoints(); // 최외곽 ROI
         ContourDetection(); // 원 검출
         getPointOfIntersection();
+        return true;
     }
+    return false;
 }
 
 // 이미지 set
@@ -1278,7 +1287,7 @@ string CircleDection::getFilename() {
 }
 
 // 회전이미지 생성
-void CircleDection::Rotation()
+bool CircleDection::Rotation()
 {
     this->src = this->Original.clone();
     SetImage(src);
@@ -1286,7 +1295,7 @@ void CircleDection::Rotation()
     approx.clear();
     cornerPts.clear(); // 외곽 3점 좌표 값
     if (!GetCornerPoints()) // 3점 좌표 추출
-        return;
+        return false;
     // 회전
     double theta = atan2((this->cornerPts[0].x - this->cornerPts[0].x), (1000 - this->cornerPts[0].y))
         - atan2((this->cornerPts[1].x - this->cornerPts[0].x), this->cornerPts[1].y - this->cornerPts[0].y);
@@ -1298,7 +1307,7 @@ void CircleDection::Rotation()
     approx.clear();
     cornerPts.clear(); // 외곽 3점 좌표 값
     if (!GetCornerPoints()) // 3점 좌표 추출
-        return;
+        return false;
     int min_x = this->Rotate.rows, min_y = this->Rotate.cols, max_x = 0, max_y = 0;
     
     for (int i = 0; i < cornerPts.size(); i++)
@@ -1329,6 +1338,7 @@ void CircleDection::Rotation()
    
     this->Rotate = this->src(Rect(Point(min_x, min_y), Point(max_x, max_y)));
     isRotate = true;
+    return true;
 }
 // 이미지 회전 함수
 template <typename T>
