@@ -42,23 +42,29 @@ HBITMAP CircleDection::MatToBitmap(Mat & src)
     return hbmp;
 }
 
-Mat CircleDection::BitmapToMat(HBITMAP hBmp)
+double isLeft(Point2d linePt1, Point2d linePt2, Point2d pos)
 {
-    BITMAP bmp_info;
-    GetObject(hBmp, sizeof(BITMAP), &bmp_info);
+    return ((linePt2.x - linePt1.x) * (pos.y - linePt1.y) - (pos.x - linePt1.x) * (linePt2.y - linePt1.y));
+}
 
-    uchar* MatPtr;
-    Mat temp(bmp_info.bmHeight, bmp_info.bmWidth, CV_MAKETYPE(bmp_info.bmBitsPixel/8-1, bmp_info.bmPlanes));
-    for (int i = 0; i < bmp_info.bmHeight; i++)
-    {
-        MatPtr = temp.ptr(i);
-        for (int j = 0; j < bmp_info.bmWidth; j++)
-        {
-            MatPtr[j] = *((uchar*)bmp_info.bmBits + ((i * bmp_info.bmWidth) + j));
+int isContainPolygon(Point2d pos, vector<Point2d> vertices)
+{
+    int wideNum = 0;
+
+    for (int i = 0; i < vertices.size(); i++) {
+        int nextpos = (i + 1 >= vertices.size()) ? 0 : i + 1;
+        if (vertices[i].y <= pos.y) {
+            if (vertices[nextpos].y > pos.y)
+                if (isLeft(vertices[i], vertices[nextpos], pos) > 0)
+                    ++wideNum;
+        }
+        else {
+            if (vertices[nextpos].y <= pos.y)
+                if (isLeft(vertices[i], vertices[nextpos], pos) < 0)
+                    --wideNum;
         }
     }
-
-    return temp;
+    return wideNum;
 }
 
 CircleDection::CircleDection()
@@ -67,14 +73,7 @@ CircleDection::CircleDection()
     this->radMin = 0; // 검출원 최소 반지름
     this->radMax = 0; // 검출원 최대 반지름
     this->BGV = 0; // 그레이
-    this->thMinValue = 0; // 외각 좌표 추출 th
-    this->thMaxValue = 0; // 외각 좌표 추출 th
-    this->height = 0; // 높이
-    this->width = 0; // 넓이
-    this->size = 0; // 전체 크기
     isRotate= false;
-    // 파라미터 값 초기화
-    SetThreshValue(100, 158);
     // 주소 연결
 
     threadParam = new CirDetectionParam();
@@ -96,13 +95,9 @@ void CircleDection::Initialize()
         return;
     else
     {
-        this->height = this->src.rows;
-        this->width = this->src.cols;
-        this->size = height * width;
         this->isRotate = false;
     }
 }
-
 
 bool CircleDection::SelectImage()
 {
@@ -187,16 +182,6 @@ bool CircleDection::Rotation_Run()
 void CircleDection::SetImage(Mat& src)
 {
     this->src = src;
-    this->height = src.rows;
-    this->width = src.cols;
-    this->size = src.rows * src.cols;
-}
-
-// Thresh value set
-void CircleDection::SetThreshValue(int thMinValue = 100, int thMaxValue = 158)
-{
-    this->thMinValue = thMinValue;
-    this->thMaxValue = thMaxValue;
 }
 
 // ROI 추출 범위 set
@@ -212,7 +197,7 @@ void CircleDection::SetAdjDist(double adjDist = 2.0)
 }
 
 // 원검출 set
-void CircleDection::SetCircleValue(int radMin = 2, int radMax = 4, int BGV = 100)
+void CircleDection::SetCircleValue(int radMin = 2, int radMax = 4, int BGV = 90)
 {
     this->radMin = radMin;
     this->radMax = radMax;
@@ -230,7 +215,6 @@ Mat CircleDection::GetRotateImage()
 {
     return this->Rotate;
 }
-
 
 // 서클 중심값 가져오기
 vector<Vec3f> CircleDection::GetCirclePoint()
@@ -253,7 +237,7 @@ Point2d CircleDection::GetIntersectionPoint()
     return this->IntersectionPoint;
 }
 
-// 3점 좌표 추출 수정판
+// 3점 좌표 추출 
 bool CircleDection::GetCornerPoints()
 {
     Mat grayImage = this->src.clone();
@@ -495,6 +479,8 @@ void CircleDection::Contour(Mat& src, int sx, int sy, vector<Point>& outPoints, 
 {
     int x, y, nx, ny;
     int d, cnt;
+    int height = src.rows;
+    int width = src.cols;
 
     int  dir[8][2] = {
     {  1,  0 },
@@ -517,7 +503,7 @@ void CircleDection::Contour(Mat& src, int sx, int sy, vector<Point>& outPoints, 
         nx = x + dir[d][0];
         ny = y + dir[d][1];
 
-        if (nx < 0 || nx >= this->width || ny < 0 || ny >= this->height || Map[ny * this->width + nx] != value)
+        if (nx < 0 || nx >= width || ny < 0 || ny >= height || Map[ny * width + nx] != value)
         {
             if (++d > 7) d = 0;
             cnt++;
@@ -741,10 +727,9 @@ void CircleDection::ContourDetection() {
     // range 범위 영역 추출
     fillPoly_(this->src.size(), mask, this->vertexPts);
     bitwise_and(this->src, mask, ROI);
-
     Mat imgThreshold = ROI.clone();
 
-    ToZeroThreshold(imgThreshold, imgThreshold, 0, this->BGV);
+    ToZeroThreshold(imgThreshold, imgThreshold, 0, 90);
     vector<vector<Point>> contours;
     MyContours(imgThreshold, contours);
 
@@ -955,7 +940,6 @@ Rect CircleDection::boundRect(vector<Point> pts) {
     }
     return Rect(minX, minY, maxX - minX + 1, maxY - minY + 1);
 }
-
 
 int CircleDection::OtsuThreshold(Mat& src) {
     if (!src.data)
@@ -1286,6 +1270,7 @@ string CircleDection::getFilename() {
     return this->fileName;
 }
 
+
 // 회전이미지 생성
 bool CircleDection::Rotation()
 {
@@ -1370,6 +1355,130 @@ void CircleDection::rotation(Mat src, Mat& dst, double theta, Point pt)
 
             if (rect.contains(target))
                 ptr[j] = BilinearValue<T>(src, target);
+        }
+    }
+}
+
+// 볼 개수 함수
+int CircleDection::BallCounting(vector<Point2d>& shape_pts, bool isCricleShape)
+{
+    Mat copy,ROI;
+    this->src.copyTo(copy);
+    if (isCricleShape == true) {
+        Mat mask;
+        Rect2d rect = boundRect(shape_pts);
+        fillPolyCircle(copy, mask, shape_pts);
+        bitwise_and(copy, mask, copy);
+        ROI = copy(rect);
+    }
+    else {
+        Mat mask;
+        Rect2d rect = boundRect(shape_pts);
+        
+        fillPoly_ROI(copy.size(), mask, shape_pts);
+        imshow("copy", copy);
+        imshow("mask", mask);
+        bitwise_and(copy, mask, copy);
+        ROI= copy(rect);
+    }
+    // Ball Count
+    Mat dstX, dstY, norm;
+    Sobel(ROI, dstX, CV_32F, 1, 0, 3);
+    Sobel(ROI, dstY, CV_32F, 0, 1, 3);
+    magnitude(dstX, dstY, norm); // 1차미분
+    normalize(norm, norm, 0, 255, NORM_MINMAX);
+    norm.convertTo(norm, CV_8UC1);
+    imshow("norm", norm);
+    for (int x = 0; x < norm.cols; x++) {
+        for (int y = 0; y < norm.rows; y++) {
+            if (norm.at<uchar>(y, x) < 40)
+                norm.at<uchar>(y, x) = 0;
+        }
+    }
+    this->CirCenters.clear();
+    HoughCircles(norm, this->CirCenters, HOUGH_GRADIENT, 1, 2, 20, 10, this->radMin,this->radMax);
+    int count = this->CirCenters.size();
+    this->CirCenters.clear();
+    return count;
+}
+
+// 실수형 rect 범위 잡기
+Rect2d CircleDection::boundRect(vector<Point2d> pts)
+{
+    int maxX = 0, maxY = 0;
+    int minX = MAXINT32, minY = MAXINT32;
+    for (Point2d pt : pts) {
+        if (pt.x < 0)
+            pt.x = 0;
+        else if (pt.x >= this->src.cols)
+            pt.x = this->src.cols;
+
+        if (pt.y < 0)
+            pt.y = 0;
+        else if (pt.y >= this->src.rows)
+            pt.y = this->src.rows;
+
+        if (pt.x > maxX)
+            maxX = pt.x;
+        if (pt.x <= minX)
+            minX = pt.x;
+        if (pt.y > maxY)
+            maxY = pt.y;
+        if (pt.y < minY)
+            minY = pt.y;
+    }
+    return Rect2d(minX, minY, maxX - minX, maxY - minY);
+}
+
+// Circle fillPoly 이미지 추출 
+void CircleDection::fillPolyCircle(Mat& src, Mat& mask, vector<Point2d> pts)
+{
+    int height = src.rows;
+    int width = src.cols;
+    src.copyTo(mask);
+    uchar* ptr;
+    
+    Point2d Center(0,0);
+    for (Point2d pt: pts)
+        Center+= pt;
+    Center.x= Center.x / pts.size();
+    Center.y= Center.y / pts.size();
+
+    double radian = (pts[1].x - pts[0].x) / 2.0;
+    radian = radian * radian;
+    for (int i = 0; i < height; i++)
+    {
+        double y = pow(i - Center.y, 2);
+        ptr = mask.ptr<uchar>(i);
+        for (int j = 0; j < width; j++)
+        {
+            double x = pow(j - Center.x, 2);
+            if ((y + x) <= radian)
+                continue;
+            else
+                ptr[j] = 0;
+        }
+    }
+}
+
+// 실수형 fillPolt
+void CircleDection::fillPoly_ROI(Size matSize, Mat& mask, vector<Point2d> pts)
+{
+    Rect2d rc = boundRect(pts);
+    mask = Mat::zeros(matSize, CV_8UC1);
+
+    int size = pts.size();
+   
+
+    Point2d pt = rc.tl();
+
+   
+
+    for (int y = pt.y; y < rc.height + pt.y; y++) {
+        for (int x = pt.x; x < rc.width + pt.x; x++) {
+            if (isContainPolygon(Point2d(x, y), pts)) {
+                mask.at<uchar>(y, x) = 255;
+            }
         }
     }
 }

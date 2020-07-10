@@ -17,8 +17,6 @@
 #include <afxext.h>
 #include <opencv2/opencv.hpp>
 #include <iostream>
-#include "XML/tinystr.h"
-#include "XML/tinyxml.h"
 
 
 //DB 사용을 위한 설정

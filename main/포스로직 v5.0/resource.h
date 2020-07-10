@@ -68,13 +68,14 @@
 #define ID_CONTEXT_LINEWIDTH            32833
 #define ID_DRAW_TRI                     32836
 #define ID_DRAW_CROSS                   32838
+#define ID_CONTEXTMENU_BALLCOUNT        32840
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        324
-#define _APS_NEXT_COMMAND_VALUE         32840
+#define _APS_NEXT_COMMAND_VALUE         32841
 #define _APS_NEXT_CONTROL_VALUE         1016
 #define _APS_NEXT_SYMED_VALUE           311
 #endif

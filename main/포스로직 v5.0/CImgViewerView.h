@@ -273,6 +273,7 @@ public:
 	void imgViewer2Navigator();
 	void GetImgPos(double Navigator_x, double Navigator_y);
 
+	afx_msg void OnContextmenuBallcount();
 };
 
 #ifndef _DEBUG  // MFCparamView.cpp의 디버그 버전

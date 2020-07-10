@@ -34,18 +34,14 @@ private:
     Point2d IntersectionPoint; // 교점 좌표의 값
     vector<Point> vertexPts;   // 최외곽 ROI Vertex Points
     vector<Point> approx;
-    
+    vector<vector<Point>> BallContours; // 볼 카운트 
+
     // Value
     int distance; // ROI 추출 범위
     double adjDist; // ROI 추출 오차범위
     int radMin; // 검출원 최소 반지름
     int radMax; // 검출원 최대 반지름
     int BGV; // 그레이
-    int thMinValue; // 외각 좌표 추출 th
-    int thMaxValue; // 외각 좌표 추출 th
-    int height; // 높이
-    int width; // 넓이
-    int size; // 전체 크기
     string fileName;
     bool isRotate; // 로테이트 유무
  
@@ -65,14 +61,11 @@ public:
     //실행
     bool Run(); // 알고리즘 부분 실행
     bool Rotation_Run();
-
+    int BallCounting(vector<Point2d>& shape_pts, bool isCricleShape = false); // 볼 개수 실행
     // Image Data Type 변환
     HBITMAP MatToBitmap(Mat& src);
-    Mat BitmapToMat(HBITMAP hBmp);
-
     // set 함수
     void SetImage(Mat& src); // 이미지 Set
-    void SetThreshValue(int thMinValue, int thMaxValue); // Thresh value set
     void SetDistance(int distance); // ROI 추출 범위값 set
     void SetAdjDist(double adjDist); // ROI 추출 오차 범위값 set
     void SetCircleValue(int radMin, int radMax, int BGV); // 원검출 Value set
@@ -84,7 +77,7 @@ public:
     vector<pair<Point2d, Point2d>> GetCirLinePoints();
     Point2d GetIntersectionPoint();
     string getFilename();
-
+    
 
     // 알고리즘 실행 부분
 private:
@@ -132,9 +125,19 @@ private:
     // 최소제곱법 함수
     Vec2f LSM_Horizontal(vector<Vec3f>& pts);
     Vec2f LSM_Horizontal(vector<Point>& pts);
+
     // 로테이션 함수
     template <typename T>
     void rotation(Mat src, Mat& dst, double theta, Point pt);
+    // 회전
     bool Rotation();
+
+    // 실수형 fiilPolt 함수
+    void fillPoly_ROI(Size matSize, Mat& dst, vector<Point2d> pts);
+    // 원형 모양 fill Poly
+    void fillPolyCircle(Mat& src, Mat& dst, vector<Point2d> pts);
+    // 실수 좌표 rect 추출
+    Rect2d boundRect(vector<Point2d> pts);
+
 };
 

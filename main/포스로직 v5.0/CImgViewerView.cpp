@@ -14,9 +14,10 @@
 #include "CImgViewerView.h"
 #include "CSelectLineWidth.h"
 #include <fstream>
-#include "XML/tinyxml.h"
-#include "json/json.h"
+//#include "json/json.h"
 #define IsCTRLPressed()  ( 0x8000 ==(GetKeyState(VK_CONTROL) & 0x8000 ))
+#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console")
+
 
 IMPLEMENT_DYNCREATE(CImgViewerView, CView)
 
@@ -52,6 +53,7 @@ BEGIN_MESSAGE_MAP(CImgViewerView, CView)
     ON_WM_CREATE()
     ON_WM_ERASEBKGND()
     ON_WM_CLOSE()
+    ON_COMMAND(ID_CONTEXTMENU_BALLCOUNT, &CImgViewerView::OnContextmenuBallcount)
 END_MESSAGE_MAP()
 
 
@@ -1707,7 +1709,11 @@ void CImgViewerView::OnContextMenu(CWnd* pWnd, CPoint point)
     else if ((penID) || !GroupList.empty())
     {
         popup.LoadMenuW(IDR_MENU_CONTEXT);
-        pMenu = popup.GetSubMenu(0);
+
+        if (selectID == TRUE && GroupList.size() < 2)
+            pMenu = popup.GetSubMenu(0);
+        else
+            pMenu = popup.GetSubMenu(1);
         pMenu->TrackPopupMenu(TPM_LEFTALIGN || TPM_RIGHTBUTTON, point.x, point.y, AfxGetMainWnd());
     }
     else
@@ -2068,8 +2074,6 @@ void CImgViewerView::DrawShape_FileSave(CDC* pDC, MyShape& shape) {
     pDC->SelectStockObject(NULL_BRUSH);
 
 
-
-
     if (shapeType == DrawMode::DPoint)
     {
         pDC->MoveTo(shape.RotatePts[0].x - 5, shape.RotatePts[0].y - 5);
@@ -2350,11 +2354,12 @@ void CImgViewerView::paraChanged(bool isRotateCheck) // 이미지 처리 및 버
     else
         z_pos.y = 0;
     AddShapeCircle(CircleCenter);
-    AddShapeLines(CirLinePoints);
-    AddShapePoint(IntersectionPoint);
+   // AddShapeLines(CirLinePoints);
+   // AddShapePoint(IntersectionPoint);
 
     theApp.pNavigatorView->OnFileOpen();
     Invalidate(FALSE);
+    UpdateWindow();
 }
 
 
@@ -3237,7 +3242,7 @@ void CImgViewerView::SelectShapeUpdate()
             if (data[SelectIndex].MoveCount >= RectCount)
                 data[SelectIndex].MoveCount %= 4;
 
-            cout << data[SelectIndex].MoveCount << endl;
+            //cout << data[SelectIndex].MoveCount << endl;
             data[SelectIndex].pts = data[SelectIndex].RotatePts = temp;
         }
     }
@@ -3682,99 +3687,140 @@ void CImgViewerView::SaveShape(string filename) {
     //root["string_key"] = (string_value);//append() 사용가능
     //ofstream outFile("test.json", ios::out);
     //outFile << root;
-    Json::Value file;
-    Json::Value files;
-    Json::Value root;
-    Json::Reader reader;
-    ifstream json("shapes.json", ifstream::binary);
 
-    reader.parse(json, files);//json >> root; 두 구문 모두 json을 파싱하는데 사용할 수 있다.
-    //file["Shape_count"] = data.GetSize();
-    for (int i = 0; i < data.GetSize(); i++) {
-        Json::Value shape;
-        Json::Value pts;
-        for (int j = 0; j < data[i].pts.size(); j++) {
-            Json::Value point;
-            point["x"] = data[i].pts[j].x;
-            point["y"] = data[i].pts[j].y;
-            pts[j] = point;
-        }
-        //shape["pts_size"] = data[i].pts.size();
-        shape["pts"] = pts;
-        shape["shapeType"] = data[i].shapeType;
-        Json::Value shapeColor;
-        shape["shapeColor"]["R"] = GetRValue(data[i].shapeColor);
-        shape["shapeColor"]["G"] = GetGValue(data[i].shapeColor);
-        shape["shapeColor"]["B"] = GetBValue(data[i].shapeColor);
-        //shape["shapeColor"].append(shapeColor);
-        shape["PenWidth"] = data[i].penWidth;
-        file[i] = shape;
-    }
-    files[filename] = file;
-    //ofstream outFile(filename + ".json", ios::out);
-    ofstream outFile("shapes.json", ios::out);
-    outFile << files;
+
+
+    //Json::Value file;
+    //Json::Value files;
+    //Json::Value root;
+    //Json::Reader reader;
+    //ifstream json("shapes.json", ifstream::binary);
+
+    //reader.parse(json, files);//json >> root; 두 구문 모두 json을 파싱하는데 사용할 수 있다.
+    ////file["Shape_count"] = data.GetSize();
+    //for (int i = 0; i < data.GetSize(); i++) {
+    //    Json::Value shape;
+    //    Json::Value pts;
+    //    for (int j = 0; j < data[i].pts.size(); j++) {
+    //        Json::Value point;
+    //        point["x"] = data[i].pts[j].x;
+    //        point["y"] = data[i].pts[j].y;
+    //        pts[j] = point;
+    //    }
+    //    //shape["pts_size"] = data[i].pts.size();
+    //    shape["pts"] = pts;
+    //    shape["shapeType"] = data[i].shapeType;
+    //    Json::Value shapeColor;
+    //    shape["shapeColor"]["R"] = GetRValue(data[i].shapeColor);
+    //    shape["shapeColor"]["G"] = GetGValue(data[i].shapeColor);
+    //    shape["shapeColor"]["B"] = GetBValue(data[i].shapeColor);
+    //    //shape["shapeColor"].append(shapeColor);
+    //    shape["PenWidth"] = data[i].penWidth;
+    //    file[i] = shape;
+    //}
+    //files[filename] = file;
+    ////ofstream outFile(filename + ".json", ios::out);
+    //ofstream outFile("shapes.json", ios::out);
+    //outFile << files;
 }
 
 void CImgViewerView::LoadShape(string filename) {
-    Json::Value files;
-    Json::Value root;
-    Json::Reader reader;
-    ifstream json("shapes.json", ifstream::binary);
+    //Json::Value files;
+    //Json::Value root;
+    //Json::Reader reader;
+    //ifstream json("shapes.json", ifstream::binary);
 
-    reader.parse(json, files);//json >> root; 두 구문 모두 json을 파싱하는데 사용할 수 있다.
-    try {
-        root = files[filename];
-    }
-    catch (exception ex) {
-        cout << "no File";
-        return;
-    }
-    //Json::Value 객체는 begin(), end() 둘다 정의되서 범위기반 for문도 사용 가능하다.
-    for (auto& value : root) {
-        MyShape shape;
-        shape.penWidth = value["PenWidth"].asInt();
-        for (auto& v : value["pts"]) {
-            shape.pts.push_back(Point2d(v["x"].asDouble(), v["y"].asDouble()));
+    //reader.parse(json, files);//json >> root; 두 구문 모두 json을 파싱하는데 사용할 수 있다.
+    //try {
+    //    root = files[filename];
+    //}
+    //catch (exception ex) {
+    //    cout << "no File";
+    //    return;
+    //}
+    ////Json::Value 객체는 begin(), end() 둘다 정의되서 범위기반 for문도 사용 가능하다.
+    //for (auto& value : root) {
+    //    MyShape shape;
+    //    shape.penWidth = value["PenWidth"].asInt();
+    //    for (auto& v : value["pts"]) {
+    //        shape.pts.push_back(Point2d(v["x"].asDouble(), v["y"].asDouble()));
+    //    }
+    //    int r, g, b;
+    //    b = value["shapeColor"]["B"].asDouble();
+    //    g = value["shapeColor"]["G"].asDouble();
+    //    r = value["shapeColor"]["R"].asDouble();
+    //    shape.shapeColor = RGB(r, g, b);
+    //    shape.shapeType = value["shapeType"].asInt();
+    //    Point2d pt(0, 0);
+    //    for (int i = 0; i < shape.pts.size(); i++)
+    //        pt += shape.pts[i];
+
+
+    //    shape.RotatePts = shape.pts;
+    //    shape.Center = pt / (int)shape.pts.size();
+    //    shape.theta = 0;
+    //    shape.R_theta = 0;
+    //    shape.MoveCount = 0;
+
+    //    data.Add(shape);
+
+    //    zOrder.insert(zOrder.begin(), data.GetSize() - 1);
+    //    //SelectIndex = zOrder[0];
+
+    //    RollbackInfo info;
+    //    info.idx = zOrder[0];
+    //    info.redoShape = data[zOrder[0]];
+    //    info.undoShape = shape;
+    //    info.rollbackmode = RollBackMode::Create;
+    //    if (rollbackIndex != -1)
+    //        rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
+    //    else if (rollback.size() != 0)
+    //        rollback.erase(rollback.begin(), rollback.end());
+    //    rollback.push_back(info);
+    //    rollbackIndex = rollback.size() - 1;
+    //}
+    //penID = TRUE;
+    //selectID = FALSE;
+    //SelectIndex = -1;
+    //Invalidate();
+
+
+}
+
+void CImgViewerView::OnContextmenuBallcount()
+{
+    int BallCount;
+
+    COptionFormView* pOView = theApp.pOptionView;
+    pOView->m_nDist = _ttoi(pOView->m_strDist);
+    pOView->m_adjDist = _ttof(pOView->m_strAdjDist);
+    pOView->m_nRadMax = _ttoi(pOView->m_strRadMax);
+    pOView->m_nRadMin = _ttoi(pOView->m_strRadMin);
+    pOView->m_nBGV = _ttoi(pOView->m_strBGV);
+
+    m_Algorithm.SetDistance(pOView->m_nDist);
+    m_Algorithm.SetAdjDist(pOView->m_adjDist);
+    m_Algorithm.SetCircleValue(pOView->m_nRadMin, pOView->m_nRadMax, pOView->m_nBGV);
+
+    if (GroupList.size() == 1) {
+        if(data[GroupList[0]].shapeType== DrawMode::DEllipse)
+            BallCount = this->m_Algorithm.BallCounting(data[GroupList[0]].pts,true);
+        else if (data[GroupList[0]].shapeType == DrawMode::DRectangle)
+            BallCount = this->m_Algorithm.BallCounting(data[GroupList[0]].pts);
+        else if (data[GroupList[0]].shapeType == DrawMode::DTriangle)
+        {
+            BallCount = 0;
         }
-        int r, g, b;
-        b = value["shapeColor"]["B"].asDouble();
-        g = value["shapeColor"]["G"].asDouble();
-        r = value["shapeColor"]["R"].asDouble();
-        shape.shapeColor = RGB(r, g, b);
-        shape.shapeType = value["shapeType"].asInt();
-        Point2d pt(0, 0);
-        for (int i = 0; i < shape.pts.size(); i++)
-            pt += shape.pts[i];
-
-
-        shape.RotatePts = shape.pts;
-        shape.Center = pt / (int)shape.pts.size();
-        shape.theta = 0;
-        shape.R_theta = 0;
-        shape.MoveCount = 0;
-
-        data.Add(shape);
-
-        zOrder.insert(zOrder.begin(), data.GetSize() - 1);
-        //SelectIndex = zOrder[0];
-
-        RollbackInfo info;
-        info.idx = zOrder[0];
-        info.redoShape = data[zOrder[0]];
-        info.undoShape = shape;
-        info.rollbackmode = RollBackMode::Create;
-        if (rollbackIndex != -1)
-            rollback.erase(rollback.begin() + rollbackIndex + 1, rollback.end());
-        else if (rollback.size() != 0)
-            rollback.erase(rollback.begin(), rollback.end());
-        rollback.push_back(info);
-        rollbackIndex = rollback.size() - 1;
     }
-    penID = TRUE;
-    selectID = FALSE;
-    SelectIndex = -1;
-    Invalidate();
-
-
+    else {
+        if (data[SelectIndex].shapeType == DrawMode::DEllipse)
+            BallCount = this->m_Algorithm.BallCounting(data[SelectIndex].pts, true);
+        else if(data[SelectIndex].shapeType == DrawMode::DRectangle)
+            BallCount = this->m_Algorithm.BallCounting(data[SelectIndex].pts);
+        else if (data[SelectIndex].shapeType == DrawMode::DTriangle)
+        {
+            BallCount = 0;
+        }
+    }
+    cout << BallCount << endl;
 }
