@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<DB>
+    <!--This is score DB-->
+    <class1>
+        <Teacher>
+            <JJJ />
+        </Teacher>
+        <English name="score" aa="100" bb="50" cc="90" />
+        <Math name="score" aa="90" bb="70" cc="95" />
+    </class1>
+    <class2>
+        <Teacher>
+            <SSS />
+        </Teacher>
+        <English name="score" ab="70" vc="90" ds="30" />
+        <Math name="score" ab="60" vc="70" ds="25" />
+    </class2>
+</DB>
