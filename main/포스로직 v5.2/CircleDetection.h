@@ -119,6 +119,10 @@ private:
     bool IsContain(Rect rc, vector<Point>& cirCenters);
     // 최소제곱법을 통해 교점과 직선의 좌표 추출
     void getPointOfIntersection();
+    // 아웃라이어 제외하며 직선 정확도 증가
+    void getRemovedOutlierEquation(vector<Vec3f> cirCenters, Vec2d eq_in, double adjAvg);
+    // 특정 거리 이상 떨어진 원 제외
+    void RemoveOutlier(vector<Vec3f>& cirCenters, Vec2d eq, double adjDist);
     // 최소제곱법 x, y좌표 스위칭 후 계산한 뒤 나온 식을 다시 y=x 대칭이동
     Vec2f LSM_Vertical(vector<Vec3f>& pts);
     Vec2f LSM_Vertical(vector<Point>& pts);

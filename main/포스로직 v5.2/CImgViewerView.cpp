@@ -3814,5 +3814,8 @@ void CImgViewerView::OnContextmenuBallcount()
             BallCount = 0;
         }
     }
-    cout << BallCount << endl;
+    CMainFrame* pMain = (CMainFrame*)AfxGetMainWnd();
+    CString strBallCount;
+    strBallCount.Format(_T("Ball Count : %d"), BallCount);
+    pMain->m_wndStatusBar.SetPaneText(1, strBallCount);
 }

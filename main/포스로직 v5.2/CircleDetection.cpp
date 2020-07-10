@@ -1122,29 +1122,14 @@ void CircleDection::getPointOfIntersection()
     pair<Point2d, Point2d> templines;
     vEquation = LSM_Vertical(this->vCirCenters); // 수직 원들의 최소제곱법 직선식
     hEquation = LSM_Horizontal(this->hCirCenters); // 수평 원들의 최소제곱법 직선식
-    // 직선의 방정식과 거리가 먼 경우를 제외
-    vector<Vec3f> vCirCenters_, hCirCenters_;
-    for (int i = 0; i < this->vCirCenters.size(); i++)
-    {
-        Point2d center(this->vCirCenters[i][0], this->vCirCenters[i][1]);
-        if (this->adjDist > abs(vEquation[0] * center.x - center.y + vEquation[1]) / sqrt(pow(vEquation[0], 2) + 1))
-        {
-            vCirCenters_.push_back(vCirCenters[i]);
-        }
-    }
 
-    for (int i = 0; i < this->hCirCenters.size(); i++)
-    {
-        Point2d center(this->hCirCenters[i][0], this->hCirCenters[i][1]);
-        if (this->adjDist > abs(hEquation[0] * center.x - center.y + hEquation[1]) / sqrt(pow(hEquation[0], 2) + 1))
-        {
-            hCirCenters_.push_back(hCirCenters[i]);
-        }
-    }
-    vCirCenters.clear();
-    hCirCenters.clear();
-    vCirCenters = vCirCenters_;
-    hCirCenters = hCirCenters_;
+    // 직선의 방정식과 거리가 먼 경우를 제외
+    vector<Vec3f> vv_ = vCirCenters;
+    vector<Vec3f> hh_ = hCirCenters;
+    getRemovedOutlierEquation(vv_, vEquation, 0.01);
+    getRemovedOutlierEquation(hh_, hEquation, 0.01);
+    RemoveOutlier(this->vCirCenters, vEquation, this->adjDist);
+    RemoveOutlier(this->hCirCenters, hEquation, this->adjDist);
 
     vEquation = LSM_Vertical(this->vCirCenters); // 수직 원들의 최소제곱법 직선식
     hEquation = LSM_Horizontal(this->hCirCenters); // 수평 원들의 최소제곱법 직선식
@@ -1163,6 +1148,61 @@ void CircleDection::getPointOfIntersection()
     temp2 = { (double)this->src.cols, hEquation[0] * (double)this->src.cols + hEquation[1] }; // x=src.cols 이고, 최소제곱법 직선의 방정식을 지나는 점
     templines = { temp1, temp2 };
     this->LinePoints.push_back(templines);
+}
+
+void CircleDection::getRemovedOutlierEquation(vector<Vec3f> cirCenters, Vec2d eq_in, double adjAvg)
+{
+    if (cirCenters.size() < 3)
+        return;
+
+    vector<Vec3f> cirCenters_;
+    double distSum = 0;
+    double distAvg = 0;
+    for (int i = 0; i < cirCenters.size(); i++)
+    {
+        Point2d center(cirCenters[i][0], cirCenters[i][1]);
+        distSum += abs(eq_in[0] * center.x - center.y + eq_in[1]) / sqrt(pow(eq_in[0], 2) + 1);
+        distAvg = distSum / cirCenters.size();
+    }
+
+    if (adjAvg > distAvg)
+        return;
+
+    else
+    {
+        for (int i = 0; i < cirCenters.size(); i++)
+        {
+            Point2d center(cirCenters[i][0], cirCenters[i][1]);
+            if (distAvg > abs(eq_in[0] * center.x - center.y + eq_in[1]) / sqrt(pow(eq_in[0], 2) + 1))
+            {
+                cirCenters_.push_back(cirCenters[i]);
+            }
+        }
+        cirCenters.clear();
+        cirCenters = cirCenters_;
+        if (abs(eq_in[0]) < 1)
+            eq_in = LSM_Horizontal(cirCenters);
+        else
+            eq_in = LSM_Vertical(cirCenters);
+
+
+        getRemovedOutlierEquation(cirCenters, eq_in, adjAvg);
+    }
+}
+
+void CircleDection::RemoveOutlier(vector<Vec3f>& cirCenters, Vec2d eq, double adjDist)
+{
+    vector<Vec3f> cirCenters_;
+    for (int i = 0; i < cirCenters.size(); i++)
+    {
+        Point2d center(cirCenters[i][0], cirCenters[i][1]);
+        if (adjDist >= abs(eq[0] * center.x - center.y + eq[1]) / sqrt(pow(eq[0], 2) + 1))
+        {
+            cirCenters_.push_back(cirCenters[i]);
+        }
+    }
+    cirCenters.clear();
+    cirCenters = cirCenters_;
 }
 
 // 최소제곱법 x, y좌표 스위칭 후 계산한 뒤 나온 식을 다시 y=x 대칭이동

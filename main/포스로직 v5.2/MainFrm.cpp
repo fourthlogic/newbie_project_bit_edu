@@ -22,6 +22,7 @@ END_MESSAGE_MAP()
 static UINT indicators[] =
 {
 	ID_SEPARATOR,           // 상태 줄 표시기
+	ID_INDICATOR_USER_FILENAME,
 };
 
 // CMainFrame 생성/소멸
@@ -45,10 +46,13 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;      // 만들지 못했습니다.
 	}
 	m_wndStatusBar.SetIndicators(indicators, sizeof(indicators) / sizeof(UINT));
-	m_wndStatusBar.SetPaneInfo(0, ID_INDICATOR_USER_FILENAME, SBPS_STRETCH, 200);
-	CString runtime;
+	m_wndStatusBar.SetPaneInfo(0, ID_INDICATOR_USER_FILENAME, SBPS_NORMAL, 200);
+	m_wndStatusBar.SetPaneInfo(1, ID_INDICATOR_USER_FILENAME, SBPS_STRETCH, 200);
+	CString runtime, ballcount;
 	runtime = _T("Runtime : 0");
+	ballcount = _T("Ball Count : 0");
 	m_wndStatusBar.SetPaneText(0, runtime);
+	m_wndStatusBar.SetPaneText(1, ballcount);
 
 	return 0;
 }
