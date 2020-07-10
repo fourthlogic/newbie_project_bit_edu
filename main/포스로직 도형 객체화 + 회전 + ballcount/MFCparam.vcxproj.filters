@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="XML">
-      <UniqueIdentifier>{6093da82-ce9e-4728-adba-0536e0746ba1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Json">
       <UniqueIdentifier>{93e6fe69-a95b-4733-9785-77618be97ce4}</UniqueIdentifier>
     </Filter>
@@ -96,12 +93,6 @@
     <ClInclude Include="json\json_tool.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="XML\tinystr.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="XML\tinyxml.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MainFrm.cpp">
@@ -153,18 +144,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="json\json_writer.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="XML\tinystr.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="XML\tinyxml.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="XML\tinyxmlerror.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="XML\tinyxmlparser.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

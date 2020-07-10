@@ -42,39 +42,13 @@ HBITMAP CircleDection::MatToBitmap(Mat & src)
     return hbmp;
 }
 
-Mat CircleDection::BitmapToMat(HBITMAP hBmp)
-{
-    BITMAP bmp_info;
-    GetObject(hBmp, sizeof(BITMAP), &bmp_info);
-
-    uchar* MatPtr;
-    Mat temp(bmp_info.bmHeight, bmp_info.bmWidth, CV_MAKETYPE(bmp_info.bmBitsPixel/8-1, bmp_info.bmPlanes));
-    for (int i = 0; i < bmp_info.bmHeight; i++)
-    {
-        MatPtr = temp.ptr(i);
-        for (int j = 0; j < bmp_info.bmWidth; j++)
-        {
-            MatPtr[j] = *((uchar*)bmp_info.bmBits + ((i * bmp_info.bmWidth) + j));
-        }
-    }
-
-    return temp;
-}
-
 CircleDection::CircleDection()
 {
     this->distance = 0; // ROI 추출 범위
     this->radMin = 0; // 검출원 최소 반지름
     this->radMax = 0; // 검출원 최대 반지름
     this->BGV = 0; // 그레이
-    this->thMinValue = 0; // 외각 좌표 추출 th
-    this->thMaxValue = 0; // 외각 좌표 추출 th
-    this->height = 0; // 높이
-    this->width = 0; // 넓이
-    this->size = 0; // 전체 크기
     isRotate= false;
-    // 파라미터 값 초기화
-    SetThreshValue(100, 158);
     // 주소 연결
 
     threadParam = new CirDetectionParam();
@@ -96,13 +70,9 @@ void CircleDection::Initialize()
         return;
     else
     {
-        this->height = this->src.rows;
-        this->width = this->src.cols;
-        this->size = height * width;
         this->isRotate = false;
     }
 }
-
 
 bool CircleDection::SelectImage()
 {
@@ -183,20 +153,39 @@ bool CircleDection::Rotation_Run()
     return false;
 }
 
+int CircleDection::BallCounting(vector<Point2d>& shape_pts)
+{
+    BallContours.clear();
+    vector<Vec3f> CirCenters;
+    vector<Point> pts;
+    for (int i = 0; i < shape_pts.size(); i++)
+        pts.push_back(shape_pts[i]);
+    Rect rect = boundRect(pts);
+    Mat ROI = this->src(rect);
+    Mat imgThreshold = ROI.clone();
+    ToZeroThreshold(ROI, imgThreshold, 0, this->BGV);
+    //imshow("ROI", ROI);
+    imshow("ROI", ROI);
+    imshow("imgThreshold", imgThreshold);
+    Mat circleImage(ROI.size(), CV_8UC1, Scalar(0));
+    //MyContours(imgThreshold, BallContours);
+    findContours(imgThreshold, BallContours, RETR_EXTERNAL, CHAIN_APPROX_NONE);
+    for (auto pts : BallContours)
+    {
+        for (auto pt : pts)
+        {
+            circle(circleImage, pt, 0, Scalar(255));
+        }
+    }
+    imshow("circleImage", circleImage);
+    CircleDetection(ROI,BallContours, CirCenters);
+    waitKey();
+    return CirCenters.size();
+}
 // 이미지 set
 void CircleDection::SetImage(Mat& src)
 {
     this->src = src;
-    this->height = src.rows;
-    this->width = src.cols;
-    this->size = src.rows * src.cols;
-}
-
-// Thresh value set
-void CircleDection::SetThreshValue(int thMinValue = 100, int thMaxValue = 158)
-{
-    this->thMinValue = thMinValue;
-    this->thMaxValue = thMaxValue;
 }
 
 // ROI 추출 범위 set
@@ -212,7 +201,7 @@ void CircleDection::SetAdjDist(double adjDist = 2.0)
 }
 
 // 원검출 set
-void CircleDection::SetCircleValue(int radMin = 2, int radMax = 4, int BGV = 100)
+void CircleDection::SetCircleValue(int radMin = 2, int radMax = 4, int BGV = 90)
 {
     this->radMin = radMin;
     this->radMax = radMax;
@@ -230,7 +219,6 @@ Mat CircleDection::GetRotateImage()
 {
     return this->Rotate;
 }
-
 
 // 서클 중심값 가져오기
 vector<Vec3f> CircleDection::GetCirclePoint()
@@ -517,7 +505,7 @@ void CircleDection::Contour(Mat& src, int sx, int sy, vector<Point>& outPoints, 
         nx = x + dir[d][0];
         ny = y + dir[d][1];
 
-        if (nx < 0 || nx >= this->width || ny < 0 || ny >= this->height || Map[ny * this->width + nx] != value)
+        if (nx < 0 || nx >= src.cols || ny < 0 || ny >= src.rows || Map[ny * src.rows + nx] != value)
         {
             if (++d > 7) d = 0;
             cnt++;
@@ -741,7 +729,6 @@ void CircleDection::ContourDetection() {
     // range 범위 영역 추출
     fillPoly_(this->src.size(), mask, this->vertexPts);
     bitwise_and(this->src, mask, ROI);
-
     Mat imgThreshold = ROI.clone();
 
     ToZeroThreshold(imgThreshold, imgThreshold, 0, this->BGV);
@@ -937,6 +924,125 @@ void CircleDection::CircleDetection(vector<vector<Point>>& contours, vector<Vec3
 
         }
     }
+}
+
+// ROI 영역 원 검출
+void CircleDection::CircleDetection(Mat& ROI,vector<vector<Point>>& contours, vector<Vec3f>& cirCenters) {
+
+    for (vector<Point> pts : contours) {
+        double areaValue = contourArea(pts); // 면적값 계산
+        if (areaValue < 50 && areaValue > 0) {
+            Rect rc = boundRect(pts); // 면적 사이즈를 지정할수 있게 설정하면 좋을듯 
+
+            if (rc.tl().x - 3 > 0 && rc.tl().y - 3 > 0) {
+                rc -= Point(3, 3);
+            }
+            if (rc.tl().x + rc.width + 4 < ROI.cols ) {
+                rc += Size(4, 0);
+            }
+            else {
+                rc.width = ROI.cols - rc.tl().x;
+            }
+            if (rc.tl().y + rc.height + 4 < ROI.rows)
+            {
+                rc += Size(0, 4);
+            }
+            else {
+                rc.height = ROI.rows - rc.tl().y;
+            }
+
+            Mat cirRect = ROI(rc);
+            for (int i = 0; i < cirRect.rows; i++)
+            {
+                for (int j = 0; j < cirRect.cols; j++)
+                {
+                    if (cirRect.at<uchar>(i, j) >= 190)
+                        cirRect.at<uchar>(i, j) = 140;
+                }
+            }
+
+            Mat dstX, dstY, norm, angles, re;
+            Sobel(cirRect, dstX, CV_32F, 1, 0, 3);
+            Sobel(cirRect, dstY, CV_32F, 0, 1, 3);
+            magnitude(dstX, dstY, norm); // 1차미분
+            phase(dstX, dstY, angles, false);
+
+
+            Point2d a, b, c;
+            double cc, aa, bb;
+            int thresh = OtsuThreshold(cirRect);
+
+            vector<Point2d> _pts;
+            vector<double> edge_angles;
+            for (int y = 1; y < cirRect.rows - 1; y++)
+            {
+                for (int x = 1; x < cirRect.cols - 1; x++)
+                {
+                    b = Point2d(x, y);
+                    bb = cirRect.at<uchar>(y, x);
+                    if (norm.at<float>(y, x) >= thresh)
+                    {
+                        double theta = angles.at<float>(y, x);
+                        c = { b.x + cos(theta), b.y + sin(theta) };
+                        a = { b.x - cos(theta), b.y - sin(theta) };
+
+                        cc = BilinearValue<uchar>(cirRect, c);
+                        aa = BilinearValue<uchar>(cirRect, a);
+                        if (aa < cirRect.at<uchar>(y, x) && cc > cirRect.at<uchar>(y, x))
+                        {
+                            double lambda = abs(cc - bb) / (abs(bb - aa) + abs(bb - cc));
+                            b = { b.x + lambda * cos(theta) + 0.5, b.y + lambda * sin(theta) + 0.5 };
+                            _pts.push_back(b);
+                            edge_angles.push_back(theta * 180 / CV_PI);
+                        }
+                    }
+                }
+            }
+
+            Vec3f Center;
+            vector<double> dataX;
+
+            Center = CircleFitByTaubin(_pts);
+            int angle_count = edge_angles.size();
+            for (int i = 0; i < edge_angles.size(); i++) {
+
+                double dy = Center[1] - _pts[i].y;
+                double dx = Center[0] - _pts[i].x;
+                double angle = atan(dy / dx) * (180.0 / CV_PI);
+                angle += 180.f;
+                if (dx < 0.0) {
+                    angle += 180.0;
+                }
+
+                if (angle > 360.f)
+                    angle -= 360.f;
+                if (edge_angles[i] - 20 < angle && angle < edge_angles[i] + 20)
+                    angle_count--;
+            }
+            if (angle_count > _pts.size() / 4)
+                continue;
+            int vote = 0;
+
+
+            if (this->radMax >= Center[2] && this->radMin <= Center[2]) {
+                cirCenters.push_back(Vec3f(Center[0] + rc.x, Center[1] + rc.y, Center[2]));
+                for (int t = 0; t <= 360; t += 5)
+                {
+                    double a = Center[0] - Center[2] * (cos(t * CV_PI / 180));
+                    double b = Center[1] - Center[2] * (sin(t * CV_PI / 180));
+                    if (a >= 0 && a < cirRect.cols && b >= 0 && b < cirRect.rows) {
+
+                        if (BilinearValue<float>(norm, Point2d(a, b)) >= 100)
+                            vote += 1;
+                    }
+                }
+                if (vote >= 60) // 허프 깊이 
+                    cirCenters.push_back(Vec3f(Center[0] + rc.x, Center[1] + rc.y, Center[2]));
+            }
+
+        }
+    }
+    cout << CirCenters.size();
 }
 
 // 모든 Point를 포함하는 rect 추출

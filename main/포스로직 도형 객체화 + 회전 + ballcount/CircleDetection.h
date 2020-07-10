@@ -34,18 +34,14 @@ private:
     Point2d IntersectionPoint; // 교점 좌표의 값
     vector<Point> vertexPts;   // 최외곽 ROI Vertex Points
     vector<Point> approx;
-    
+    vector<vector<Point>> BallContours; // 볼 카운트 
+
     // Value
     int distance; // ROI 추출 범위
     double adjDist; // ROI 추출 오차범위
     int radMin; // 검출원 최소 반지름
     int radMax; // 검출원 최대 반지름
     int BGV; // 그레이
-    int thMinValue; // 외각 좌표 추출 th
-    int thMaxValue; // 외각 좌표 추출 th
-    int height; // 높이
-    int width; // 넓이
-    int size; // 전체 크기
     string fileName;
     bool isRotate; // 로테이트 유무
  
@@ -65,14 +61,11 @@ public:
     //실행
     bool Run(); // 알고리즘 부분 실행
     bool Rotation_Run();
-
+    int BallCounting(vector<Point2d>& shape_pts); // 볼 개수 실행
     // Image Data Type 변환
     HBITMAP MatToBitmap(Mat& src);
-    Mat BitmapToMat(HBITMAP hBmp);
-
     // set 함수
     void SetImage(Mat& src); // 이미지 Set
-    void SetThreshValue(int thMinValue, int thMaxValue); // Thresh value set
     void SetDistance(int distance); // ROI 추출 범위값 set
     void SetAdjDist(double adjDist); // ROI 추출 오차 범위값 set
     void SetCircleValue(int radMin, int radMax, int BGV); // 원검출 Value set
@@ -113,6 +106,8 @@ private:
     static unsigned WINAPI CirDetectionThread(void* para);
     // 원 검출
     void CircleDetection(vector<vector<Point>>& contours, vector<Vec3f>& cirCenters);
+    // ROI영역 원검출
+    void CircleDetection(Mat& ROI, vector<vector<Point>>& contours, vector<Vec3f>& cirCenters);
     // 모든 Point를 포함하는 rect 추출
     Rect boundRect(vector<Point> pts);
     // Otsu threshold
