@@ -1146,6 +1146,7 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
             Point2d tmp;
             for (int j = 0; j < GroupList.size(); j++)
             {
+               
                 RectCount = data[GroupList[j]].pts.size();
                 if (data[GroupList[j]].shapeType == DrawMode::DPoint)
                     continue;
@@ -1166,6 +1167,14 @@ void CImgViewerView::OnLButtonDown(UINT nFlags, CPoint point)
                         return;
                     }
                     else if (sqrt(pow(tmp.x - d_pt.x, 2) + pow(tmp.y - d_pt.y, 2)) <= b_radian) {
+                        if (data[GroupList[j]].shapeType == DrawMode::DEllipse) {
+                            EdgeSelect = TRUE;
+                            SelectIndex = GroupList[j];
+                            EdgeIndex = i;
+                            Invalidate(FALSE);
+                            return;
+                        }
+                            
                         rotatePts = d_pos;
                         rotateID = TRUE;
                         EdgeIndex = i;
@@ -1441,7 +1450,7 @@ void CImgViewerView::OnLButtonUp(UINT nFlags, CPoint point)
         for (int i = 0; i < shape.pts.size(); i++)
             pt += shape.pts[i];
 
-
+        shape.tri_idx = { 0,1 };
         shape.RotatePts = shape.pts;
         shape.Center = pt / (int)shape.pts.size();
         shape.theta = 0;
@@ -2126,7 +2135,7 @@ void CImgViewerView::DrawShape_FileSave(CDC* pDC, MyShape& shape) {
     }
     else if (shapeType == DrawMode::DTriangle)
     {
-        Point2d pt = (shape.pts[0] + shape.pts[1]) / 2;
+        Point2d pt = (shape.pts[shape.tri_idx.x] + shape.pts[shape.tri_idx.y]) / 2;
 
         pDC->MoveTo(pt.x, pt.y);
         pDC->LineTo(shape.pts[2].x, shape.pts[2].y);
@@ -2592,29 +2601,38 @@ void CImgViewerView::drawShape(CDC* pDC, MyShape& shape)
         int Index0 = 0, Index1 = 1, Index2 = 2;
         if (shape.MoveCount == 0)
         {
-            pt = (shape.pts[0] + shape.pts[1]) / 2;
+            pt = (shape.pts[shape.tri_idx.x] + shape.pts[shape.tri_idx.y]) / 2;
             Index1 = 2;
             Index2 = 3;
         }
         if (shape.MoveCount == 1)
         {
-            pt = (shape.pts[1] + shape.pts[2]) / 2;
+            pt = (shape.pts[shape.tri_idx.x] + shape.pts[shape.tri_idx.y]) / 2;
             Index1 = 3;
             Index2 = 0;
         }
         if (shape.MoveCount == 2)
         {
-            pt = (shape.pts[2] + shape.pts[3]) / 2;
+            pt = (shape.pts[shape.tri_idx.x] + shape.pts[shape.tri_idx.y]) / 2;
             Index1 = 0;
             Index2 = 1;
         }
         if (shape.MoveCount == 3)
         {
-            pt = (shape.pts[3] + shape.pts[0]) / 2;
+           pt = (shape.pts[shape.tri_idx.x] + shape.pts[shape.tri_idx.y]) / 2;
             Index1 = 1;
             Index2 = 2;
         }
-
+        
+        
+        int arr[6] = { 0,1,2,3,0,1 };
+        Index1 = arr[shape.tri_idx.x + 2];
+        Index2 = arr[shape.tri_idx.y + 2];
+        if (Index2 > Index1) {
+            int d = Index2;
+            Index2 = Index1;
+            Index1 = d;
+        }
         xd_0 = modf(pt.x, &xi_0);
         yd_0 = modf(pt.y, &yi_0);
         xd_1 = modf(shape.pts[Index1].x, &xi_1);
@@ -2796,7 +2814,15 @@ void CImgViewerView::SelectDrawShape(CDC* pDC, MyShape& shape)
             Index1 = 1;
             Index2 = 2;
         }
-
+        pt = (shape.pts[shape.tri_idx.x] + shape.pts[shape.tri_idx.y]) / 2;
+        int arr[6] = { 0,1,2,3,0,1 };
+        Index1 = arr[shape.tri_idx.x + 2];
+        Index2 = arr[shape.tri_idx.y + 2];
+        if (Index2 > Index1) {
+            int d = Index2;
+            Index2 = Index1;
+            Index1 = d;
+        }
         xd_0 = modf(pt.x, &xi_0);
         yd_0 = modf(pt.y, &yi_0);
         xd_1 = modf(shape.pts[Index1].x, &xi_1);
@@ -2900,7 +2926,15 @@ void CImgViewerView::SelectDrawShape(CDC* pDC, MyShape& shape)
                 Index1 = 1;
                 Index2 = 2;
             }
-
+            pt = (shape.RotatePts[shape.tri_idx.x] + shape.RotatePts[shape.tri_idx.y]) / 2;
+            int arr[6] = { 0,1,2,3,0,1 };
+            Index1 = arr[shape.tri_idx.x + 2];
+            Index2 = arr[shape.tri_idx.y + 2];
+            if (Index2 > Index1) {
+                int d = Index2;
+                Index2 = Index1;
+                Index1 = d;
+            }
             xd_0 = modf(pt.x, &xi_0);
             yd_0 = modf(pt.y, &yi_0);
             xd_1 = modf(shape.RotatePts[Index1].x, &xi_1);
@@ -3016,6 +3050,15 @@ void CImgViewerView::SelectDrawShape(CDC* pDC, MyShape& shape)
                     pt = (shape.RotatePts[3] + shape.RotatePts[0]) / 2;
                     Index1 = 1;
                     Index2 = 2;
+                }
+                pt = (shape.RotatePts[shape.tri_idx.x] + shape.RotatePts[shape.tri_idx.y]) / 2;
+                int arr[6] = { 0,1,2,3,0,1 };
+                Index1 = arr[shape.tri_idx.x + 2];
+                Index2 = arr[shape.tri_idx.y + 2];
+                if (Index2 > Index1) {
+                    int d = Index2;
+                    Index2 = Index1;
+                    Index1 = d;
                 }
 
                 xd_0 = modf(pt.x, &xi_0);
@@ -3198,17 +3241,34 @@ void CImgViewerView::SelectShapeUpdate()
                     thetaIndex.push_back(pair<double, int>(theta, i));
                 }
                 sort(thetaIndex.begin(), thetaIndex.end(), PairComparer);
+                BOOL flag1 = FALSE, flag2 = FALSE;
                 for (int i = 0; i < RectCount; i++)
                 {
+                    if (thetaIndex[i].second == data[GroupIndex].tri_idx.x) {
+                        if (!flag1) {
+                            data[GroupIndex].tri_idx.x = i;
+                            flag1 = TRUE;
+                        }
+                    }
+                    if (thetaIndex[i].second == data[GroupIndex].tri_idx.y) {
+                        if (!flag2) {
+                            data[GroupIndex].tri_idx.y = i;
+                            flag2 = TRUE;
+                        }
+                    }
                     temp[i] = data[GroupIndex].pts[thetaIndex[i].second];
+                }
+                int d;
+                if (data[GroupIndex].tri_idx.y < data[GroupIndex].tri_idx.x) {
+                    d = data[GroupIndex].tri_idx.x;
+                    data[GroupIndex].tri_idx.x = data[GroupIndex].tri_idx.y;
+                    data[GroupIndex].tri_idx.y = d;
                 }
 
                 data[GroupIndex].MoveCount += (-thetaIndex[0].second) < 0 ? RectCount - thetaIndex[0].second : -thetaIndex[0].second;
                 if (data[GroupIndex].MoveCount >= RectCount)
                     data[GroupIndex].MoveCount %= 4;
-
-                cout << data[GroupIndex].MoveCount << endl;
-                data[GroupIndex].pts = data[GroupIndex].RotatePts = temp;
+                data[GroupIndex].RotatePts = data[GroupIndex].pts = temp;
             }
 
         }
@@ -3251,18 +3311,38 @@ void CImgViewerView::SelectShapeUpdate()
                     theta = theta + (CV_PI * 2);
                 thetaIndex.push_back(pair<double, int>(theta, i));
             }
+           
             sort(thetaIndex.begin(), thetaIndex.end(), PairComparer);
+            BOOL flag1=FALSE, flag2=FALSE;
             for (int i = 0; i < RectCount; i++)
             {
+                if (thetaIndex[i].second == data[SelectIndex].tri_idx.x) {
+                    if (!flag1) {
+                    data[SelectIndex].tri_idx.x = i;
+                    flag1 = TRUE;
+                    }
+                }
+                if (thetaIndex[i].second == data[SelectIndex].tri_idx.y) {
+                    if (!flag2) {
+                        data[SelectIndex].tri_idx.y = i;
+                        flag2 = TRUE;
+                    }
+                }
                 temp[i] = data[SelectIndex].pts[thetaIndex[i].second];
             }
-
+            int d;
+            if (data[SelectIndex].tri_idx.y < data[SelectIndex].tri_idx.x) {
+                d = data[SelectIndex].tri_idx.x;
+                data[SelectIndex].tri_idx.x = data[SelectIndex].tri_idx.y;
+                data[SelectIndex].tri_idx.y = d;
+            }
+            
             data[SelectIndex].MoveCount += (-thetaIndex[0].second) < 0 ? RectCount - thetaIndex[0].second : -thetaIndex[0].second;
             if (data[SelectIndex].MoveCount >= RectCount)
                 data[SelectIndex].MoveCount %= 4;
-
+            
             //cout << data[SelectIndex].MoveCount << endl;
-            data[SelectIndex].pts = data[SelectIndex].RotatePts = temp;
+            data[SelectIndex].RotatePts = data[SelectIndex].pts = temp;
         }
     }
 }
