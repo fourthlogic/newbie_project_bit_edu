@@ -3727,6 +3727,8 @@ void CImgViewerView::SaveShape(string filename) {
         shape["shapeColor"]["R"] = GetRValue(data[i].shapeColor);
         shape["shapeColor"]["G"] = GetGValue(data[i].shapeColor);
         shape["shapeColor"]["B"] = GetBValue(data[i].shapeColor);
+        shape["index1"] = data[i].tri_idx.x;
+        shape["index2"] = data[i].tri_idx.y;
         //shape["shapeColor"].append(shapeColor);
         shape["PenWidth"] = data[i].penWidth;
         shape["isFlag"] = int(data[i].isflag);
@@ -3763,6 +3765,8 @@ void CImgViewerView::LoadShape(string filename) {
         b = value["shapeColor"]["B"].asDouble();
         g = value["shapeColor"]["G"].asDouble();
         r = value["shapeColor"]["R"].asDouble();
+        shape.tri_idx.x= value["index1"].asInt();
+        shape.tri_idx.y = value["index2"].asInt();
         shape.shapeColor = RGB(r, g, b);
         shape.shapeType = value["shapeType"].asInt();
         shape.isflag = value["isFlag"].asBool();

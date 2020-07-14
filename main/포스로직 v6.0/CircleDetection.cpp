@@ -883,10 +883,9 @@ void CircleDection::CircleDetection(vector<vector<Point>>& contours, vector<Vec3
             }
 
 
-            Vec3f Center;
-            vector<double> dataX;
+            Vec3f Center = OutlierCircle(_pts, edge_angles);
 
-            Center = CircleFitByTaubin(_pts);
+
             int angle_count = edge_angles.size();
             for (int i = 0; i < edge_angles.size(); i++) {
 
@@ -915,16 +914,66 @@ void CircleDection::CircleDetection(vector<vector<Point>>& contours, vector<Vec3
                     double b = Center[1] - Center[2] * (sin(t * CV_PI / 180));
                     if (a >= 0 && a < cirRect.cols && b >= 0 && b < cirRect.rows) {
 
-                        if (BilinearValue<float>(norm, Point2d(a, b)) >= 80)
+                        if (BilinearValue<float>(norm, Point2d(a, b)) >= 90)
                             vote += 1;
                     }
                 }
-                if (vote >= 60) // 허프 깊이 
+                if (vote >= 55) // 허프 깊이 
                     cirCenters.push_back(Vec3f(Center[0] + rc.x, Center[1] + rc.y, Center[2]));
             }
 
         }
     }
+}
+
+Vec3f CircleDection::OutlierCircle(vector<Point2d>& _pts,vector<double>& edge_angles) {
+    Vec3f Center;
+    Center = CircleFitByTaubin(_pts);
+
+    while (true)
+    {
+
+        double mean = 0.;
+        int si = _pts.size();
+        vector<Point2d> temp_pts;
+        vector<double> temp_edge;
+        for (int i = 0; i < _pts.size(); i++) {
+            double dist = sqrt(pow(_pts[i].x - Center[0], 2) + pow(_pts[i].y - Center[1], 2));
+            double val = abs(dist - Center[2]);
+            mean += val;
+            if (val < 1) {
+                temp_edge.push_back(edge_angles[i]);
+                temp_pts.push_back(_pts[i]);
+            }
+        }
+
+        mean /= si;
+        double mean2 = 0;
+        double si_2 = temp_pts.size();
+        vector<Point2d> temp_pts2;
+        vector<double> temp_edge2;
+        for (int i = 0; i < si_2; i++) {
+
+            double dist = sqrt(pow(temp_pts[i].x - Center[0], 2) + pow(temp_pts[i].y - Center[1], 2));
+            double val = abs(dist - Center[2]);
+            mean2 += val;
+            if (val < mean) {
+                temp_edge2.push_back(temp_edge[i]);
+                temp_pts2.push_back(temp_pts[i]);
+            }
+        }
+        mean2 /= si_2;
+
+        if (temp_pts2.size() < 3)
+            break;
+        _pts.assign(temp_pts2.begin(), temp_pts2.end());
+        edge_angles.assign(temp_edge2.begin(), temp_edge2.end());
+        Center = CircleFitByTaubin(_pts);
+        ;
+        if (mean2 < 0.05)
+            break;
+    }
+    return Center;
 }
 
 // 모든 Point를 포함하는 rect 추출
@@ -1128,6 +1177,8 @@ void CircleDection::getPointOfIntersection()
     vector<Vec3f> hh_ = hCirCenters;
     getRemovedOutlierEquation(vv_, vEquation, 0.01);
     getRemovedOutlierEquation(hh_, hEquation, 0.01);
+
+
     RemoveOutlier(this->vCirCenters, vEquation, this->adjDist);
     RemoveOutlier(this->hCirCenters, hEquation, this->adjDist);
 
@@ -1162,8 +1213,8 @@ void CircleDection::getRemovedOutlierEquation(vector<Vec3f> cirCenters, Vec2d eq
     {
         Point2d center(cirCenters[i][0], cirCenters[i][1]);
         distSum += abs(eq_in[0] * center.x - center.y + eq_in[1]) / sqrt(pow(eq_in[0], 2) + 1);
-        distAvg = distSum / cirCenters.size();
     }
+	distAvg = distSum / cirCenters.size();
 
     if (adjAvg > distAvg)
         return;

@@ -117,6 +117,8 @@ private:
     // 선형 보간법 - 밝기값 추출
     template <typename T>
     double BilinearValue(Mat& img, Point2d pt);
+
+    Vec3f OutlierCircle(vector<Point2d>& _pts, vector<double>& edge_angles);
     // 최소제곱법 원 중심 추출
     Vec3f CircleFitByTaubin(vector<Point2d> edges);
     // 사각형 내부의 점 포함 여부
