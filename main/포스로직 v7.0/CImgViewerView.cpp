@@ -16,7 +16,6 @@
 #include "json/json.h"
 #include <fstream>
 #define IsCTRLPressed()  ( 0x8000 ==(GetKeyState(VK_CONTROL) & 0x8000 ))
-#pragma comment(linker, "/entry:WinMainCRTStartup /subsystem:console")
 
 
 IMPLEMENT_DYNCREATE(CImgViewerView, CView)

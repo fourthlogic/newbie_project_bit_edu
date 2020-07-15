@@ -1453,10 +1453,9 @@ void CircleDection::rotation(Mat src, Mat& dst, double theta, Point pt)
     }
 }
 
-// 볼 개수 함수
 int CircleDection::BallCounting(vector<Point2d>& shape_pts, bool isCricleShape)
 {
-    Mat copy,ROI , norm;
+    Mat copy, ROI, norm;
     this->src.copyTo(copy);
     if (isCricleShape == true) {
         Mat mask;
@@ -1478,9 +1477,39 @@ int CircleDection::BallCounting(vector<Point2d>& shape_pts, bool isCricleShape)
         fillPoly_ROI(copy.size(), mask, shape_pts);
         bitwise_and(norm, mask(rect), ROI);
     }
-    this->CirCenters.clear();
-    HoughCircles(norm, this->CirCenters, HOUGH_GRADIENT, 1, 2, 20, 20, this->radMin,this->radMax);
-    int count = this->CirCenters.size();
+    Mat test;
+    threshold(ROI, test, 90, 255, THRESH_TOZERO);
+    vector<vector<Point>> contours;
+    findContours(test, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+    int count = 0;
+    for (vector<Point> pts : contours) {
+        double areaValue = contourArea(pts); // 면적값 계산
+        if (areaValue < 50 && areaValue > 20) {
+            Rect rc = boundRect(pts); // 면적 사이즈를 지정할수 있게 설정하면 좋을듯 
+
+            if (rc.tl().x - 3 > 0 && rc.tl().y - 3 > 0) {
+                rc -= Point(3, 3);
+            }
+            if (rc.tl().x + rc.width + 4 < ROI.cols) {
+                rc += Size(4, 0);
+            }
+            else {
+                rc.width = ROI.cols - rc.tl().x;
+                rc.height += 4;
+            }
+            if (rc.tl().y + rc.height + 4 < ROI.rows) {
+                rc += Size(0, 4);
+            }
+            else {
+                rc.height = ROI.rows - rc.tl().y;
+            }
+            Mat cirRect = ROI(rc);
+            this->CirCenters.clear();
+            HoughCircles(norm, this->CirCenters, HOUGH_GRADIENT, 1, 1, 100, 5, this->radMin, this->radMax);
+            if (this->CirCenters.size() >= 1)
+                count++;
+        }
+    }
     this->CirCenters.clear();
     return count;
 }
